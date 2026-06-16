@@ -18,6 +18,9 @@ jobs:
     # Les forks n'ont pas accès aux secrets : on saute le déploiement.
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
+    env:
+      # Vrai seulement si le secret de déploiement est configuré.
+      HAS_FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,6 +43,8 @@ jobs:
           VITE_ADMIN_EMAIL: ${{ secrets.VITE_ADMIN_EMAIL }}
 
       - name: Deploy preview channel
+        # Ignoré tant que le secret FIREBASE_SERVICE_ACCOUNT n'est pas configuré.
+        if: ${{ env.HAS_FIREBASE_SA == 'true' }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
