@@ -188,16 +188,23 @@ const INITIAL_MOCK_FILES: DossierFile[] = [
   }
 ];
 
+// Le mode "sandbox" (repli local) est désormais conservé EN MÉMOIRE seulement,
+// et non plus dans localStorage. Conséquence : chaque rechargement de page
+// repart en mode "Firebase réel" et ne reste donc jamais bloqué en sandbox.
+// Si Firebase échoue à nouveau, l'app y rebascule automatiquement pour la
+// session courante. Les données locales de secours restent, elles, dans
+// localStorage (orgs/fichiers/dossiers).
+let sandboxActiveMemory = false;
+
 export const localDb = {
   isSandboxActive(): boolean {
-    // If quota limit encountered, or explicitly activated
-    return localStorage.getItem(STORAGE_KEYS.SANDBOX_MODE) === 'true';
+    return sandboxActiveMemory;
   },
 
   setSandboxActive(active: boolean) {
-    if (active) {
-      localStorage.setItem(STORAGE_KEYS.SANDBOX_MODE, 'true');
-    } else {
+    sandboxActiveMemory = active;
+    // Nettoyage d'un éventuel ancien drapeau persistant (migration).
+    if (localStorage.getItem(STORAGE_KEYS.SANDBOX_MODE)) {
       localStorage.removeItem(STORAGE_KEYS.SANDBOX_MODE);
     }
   },

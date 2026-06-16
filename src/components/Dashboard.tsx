@@ -38,8 +38,7 @@ import CreateFolderModal from './CreateFolderModal';
 import UserProfileModal from './UserProfileModal';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
-// @ts-ignore
-import firebaseConfig from '../../firebase-applet-config.json';
+import { firebaseConfig } from '../lib/firebaseConfig';
 
 const statusConfig: Record<SubmissionStatus, { color: string; bgClass: string; textClass: string; icon: React.ElementType }> = {
   'Pending': { color: 'bg-amber-500', bgClass: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30', textClass: 'text-amber-700 dark:text-amber-400', icon: Clock },
