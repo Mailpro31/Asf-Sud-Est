@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatBytes } from '../lib/utils';
 import { 
   ShieldAlert, 
   CloudUpload, 
@@ -47,14 +48,6 @@ const statusConfig: Record<SubmissionStatus, { color: string; bgClass: string; t
   'Incomplete': { color: 'bg-rose-500', bgClass: 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30', textClass: 'text-rose-700 dark:text-rose-400', icon: AlertCircle },
 };
 
-function formatBytes(bytes: number, decimals = 2) {
-  if (!+bytes) return '0 Octets';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Octets', 'Ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}
 
 export default function Dashboard() {
   const { user, organization, signOut, antennes, delegations } = useAuth();

@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchOrg = async (uid: string, email?: string | null, displayName?: string | null) => {
     const isSandbox = localDb.isSandboxActive();
-    const isAdminUser = uid === 'TON_UID_ADMIN' || (email ? email.toLowerCase() === (import.meta as any).env.VITE_ADMIN_EMAIL?.toLowerCase() : false);
+    const isAdminUser = email ? email.toLowerCase() === (import.meta as any).env.VITE_ADMIN_EMAIL?.toLowerCase() : false;
     
     // Check for any locally saved wizard-flow registration info (to bypass race conditions/Google defaults)
     let pendingReg: any = null;

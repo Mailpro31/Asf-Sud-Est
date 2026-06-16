@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { ShieldAlert, Compass, Layers, Globe, Star, AppWindow } from 'lucide-react';
 import { useTheme, themeOptions } from '../context/ThemeContext';
 import { LogoASF } from './LandingPage';
 

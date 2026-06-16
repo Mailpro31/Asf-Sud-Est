@@ -20,6 +20,33 @@ interface Antenne {
   delegation_id: string;
 }
 
+// Contraintes de sécurité pour les dépôts publics (doivent rester alignées
+// avec les règles Firebase Storage sur le chemin public_uploads/).
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 Mo
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+
+/** Vérifie la taille et le type d'un fichier. Retourne un message d'erreur ou null. */
+function validateUploadFile(file: File): string | null {
+  if (file.size > MAX_FILE_SIZE) {
+    return `Fichier trop volumineux (maximum 10 Mo).`;
+  }
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const extOk = ALLOWED_EXTENSIONS.includes(ext);
+  // Certains navigateurs ne renseignent pas file.type : on tolère si l'extension est valide.
+  const mimeOk = file.type === '' || ALLOWED_MIME_TYPES.includes(file.type);
+  if (!extOk || !mimeOk) {
+    return `Type de fichier non autorisé. Formats acceptés : PDF, JPG, PNG, DOC, DOCX.`;
+  }
+  return null;
+}
+
 export default function PublicUploadForm({ onNavigateHome }: PublicUploadFormProps) {
   const [delegations, setDelegations] = useState<Delegation[]>([]);
   const [antennes, setAntennes] = useState<Antenne[]>([]);
@@ -130,6 +157,14 @@ export default function PublicUploadForm({ onNavigateHome }: PublicUploadFormPro
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
+      const validationError = validateUploadFile(selectedFile);
+      if (validationError) {
+        setFile(null);
+        e.target.value = '';
+        setErrorMessage(validationError);
+        return;
+      }
+      setErrorMessage('');
       setFile(selectedFile);
       if (!documentName) {
         // Strip file extension to prefill document name beautifully
@@ -143,6 +178,12 @@ export default function PublicUploadForm({ onNavigateHome }: PublicUploadFormPro
     e.preventDefault();
     if (!selectedDelegation || !selectedAntenne || !file || !documentName.trim()) {
       setErrorMessage('Veuillez remplir tous les champs et sélectionner un fichier.');
+      return;
+    }
+
+    const validationError = validateUploadFile(file);
+    if (validationError) {
+      setErrorMessage(validationError);
       return;
     }
 
