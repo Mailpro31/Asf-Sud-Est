@@ -2,14 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-// @ts-ignore
-import firebaseConfig from '../../firebase-applet-config.json';
+import { firebaseConfig, firestoreDatabaseId } from './firebaseConfig';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true
-}, firebaseConfig.firestoreDatabaseId);
+}, firestoreDatabaseId);
 export const storage = getStorage(app);
 
 export enum OperationType {
