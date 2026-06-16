@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>ASF · Design System (aperçu Étape 0)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* --- Tokens ASF (miroir de src/index.css) --- */
+    :root {
+      --font-sans: "Inter", system-ui, sans-serif;
+      --font-display: "Figtree", "Inter", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+      --azur: #1b98c4; --azur-pastel: #83d0f5; --azur-dark: #126b8b;
+      --azur-light: #e8f5fb; --azur-hover: #1682a8;
+      --deep: #0e5e76; --deep-dark: #0a4659;
+      --sourire: #f39200; --sourire-dark: #d97e00; --sourire-light: #fff4e6;
+      --status-pending: #f59e0b; --status-review: #1b98c4;
+      --status-validated: #10b981; --status-incomplete: #f43f5e;
+      --shadow-sm: 0 1px 2px rgba(15,23,42,.04);
+      --shadow-lg: 0 18px 40px -12px rgba(14,94,118,.22);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: var(--font-sans); color: #1e293b;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef6fb 100%);
+      -webkit-font-smoothing: antialiased; padding: 0 0 80px;
+    }
+    h1,h2,h3,h4 { font-family: var(--font-display); letter-spacing: -.02em; color: var(--deep); margin: 0; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+    header.hero {
+      background: linear-gradient(120deg, var(--deep) 0%, var(--azur) 100%);
+      color: #fff; padding: 48px 0 40px; margin-bottom: 40px;
+    }
+    header.hero h1 { color: #fff; font-size: 34px; font-weight: 800; }
+    header.hero p { margin: 10px 0 0; opacity: .9; font-size: 15px; max-width: 600px; }
+    .tag { display:inline-block; background: rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.25);
+      padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+    section { margin-bottom: 44px; }
+    .sec-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em;
+      color: var(--azur-dark); margin-bottom: 16px; }
+    .card { background:#fff; border:1px solid #e2e8f0; border-radius: 24px; box-shadow: var(--shadow-sm); padding: 28px; }
+    .row { display:flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .grid { display:grid; gap: 16px; }
+
+    /* Palette */
+    .swatches { grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); }
+    .swatch { border-radius: 16px; overflow: hidden; border:1px solid #e2e8f0; }
+    .swatch .chip { height: 72px; }
+    .swatch .meta { padding: 10px 12px; background:#fff; }
+    .swatch .meta b { font-size: 13px; color:#0f172a; display:block; }
+    .swatch .meta code { font-size: 11px; color:#64748b; font-family: var(--font-mono); }
+
+    /* Buttons */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+      border-radius:.875rem; padding:.75rem 1.5rem; font-family: var(--font-display); font-weight:600;
+      border:none; cursor:pointer; transition: all .2s; font-size: 14px; }
+    .btn-asf { color:#fff; background: var(--azur); box-shadow: var(--shadow-sm); }
+    .btn-asf:hover { background: var(--azur-hover); box-shadow: 0 6px 18px rgba(27,152,196,.28); }
+    .btn-sourire { color:#fff; background: var(--sourire); }
+    .btn-sourire:hover { background: var(--sourire-dark); box-shadow: 0 6px 18px rgba(243,146,0,.30); }
+    .btn-secondary { color: var(--deep); background:#fff; border:1px solid #e2e8f0; box-shadow: var(--shadow-sm); }
+    .btn-secondary:hover { background:#f8fafc; border-color:#cbd5e1; }
+    .btn-ghost { color:#475569; background:transparent; padding:.625rem 1rem; }
+    .btn-ghost:hover { background:#f1f5f9; color: var(--deep); }
+    .btn-danger { color:#fff; background:#e11d48; }
+    .btn-danger:hover { background:#be123c; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* Badges */
+    .badge { display:inline-flex; align-items:center; gap:.375rem; border-radius:999px; border:1px solid transparent;
+      padding:.125rem .625rem; font-size:12px; font-weight:600; line-height:1.25rem; }
+    .badge .dot { width:6px; height:6px; border-radius:999px; }
+    .b-pending    { background:#fffbeb; color:#92400e; border-color:#fde68a; }
+    .b-review     { background: var(--azur-light); color: var(--deep); border-color: var(--azur-pastel); }
+    .b-validated  { background:#ecfdf5; color:#065f46; border-color:#a7f3d0; }
+    .b-incomplete { background:#fff1f2; color:#9f1239; border-color:#fecdd3; }
+
+    /* Input */
+    .field { display:flex; flex-direction:column; gap:6px; max-width: 360px; }
+    .field label { font-size:14px; font-weight:500; color:#334155; }
+    .input { width:100%; border-radius:.75rem; border:1px solid #e2e8f0; background:#fff;
+      padding:.625rem .875rem; font-size:14px; color:#0f172a; transition: all .2s; font-family: var(--font-sans); }
+    .input::placeholder { color:#94a3b8; }
+    .input:focus { outline:none; border-color: var(--azur); box-shadow: 0 0 0 3px rgba(27,152,196,.15); }
+    .hint { font-size:12px; color:#64748b; }
+
+    /* Modal mock */
+    .modal-stage { position: relative; background:#0f172a14; border-radius: 24px; padding: 36px;
+      display:flex; align-items:center; justify-content:center; }
+    .modal { width: 420px; max-width:100%; background:#fff; border-radius: 24px; box-shadow: var(--shadow-lg); overflow:hidden; }
+    .modal .head { display:flex; gap:12px; align-items:flex-start; padding: 20px 24px; border-bottom:1px solid #e2e8f070; }
+    .modal .ic { width:40px; height:40px; border-radius:12px; background: var(--azur-light); color: var(--azur);
+      display:flex; align-items:center; justify-content:center; font-weight:800; }
+    .modal h3 { font-size:18px; }
+    .modal .sub { font-size:13px; color:#64748b; margin-top:2px; }
+    .modal .body { padding: 20px 24px; font-size:14px; color:#475569; }
+    .modal .foot { display:flex; justify-content:flex-end; gap:12px; padding:16px 24px; border-top:1px solid #e2e8f070; background:#f8fafc99; }
+    .mono { font-family: var(--font-mono); }
+    .type-sample p { margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <span class="tag">Refonte ASF · Étape 0 — Socle</span>
+      <h1>Design System — Aviation Sans Frontières</h1>
+      <p>Aperçu des fondations centralisées : typographies, palette, boutons, badges de statut, champs et modale. Tous les écrans de l'application seront migrés sur ces briques, étape par étape.</p>
+    </div>
+  </header>
+
+  <main class="wrap grid" style="gap:0">
+
+    <section>
+      <div class="sec-title">Typographie</div>
+      <div class="card type-sample">
+        <h1 style="font-size:32px">Figtree · Display 800</h1>
+        <h2 style="font-size:24px; margin-top:8px">Figtree · Titres de section</h2>
+        <p style="font-size:16px; color:#334155">Inter · corps de texte — Portail documentaire sécurisé pour les autorisations de vol de l'ASF Sud-Est.</p>
+        <p class="mono" style="color:#64748b; font-size:13px">JetBrains Mono · données / identifiants techniques</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">Palette de marque</div>
+      <div class="grid swatches">
+        <div class="swatch"><div class="chip" style="background:#1b98c4"></div><div class="meta"><b>Azur (primaire)</b><code>#1b98c4</code></div></div>
+        <div class="swatch"><div class="chip" style="background:#83d0f5"></div><div class="meta"><b>Azur pastel</b><code>#83d0f5</code></div></div>
+        <div class="swatch"><div class="chip" style="background:#0e5e76"></div><div class="meta"><b>Bleu profond</b><code>#0e5e76</code></div></div>
+        <div class="swatch"><div class="chip" style="background:#e8f5fb"></div><div class="meta"><b>Azur clair</b><code>#e8f5fb</code></div></div>
+        <div class="swatch"><div class="chip" style="background:#f39200"></div><div class="meta"><b>Sourire (accent)</b><code>#f39200</code></div></div>
+        <div class="swatch"><div class="chip" style="background:#fff4e6"></div><div class="meta"><b>Sourire clair</b><code>#fff4e6</code></div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">Boutons</div>
+      <div class="card">
+        <div class="row">
+          <button class="btn btn-asf">Action principale</button>
+          <button class="btn btn-sourire">Déposer un document</button>
+          <button class="btn btn-secondary">Secondaire</button>
+          <button class="btn btn-ghost">Ghost</button>
+          <button class="btn btn-danger">Supprimer</button>
+          <button class="btn btn-asf" disabled>Désactivé</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">Badges de statut (dossiers)</div>
+      <div class="card">
+        <div class="row">
+          <span class="badge b-pending"><span class="dot" style="background:var(--status-pending)"></span>En attente</span>
+          <span class="badge b-review"><span class="dot" style="background:var(--status-review)"></span>En révision</span>
+          <span class="badge b-validated"><span class="dot" style="background:var(--status-validated)"></span>Validé</span>
+          <span class="badge b-incomplete"><span class="dot" style="background:var(--status-incomplete)"></span>Incomplet</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">Champs de saisie</div>
+      <div class="card">
+        <div class="field">
+          <label for="x">Adresse e-mail</label>
+          <input class="input" id="x" placeholder="prenom.nom@asf.org" />
+          <span class="hint">Format institutionnel recommandé.</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">Modale</div>
+      <div class="modal-stage">
+        <div class="modal">
+          <div class="head">
+            <div class="ic">+</div>
+            <div style="flex:1">
+              <h3>Créer un dossier</h3>
+              <div class="sub">Organisez vos documents par mission.</div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="field" style="max-width:none">
+              <label>Nom du dossier</label>
+              <input class="input" placeholder="Ex. Autorisations 2026" />
+            </div>
+          </div>
+          <div class="foot">
+            <button class="btn btn-secondary">Annuler</button>
+            <button class="btn btn-asf">Créer</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>
