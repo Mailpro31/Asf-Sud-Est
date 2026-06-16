@@ -55,14 +55,6 @@ import { LogoASF } from './LandingPage';
 import AilesDuSourireDashboard from './AilesDuSourireDashboard';
 import { localDb } from '../lib/localDb';
 
-const DELEGATIONS = [
-  { id: 'france', name: 'Aviation Sans Frontières France', desc: 'Réseau national des antennes d\'Aviation Sans Frontières' }
-];
-
-const ANTENNES_BY_DELEGATION: Record<string, { id: string; name: string; x?: number; y?: number }[]> = {
-  'france': [],
-};
-
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
   gradientClass: string;
