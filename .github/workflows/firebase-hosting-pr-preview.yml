@@ -49,5 +49,5 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: asf013
+          projectId: asf-sud-est-prod-524c1
           expires: 7d
