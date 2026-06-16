@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /dossiers/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.auth.uid == "YaC6654WHzSabEclQBeTwOdE4xp1" ||
+        (request.auth.token.email == "mailprosasha2@gmail.com") ||
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) ||
+        (firestore.exists(/databases/(default)/documents/organizations/$(request.auth.uid)) && 
+         firestore.get(/databases/(default)/documents/organizations/$(request.auth.uid)).data.role == "admin")
+      );
+    }
+  }
+}

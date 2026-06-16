@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Candara", "Calibri", "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-display: "Arial Nova", "Arial", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-azur: #1b98c4;
+  --color-azur-pastel: #83d0f5;
+  --color-azur-dark: #126b8b;
+  --color-azur-light: #e8f5fb;
+  --color-azur-hover: #1682a8;
+}
+
+/* Animations and custom transitions */
+.transition-all-custom {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-glow-azur {
+  text-shadow: 0 0 8px rgba(27, 152, 196, 0.4);
+}
+
