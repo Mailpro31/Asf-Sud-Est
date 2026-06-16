@@ -217,7 +217,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
       {onNavigateHome && (
         <button 
           onClick={onNavigateHome}
-          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#1b98c4] transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
+          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-azur transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
           id="back-to-home-btn"
         >
           ← Retour à l'accueil
@@ -227,11 +227,11 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
         {/* Modern Minimal Headings */}
         <div className="mb-6 text-center flex flex-col items-center">
           <LogoASF className="w-16 h-16 mb-3 hover:scale-105 transition-transform duration-200" variant="color" />
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white font-sans font-display uppercase">
+          <h1 className="text-2xl font-black tracking-tight text-deep dark:text-white font-display">
             Aviation Sans Frontières
           </h1>
           <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed text-center">
-            Réseau d'accompagnement de vol solidaire <span className="font-bold text-[#1b98c4]">"Ailes du Sourire"</span>. Ouvrez votre espace numérique d'habilitation.
+            Ouvrez votre espace partenaire pour transmettre les documents des vols <span className="font-semibold text-azur">Les Ailes du Sourire</span>.
           </p>
         </div>
 
