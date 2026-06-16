@@ -2,6 +2,18 @@
  * Utilitaires partagés de l'application.
  */
 
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+/**
+ * Fusionne des classes Tailwind de façon sûre (clsx + tailwind-merge).
+ * Permet de surcharger des classes par défaut sans conflit.
+ * Ex : cn('px-4 py-2', condition && 'px-6') => "py-2 px-6"
+ */
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
+}
+
 /**
  * Formate une taille en octets en chaîne lisible (français).
  * Ex : formatBytes(1536) => "1.5 Ko"
