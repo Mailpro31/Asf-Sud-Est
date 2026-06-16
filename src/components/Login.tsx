@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { useTheme, themeOptions } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 import { LogoASF } from './LandingPage';
 
 interface LoginProps {
@@ -15,7 +15,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { theme, setTheme, themeConfig } = useTheme();
+  const { themeConfig } = useTheme();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +44,6 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
     }
   };
 
-  const inputRounded = 'rounded-xl';
   const borderStyle = `border ${themeConfig.cardBorder}`;
 
   return (
@@ -73,7 +72,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
         {/* Login Form Wrapper Card */}
         <div className={`w-full p-8 sm:p-10 ${themeConfig.cardBg} ${borderStyle} rounded-2xl ${themeConfig.accentGlow} transition-all duration-300`}>
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-slate-900 font-display">Se connecter</h2>
+            <h2 className="text-lg font-bold text-deep font-display">Se connecter</h2>
             <p className="text-xs text-slate-500 mt-1">Saisissez vos identifiants pour accéder aux dossiers</p>
           </div>
 
@@ -91,7 +90,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-4 py-2.5 border ${themeConfig.cardBorder} ${inputRounded} bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-azur/20 focus:border-azur text-sm transition-all`}
+                className="input-asf"
                 placeholder="organisation@aviation-sans-frontieres-fr.org"
               />
             </div>
@@ -102,7 +101,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full px-4 py-2.5 border ${themeConfig.cardBorder} ${inputRounded} bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-azur/20 focus:border-azur text-sm transition-all`}
+                className="input-asf"
                 placeholder="••••••••"
               />
             </div>
@@ -110,7 +109,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-2.5 px-4 ${themeConfig.btnPrimary} flex items-center justify-center gap-2 mt-6 cursor-pointer`}
+              className="btn-asf w-full flex items-center justify-center gap-2 mt-6 cursor-pointer"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -130,7 +129,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
             <button
               type="button"
               onClick={handleGoogleSignIn}
-              className={`w-full py-2.5 px-4 ${themeConfig.btnSecondary} flex justify-center items-center gap-2 text-sm font-semibold cursor-pointer`}
+              className="btn-secondary w-full flex justify-center items-center gap-2 text-sm font-semibold cursor-pointer"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4 mr-1">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

@@ -90,7 +90,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
           <div className="flex items-center gap-3">
             <LogoASF className="w-10 h-10 transition-transform hover:scale-105 duration-300" variant="color" />
             <div className="flex flex-col">
-              <span className="font-display font-bold text-[#1b98c4] tracking-wide text-sm md:text-base">
+              <span className="font-display font-bold text-azur tracking-wide text-sm md:text-base">
                 AVIATION Sans Frontières
               </span>
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">
@@ -198,15 +198,15 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 className="grid grid-cols-3 gap-8 pt-6 border-t border-slate-200/80 w-full"
               >
                 <div>
-                  <span className="block text-xl md:text-2xl font-black text-[#1b98c4]">800+</span>
+                  <span className="block text-xl md:text-2xl font-black text-azur">800+</span>
                   <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold font-mono">Bénévoles</span>
                 </div>
                 <div>
-                  <span className="block text-xl md:text-2xl font-black text-[#1b98c4]">45 ans</span>
+                  <span className="block text-xl md:text-2xl font-black text-azur">45 ans</span>
                   <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold font-mono">Service public</span>
                 </div>
                 <div>
-                  <span className="block text-xl md:text-2xl font-black text-[#1b98c4]">20+</span>
+                  <span className="block text-xl md:text-2xl font-black text-azur">20+</span>
                   <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold font-mono">Missions / jour</span>
                 </div>
               </motion.div>
@@ -231,7 +231,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 {/* Overlay card */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent p-6 text-white text-left">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="px-2 py-0.5 rounded text-[8px] tracking-widest font-bold uppercase bg-[#1b98c4]">MISSION</span>
+                    <span className="px-2 py-0.5 rounded text-[8px] tracking-widest font-bold uppercase bg-azur">MISSION</span>
                     <p className="text-[11px] font-mono tracking-wider opacity-90">Opérations Air & Terre</p>
                   </div>
                   <h3 className="text-lg font-bold font-display">Aviation Sans Frontières : Les Ailes de l'Humanitaire</h3>
@@ -242,8 +242,8 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
               </motion.div>
 
               {/* Decorative cloud path outline */}
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#1b98c4]/5 rounded-full blur-2xl pointer-events-none"></div>
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-[#83d0f5]/80/10 rounded-full blur-2xl pointer-events-none"></div>
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-azur/5 rounded-full blur-2xl pointer-events-none"></div>
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-azur-pastel/10 rounded-full blur-2xl pointer-events-none"></div>
             </div>
 
           </div>
@@ -254,14 +254,14 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
           <div className="max-w-7xl mx-auto">
             
             <div className="text-center max-w-xl mx-auto space-y-3 mb-12">
-              <span className="px-3 py-1 rounded bg-[#1b98c4]/15 text-[#1b98c4] text-xs font-bold tracking-widest uppercase font-mono">
+              <span className="px-3 py-1 rounded bg-azur/15 text-azur text-xs font-bold tracking-widest uppercase font-mono">
                 Focus Solidaire : Ailes du Sourire
               </span>
-              <h2 className="text-2xl md:text-3xl font-black font-display tracking-tight text-slate-900">
+              <h2 className="text-2xl md:text-3xl font-black font-display tracking-tight text-deep">
                 L'Évasion pour Tous : L'Envol Thérapeutique
               </h2>
               <p className="text-slate-600 text-xs md:text-sm leading-relaxed">
-                Le programme <span className="font-bold text-[#1b98c4]">Ailes du Sourire</span> rompt l'isolement et offre des moments de partage magiques dans les airs aux personnes touchées par le handicap ou d'importantes précarités.
+                Le programme <span className="font-bold text-azur">Ailes du Sourire</span> rompt l'isolement et offre des moments de partage magiques dans les airs aux personnes touchées par le handicap ou d'importantes précarités.
               </p>
             </div>
 
@@ -288,9 +288,9 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 </div>
                 
                 <div className="space-y-4 pt-8">
-                  <div className="bg-[#1b98c4]/5 rounded-xl border border-[#1b98c4]/10 p-5 h-36 flex flex-col justify-center text-left">
-                    <span className="text-3xl font-black text-[#1b98c4] block">96%</span>
-                    <h4 className="text-xs font-bold text-slate-800">Sourires & Évasion</h4>
+                  <div className="bg-azur/5 rounded-xl border border-azur/10 p-5 h-36 flex flex-col justify-center text-left">
+                    <span className="text-3xl font-black text-azur block">96%</span>
+                    <h4 className="text-xs font-bold text-deep">Sourires & Évasion</h4>
                     <p className="text-[10px] text-slate-500 leading-relaxed mt-1">Un impact thérapeutique prouvé, renforçant l'estime de soi.</p>
                   </div>
                   <div className="rounded-xl overflow-hidden shadow-md border hover:scale-[1.02] transition-transform duration-300">
@@ -307,8 +307,8 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
               {/* Right Side: Description and Benefits */}
               <div className="text-left space-y-6">
                 <div>
-                  <h3 className="text-lg font-bold font-display text-slate-900 flex items-center gap-2">
-                    <Compass className="w-5 h-5 text-[#1b98c4]" />
+                  <h3 className="text-lg font-bold font-display text-deep flex items-center gap-2">
+                    <Compass className="w-5 h-5 text-azur" />
                     Qu'est-ce que les Ailes du Sourire ?
                   </h3>
                   <p className="text-slate-600 text-xs md:text-sm leading-relaxed mt-2.5">
@@ -318,25 +318,25 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
 
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <CheckCircle2 className="w-4 h-4 text-[#1b98c4] shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-azur shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Vols de Découverte Aérienne</h4>
+                      <h4 className="text-xs font-bold text-deep">Vols de Découverte Aérienne</h4>
                       <p className="text-[11px] text-slate-500">Chaque passager prend place à bord d'un avion léger aux côtés d'un pilote chevronné pour un parcours d'évasion inoubliable au-dessus des plus belles régions.</p>
                     </div>
                   </div>
                   
                   <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <CheckCircle2 className="w-4 h-4 text-[#1b98c4] shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-azur shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Coordination Réglementaire Renforcée</h4>
+                      <h4 className="text-xs font-bold text-deep">Coordination Réglementaire Renforcée</h4>
                       <p className="text-[11px] text-slate-500">Chaque vol d'Ailes du Sourire demande un protocole de sécurité et d'autorisation d'accès dont la validation est orchestrée via notre portail numérique de gestion.</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <CheckCircle2 className="w-4 h-4 text-[#1b98c4] shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-azur shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Réseau d'Aéroclubs & Partenaires</h4>
+                      <h4 className="text-xs font-bold text-deep">Réseau d'Aéroclubs & Partenaires</h4>
                       <p className="text-[11px] text-slate-500">Nous facilitons le travail conjoint entre les établissements de santé (IME, SESSAD, Foyers), les aéroclubs hôtes et nos équipes d'accompagnants.</p>
                     </div>
                   </div>
@@ -346,7 +346,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                   <button
                     onClick={onNavigateLogin}
                     id="cta-ailes-sourire"
-                    className="px-5 py-2.5 bg-slate-905 bg-[#1b98c4]/10 hover:bg-[#1b98c4]/20 border border-[#1b98c4]/20 text-[#1b98c4] text-xs font-bold rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer"
+                    className="px-5 py-2.5 bg-azur/10 hover:bg-azur/20 border border-azur/20 text-azur text-xs font-bold rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer"
                   >
                     Consulter les dossiers de vol en cours <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -362,7 +362,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
           <div className="max-w-7xl mx-auto">
             
             <div className="text-center max-w-xl mx-auto space-y-3 mb-12">
-              <h2 className="text-2xl md:text-3xl font-black font-display tracking-tight text-slate-900">
+              <h2 className="text-2xl md:text-3xl font-black font-display tracking-tight text-deep">
                 Nos Domaines d'Actions Majeurs
               </h2>
               <p className="text-slate-600 text-xs md:text-sm leading-relaxed">
@@ -374,10 +374,10 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
               {officialMissions.map((item, index) => (
                 <div 
                   key={index}
-                  className={`p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between items-start transition-transform hover:-translate-y-1 duration-200 relative ${item.highlight ? 'ring-2 ring-[#1b98c4] ring-offset-2' : ''}`}
+                  className={`p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between items-start transition-transform hover:-translate-y-1 duration-200 relative ${item.highlight ? 'ring-2 ring-azur ring-offset-2' : ''}`}
                 >
                   {item.highlight && (
-                    <span className="absolute top-3 right-3 bg-[#1b98c4] text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                    <span className="absolute top-3 right-3 bg-azur text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
                       Mission Phare
                     </span>
                   )}
@@ -386,7 +386,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                     <span className="text-[10px] tracking-wider uppercase font-black text-slate-400 block font-mono">
                       {item.subtitle}
                     </span>
-                    <h3 className="text-sm font-bold text-slate-900 font-display">
+                    <h3 className="text-sm font-bold text-deep font-display">
                       {item.title}
                     </h3>
                     <p className="text-xs text-slate-500 leading-relaxed font-sans">
@@ -397,7 +397,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                   <div className="mt-4 pt-3 border-t w-full text-right">
                     <button
                       onClick={onNavigateLogin}
-                      className="text-[10px] font-bold text-[#1b98c4] hover:underline cursor-pointer"
+                      className="text-[10px] font-bold text-azur hover:underline cursor-pointer"
                     >
                       Voir les dossiers liés →
                     </button>
@@ -410,7 +410,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
         </section>
 
         {/* Minimalist CTA banner for account access */}
-        <section className="px-6 py-20 bg-gradient-to-r from-[#126b8b] to-[#1b98c4] text-white relative overflow-hidden">
+        <section className="px-6 py-20 bg-gradient-to-r from-deep to-azur text-white relative overflow-hidden">
           
           {/* Decorative elements */}
           <div className="absolute -right-16 -top-16 w-60 h-60 bg-white/5 rounded-full blur-2xl"></div>
@@ -430,7 +430,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
               <button
                 onClick={onNavigateLogin}
                 id="cta-bottom-login-btn"
-                className="px-8 py-3.5 bg-white hover:bg-slate-55 text-[#1b98c4] font-black text-sm rounded-xl tracking-wide shadow-lg hover:-translate-y-0.5 transition-all text-center cursor-pointer"
+                className="px-8 py-3.5 bg-white hover:bg-slate-55 text-azur font-black text-sm rounded-xl tracking-wide shadow-lg hover:-translate-y-0.5 transition-all text-center cursor-pointer"
               >
                 Se connecter à l'espace membre / partenaire
               </button>
@@ -465,7 +465,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
             <a 
               href="mailto:communication@aviation-sans-frontieres-fr.org"
               id="footer-email-link"
-              className="text-[#83d0f5] hover:underline flex items-center justify-center md:justify-end gap-1.5 font-mono"
+              className="text-azur-pastel hover:underline flex items-center justify-center md:justify-end gap-1.5 font-mono"
             >
               <Mail className="w-3.5 h-3.5" /> communication@aviation-sans-frontieres-fr.org
             </a>

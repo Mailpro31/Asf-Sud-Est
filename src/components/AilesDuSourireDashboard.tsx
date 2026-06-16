@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { 
-  FileText, 
-  Download, 
-  Check, 
-  X, 
+import {
+  FileText,
+  Download,
+  Check,
+  X,
   ExternalLink,
   Search,
-  AlertCircle,
-  Clock,
   RotateCw,
   TrendingUp,
-  FileCheck2,
   FolderOpen,
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
+import { StatusBadge } from './ui';
 import AntenneDashboardModal from './AntenneDashboardModal';
 
 interface AilesDuSourireDashboardProps {
@@ -38,33 +36,6 @@ interface AilesDuSourireDashboardProps {
     bannerBorder: string;
   };
 }
-
-const STATUS_CONFIG = {
-  'Pending': { 
-    bg: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-900/30', 
-    text: 'text-amber-800 dark:text-amber-300', 
-    label: "En attente",
-    icon: Clock,
-  },
-  'Under review': { 
-    bg: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-900/30', 
-    text: 'text-blue-800 dark:text-blue-300', 
-    label: "En cours d'analyse",
-    icon: Search,
-  },
-  'Validated': { 
-    bg: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-900/30', 
-    text: 'text-emerald-800 dark:text-emerald-300', 
-    label: "Validé",
-    icon: FileCheck2,
-  },
-  'Incomplete': { 
-    bg: 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-900/30', 
-    text: 'text-rose-800 dark:text-rose-300', 
-    label: "Non conforme/Incomplet",
-    icon: AlertCircle,
-  }
-};
 
 export default function AilesDuSourireDashboard({
   files,
@@ -128,14 +99,14 @@ export default function AilesDuSourireDashboard({
     <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-slate-800/80 p-6 shadow-sm overflow-hidden text-left relative">
       
       {/* Decorative gradient header backdrop */}
-      <div className={`absolute top-0 left-0 right-0 h-[5px] ${themeAttr?.gradientClass || 'bg-[#1b98c4]'}`} />
+      <div className={`absolute top-0 left-0 right-0 h-[5px] ${themeAttr?.gradientClass || 'bg-azur'}`} />
 
       {/* Header and Counters */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pt-1">
         <div>
           <div className="flex items-center gap-2">
-            <FolderOpen className={`w-5 h-5 ${themeAttr?.accentText || 'text-[#1b98c4]'}`} />
-            <h3 className="text-base font-black tracking-tight text-slate-800 dark:text-slate-100 uppercase">
+            <FolderOpen className={`w-5 h-5 ${themeAttr?.accentText || 'text-azur'}`} />
+            <h3 className="text-base font-display font-black tracking-tight text-deep dark:text-slate-100 uppercase">
               📂 Documents nécessitant votre attention
             </h3>
           </div>
@@ -169,7 +140,7 @@ export default function AilesDuSourireDashboard({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Rechercher par document, organisme partenaire ou antenne..."
-          className="w-full pl-10 pr-4 py-3 text-xs font-semibold rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1b98c4]/20 focus:border-[#1b98c4] transition-all"
+          className="input-asf pl-10 text-xs font-semibold rounded-2xl dark:bg-slate-950/40 dark:border-slate-850 dark:text-slate-100"
         />
       </div>
 
@@ -204,9 +175,6 @@ export default function AilesDuSourireDashboard({
                 {filteredFiles.map((file) => {
                   const org = orgProfiles.find(p => p.id === file.orgId);
                   const antenneInfo = getAntenneInfo(file, org);
-                  const fileStatus = file.submissionStatus || 'Pending';
-                  const cnf = STATUS_CONFIG[fileStatus] || STATUS_CONFIG['Pending'];
-                  const StatusIcon = cnf.icon;
 
                   return (
                     <motion.tr
@@ -221,13 +189,13 @@ export default function AilesDuSourireDashboard({
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 shadow-3xs">
-                            <FileText className="w-4 h-4 text-slate-400 group-hover:text-[#1b98c4] transition-colors" />
+                            <FileText className="w-4 h-4 text-slate-400 group-hover:text-azur transition-colors" />
                           </div>
                           <div>
-                            <p className="text-xs font-black text-slate-800 dark:text-slate-200 line-clamp-1 leading-snug">
+                            <p className="text-xs font-display font-black text-deep dark:text-slate-200 line-clamp-1 leading-snug">
                               {file.name}
                             </p>
-                            <p className="text-[10px] font-black text-[#1b98c4] dark:text-sky-400 mt-0.5 uppercase tracking-wide">
+                            <p className="text-[10px] font-black text-azur dark:text-sky-400 mt-0.5 uppercase tracking-wide">
                               🏢 {org?.name || 'Compagnie Partenaire'}
                             </p>
                           </div>
@@ -239,7 +207,7 @@ export default function AilesDuSourireDashboard({
                         {antenneInfo ? (
                           <button
                             onClick={() => setSelectedAntenneDashboardId(antenneInfo.id)}
-                            className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#1b98c4] hover:text-sky-600 dark:text-sky-400 dark:hover:text-sky-300 uppercase tracking-tight bg-[#1b98c4]/5 dark:bg-sky-400/5 hover:bg-[#1b98c4]/10 border border-[#1b98c4]/10 dark:border-sky-400/10 px-2 py-1 rounded-xl transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1 text-[11px] font-extrabold text-azur hover:text-azur-hover dark:text-sky-400 dark:hover:text-sky-300 uppercase tracking-tight bg-azur/5 dark:bg-sky-400/5 hover:bg-azur/10 border border-azur/10 dark:border-sky-400/10 px-2 py-1 rounded-xl transition-all cursor-pointer"
                             title="Voir le dashboard personnalisé d'antenne"
                           >
                             <span>📍 {antenneInfo.name}</span>
@@ -263,10 +231,7 @@ export default function AilesDuSourireDashboard({
 
                       {/* Status flag */}
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-[10.5px] font-black border uppercase tracking-tight ${cnf.bg} ${cnf.text}`}>
-                          <StatusIcon className="w-3.5 h-3.5 shrink-0" />
-                          <span>{cnf.label}</span>
-                        </span>
+                        <StatusBadge status={file.submissionStatus || 'Pending'} />
                       </td>
 
                       {/* Instant validation actions */}

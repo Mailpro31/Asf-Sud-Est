@@ -107,11 +107,11 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-xs space-y-5">
       <div className="flex items-center gap-2">
-        <div className="w-9 h-9 rounded-xl bg-[#1b98c4]/10 text-[#1b98c4] flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
           <Layers className="w-4.5 h-4.5" />
         </div>
         <div>
-          <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+          <h4 className="text-xs font-display font-black text-deep dark:text-white uppercase tracking-wider">
             Groupes d'antennes
           </h4>
           <p className="text-[11px] text-slate-400 mt-0.5">
@@ -130,7 +130,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
             maxLength={100}
             onChange={(e) => setNewGroupName(e.target.value)}
             placeholder="ex: Antennes côtières"
-            className="w-full px-3 py-2 border border-slate-250 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-[#1b98c4]/20 focus:border-[#1b98c4] focus:outline-none font-bold"
+            className="input-asf text-xs font-bold dark:bg-slate-950 dark:text-white dark:border-slate-700"
           />
         </div>
         <div>
@@ -146,7 +146,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
         <button
           type="submit"
           disabled={creating || !newGroupName.trim()}
-          className="py-2.5 px-4 bg-[#1b98c4] hover:bg-[#177ea3] text-white font-black rounded-xl text-xs transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+          className="btn-asf text-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Créer</span>
@@ -183,7 +183,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
                         maxLength={100}
                         autoFocus
                         onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 px-3 py-1.5 border border-slate-250 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg text-xs font-bold focus:ring-2 focus:ring-[#1b98c4]/20 focus:border-[#1b98c4] focus:outline-none"
+                        className="input-asf flex-1 text-xs font-bold dark:bg-slate-950 dark:text-white dark:border-slate-700"
                       />
                       <button
                         type="button"
@@ -210,7 +210,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
                           className="w-3 h-3 rounded-full shrink-0 border border-black/10"
                           style={{ backgroundColor: group.color || DEFAULT_GROUP_COLOR }}
                         />
-                        <span className="text-xs font-black text-slate-900 dark:text-white truncate">{group.name}</span>
+                        <span className="text-xs font-display font-black text-deep dark:text-white truncate">{group.name}</span>
                         <span className="text-[10px] text-slate-400 font-mono shrink-0">
                           {group.antenneIds.length} antenne(s)
                         </span>
@@ -219,7 +219,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
                         <button
                           type="button"
                           onClick={() => startEdit(group)}
-                          className="p-1.5 rounded-lg text-[#1b98c4] hover:bg-[#1b98c4]/10 cursor-pointer"
+                          className="p-1.5 rounded-lg text-azur hover:bg-azur/10 cursor-pointer"
                           title="Renommer le groupe"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -253,8 +253,8 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
                           onClick={() => handleToggleAntenne(group, ant.id)}
                           className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-all cursor-pointer disabled:opacity-50 ${
                             member
-                              ? 'bg-[#1b98c4] text-white border-[#1b98c4]'
-                              : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#1b98c4]/50'
+                              ? 'bg-azur text-white border-azur'
+                              : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-azur/50'
                           }`}
                           title={member ? `Retirer ${ant.name} du groupe` : `Ajouter ${ant.name} au groupe`}
                         >
