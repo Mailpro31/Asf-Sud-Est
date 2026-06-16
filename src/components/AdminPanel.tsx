@@ -54,6 +54,7 @@ import OrgCabinetModal from './OrgCabinetModal';
 import { LogoASF } from './LandingPage';
 import AilesDuSourireDashboard from './AilesDuSourireDashboard';
 import { localDb } from '../lib/localDb';
+import { formatBytes } from '../lib/utils';
 
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
@@ -154,14 +155,6 @@ const statusConfig: Record<SubmissionStatus, { bg: string; text: string; label: 
   }
 };
 
-function formatBytes(bytes: number, decimals = 2) {
-  if (!+bytes) return '0 Octets';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Octets', 'Ko', 'Mo', 'Go', 'To', 'Po', 'Eo', 'Zo', 'Yo'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}
 
 export default function AdminPanel() {
   const { organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION } = useAuth();
