@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 interface LandingPageProps {
   onNavigateLogin: () => void;
   onNavigateRegister: () => void;
+  onNavigateUpload?: () => void;
 }
 
 // Logo SVG conforme à la charte graphique (mains entrelacées formant des ailes)
@@ -63,7 +64,7 @@ export function LogoASF({ className = "w-16 h-16", variant = "color" }: { classN
   );
 }
 
-export default function LandingPage({ onNavigateLogin, onNavigateRegister }: LandingPageProps) {
+export default function LandingPage({ onNavigateLogin, onNavigateRegister, onNavigateUpload }: LandingPageProps) {
   const { themeConfig } = useTheme();
 
   const officialMissions = [
@@ -80,8 +81,8 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
     <div className="min-h-screen relative flex flex-col bg-slate-50 text-slate-850 overflow-x-hidden antialiased font-sans">
       
       {/* Top Banner Header decoration */}
-      <div className="bg-azur text-white py-2 px-4 text-center text-xs font-medium tracking-wide">
-        🚨 Portail Officiel de Coordination des Missions de l'ONG — <span className="font-bold">Aviation Sans Frontières</span>
+      <div className="bg-deep text-white py-2 px-4 text-center text-xs font-medium tracking-wide">
+        Portail documentaire officiel — <span className="font-semibold">Aviation Sans Frontières · Les Ailes du Sourire</span>
       </div>
 
       {/* Navigation Header */}
@@ -103,16 +104,17 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
             <button
               onClick={onNavigateLogin}
               id="cta-top-login"
-              className="text-xs font-bold text-slate-600 hover:text-[#1b98c4] px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+              className="text-xs font-bold text-slate-600 hover:text-azur px-3.5 py-2 rounded-xl transition-all cursor-pointer"
             >
               Se connecter
             </button>
             <button
-              onClick={onNavigateRegister}
-              id="cta-top-register"
-              className="text-xs font-bold bg-[#1b98c4] hover:bg-[#1682a8] text-white px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
+              onClick={onNavigateUpload}
+              id="cta-top-upload"
+              className="text-xs font-bold bg-sourire hover:bg-sourire-dark text-white px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
-              Créer un espace
+              <Upload className="w-3.5 h-3.5" />
+              Déposer un document
             </button>
           </div>
         </div>
@@ -131,19 +133,19 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="px-3 py-1 rounded-full text-[10px] font-bold text-[#1b98c4] bg-[#1b98c4]/10 tracking-widest uppercase border border-[#1b98c4]/25"
+                className="px-3 py-1 rounded-full text-[10px] font-bold text-deep bg-azur/10 tracking-widest uppercase border border-azur/25"
               >
-                Charte Graphique Officielle 2026
+                Portail documentaire · Les Ailes du Sourire
               </motion.div>
 
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 font-display leading-[1.1]"
+                className="text-4xl md:text-5xl font-black tracking-tight text-deep font-display leading-[1.1]"
               >
-                Portail de Planification <br />
-                et d'Opérations de Vol
+                Vos dossiers et certificats,<br />
+                <span className="text-azur">transmis en toute simplicité</span>
               </motion.h1>
 
               <motion.p
@@ -152,7 +154,9 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-slate-600 text-sm md:text-base leading-relaxed max-w-xl font-sans"
               >
-                Bienvenue sur le portail numérique d'Aviation Sans Frontières. Cet outil permet aux organisations partenaires, équipages de vol et inspecteurs de soumettre, d'analyser et de valider les attestations réglementaires nécessaires pour chacune de nos missions de solidarité d'un bout à l'autre de la chaîne humanitaire internationale.
+                Déposez, suivez et faites valider en quelques clics les documents nécessaires aux vols
+                <span className="font-semibold text-deep"> Les Ailes du Sourire</span> d'Aviation Sans Frontières.
+                Un espace clair et sécurisé, au service de chaque sourire qui s'envole.
               </motion.p>
 
               {/* Action Buttons */}
@@ -163,20 +167,32 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto"
               >
                 <button
-                  onClick={onNavigateLogin}
-                  id="cta-hero-login"
-                  className="px-6 py-3.5 bg-[#1b98c4] hover:bg-[#1682a8] text-white text-sm font-bold rounded-xl shadow-md shadow-[#1b98c4]/10 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                  onClick={onNavigateUpload}
+                  id="cta-hero-upload"
+                  className="btn-sourire text-sm cursor-pointer group"
                 >
-                  Accéder à mon compte <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <Upload className="w-4 h-4" />
+                  Déposer un document
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button
-                  onClick={onNavigateRegister}
-                  id="cta-hero-register"
-                  className="px-6 py-3.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl transition-all flex items-center justify-center cursor-pointer"
+                  onClick={onNavigateLogin}
+                  id="cta-hero-login"
+                  className="btn-asf text-sm cursor-pointer"
                 >
-                  Demander un accès partenaire
+                  Accéder à mon espace
                 </button>
               </motion.div>
+
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                onClick={onNavigateRegister}
+                className="text-xs font-semibold text-slate-500 hover:text-azur transition-colors cursor-pointer"
+              >
+                Pas encore de compte ? <span className="text-azur underline underline-offset-2">Demander un accès partenaire</span>
+              </motion.button>
 
               {/* Mini counters */}
               <motion.div

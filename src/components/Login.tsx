@@ -52,7 +52,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
       {onNavigateHome && (
         <button 
           onClick={onNavigateHome}
-          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#1b98c4] transition-colors cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200/80 shadow-3xs"
+          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-azur transition-colors cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200/80 shadow-3xs"
           id="back-to-home-btn"
         >
           ← Retour à l'accueil
@@ -62,11 +62,11 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
         {/* Modern Minimal Headings */}
         <div className="mb-8 text-center flex flex-col items-center">
           <LogoASF className="w-16 h-16 mb-4 hover:scale-105 transition-transform duration-200" variant="color" />
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-sans font-display">
+          <h1 className="text-2xl font-bold tracking-tight text-deep font-display">
             Aviation Sans Frontières
           </h1>
           <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
-            Portail autorisé pour les secours d'urgence, les permis de vol et la logistique humanitaire.
+            Espace sécurisé pour déposer et suivre les documents des vols <span className="font-semibold text-deep">Les Ailes du Sourire</span>.
           </p>
         </div>
 

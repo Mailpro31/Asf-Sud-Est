@@ -99,9 +99,10 @@ function MainApp() {
 
   if (view === 'landing') {
     return (
-      <LandingPage 
-        onNavigateLogin={() => setView('login')} 
-        onNavigateRegister={() => setView('register')} 
+      <LandingPage
+        onNavigateLogin={() => setView('login')}
+        onNavigateRegister={() => setView('register')}
+        onNavigateUpload={() => setView('public-upload')}
       />
     );
   }

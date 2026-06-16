@@ -257,7 +257,7 @@ export default function PublicUploadForm({ onNavigateHome }: PublicUploadFormPro
       {/* Back button */}
       <button 
         onClick={onNavigateHome}
-        className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#1b98c4] transition-colors cursor-pointer bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-3xs"
+        className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-azur transition-colors cursor-pointer bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-3xs"
       >
         <ArrowLeft className="w-3.5 h-3.5" /> Retour à l'accueil
       </button>
@@ -268,18 +268,18 @@ export default function PublicUploadForm({ onNavigateHome }: PublicUploadFormPro
         <div className="text-center flex flex-col items-center space-y-3">
           <LogoASF className="w-16 h-16 transition-transform hover:scale-105 duration-300" variant="color" />
           <div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 font-display">
-              Dépôt Public de Documents
+            <h1 className="text-xl md:text-2xl font-black tracking-tight text-deep font-display">
+              Déposer un document
             </h1>
-            <p className="text-xs text-slate-400 font-mono uppercase tracking-wider mt-1">
-              Aviation Sans Frontières — Portail de Téléversement Anonyme
+            <p className="text-xs text-slate-400 uppercase tracking-wider mt-1 font-semibold">
+              Les Ailes du Sourire — Dépôt sécurisé, sans connexion
             </p>
           </div>
-          <div className="bg-[#1b98c4]/15 border border-[#1b98c4]/20 rounded-xl px-4 py-2.5 max-w-md">
+          <div className="bg-azur/10 border border-azur/20 rounded-xl px-4 py-2.5 max-w-md">
             <p className="text-[11px] text-slate-650 leading-relaxed text-left flex items-start gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#1b98c4] shrink-0 mt-0.5" />
+              <ShieldCheck className="w-4 h-4 text-azur shrink-0 mt-0.5" />
               <span>
-                Ce formulaire sécurisé vous permet de soumettre officiellement des fichiers réglementaires ou des justificatifs de vol sans être connecté. Ils seront assignés en attente de vérification.
+                Transmettez vos dossiers, certificats ou justificatifs sans avoir à vous connecter. Chaque document est rattaché à l'antenne choisie et placé en attente de validation.
               </span>
             </p>
           </div>
@@ -439,12 +439,12 @@ export default function PublicUploadForm({ onNavigateHome }: PublicUploadFormPro
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="w-full px-5 py-3.5 bg-[#1b98c4] hover:bg-[#1682a8] disabled:bg-slate-350 text-white text-sm font-bold rounded-xl shadow-md shadow-[#1b98c4]/10 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+              className="w-full px-5 py-3.5 bg-sourire hover:bg-sourire-dark disabled:bg-slate-350 text-white text-sm font-bold rounded-xl shadow-md shadow-sourire/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed font-display"
             >
               {status === 'loading' ? (
-                <>Téléversement en cours...</>
+                <>Envoi en cours...</>
               ) : (
-                <>Soumettre le document réglementaire <ChevronRight className="w-4 h-4" /></>
+                <><Upload className="w-4 h-4" /> Déposer le document</>
               )}
             </button>
 
