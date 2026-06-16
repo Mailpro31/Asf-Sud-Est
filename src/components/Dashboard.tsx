@@ -64,7 +64,6 @@ export default function Dashboard() {
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [isWarningDismissed, setIsWarningDismissed] = useState(() => localStorage.getItem('asf_sandbox_warn_dismissed') === 'true');
   const [showWarningDetails, setShowWarningDetails] = useState(false);
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const refreshLocalState = useCallback(() => {
