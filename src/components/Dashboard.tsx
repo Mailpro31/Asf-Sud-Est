@@ -959,6 +959,22 @@ export default function Dashboard() {
                   {showWarningDetails ? "🛈 Masquer les explications techniques" : "🛈 Pourquoi ai-je toujours ce message ? (Expliquez-moi)"}
                 </button>
 
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localDb.setSandboxActive(false);
+                      localStorage.removeItem('asf_sandbox_warn_dismissed');
+                      window.location.reload();
+                    }}
+                    className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] transition-colors cursor-pointer shadow-xs"
+                    title="Tenter de se reconnecter à Firebase et quitter le mode bac à sable"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Réessayer la connexion Firebase
+                  </button>
+                </div>
+
                 {showWarningDetails && (
                   <div className="mt-2.5 bg-white/45 dark:bg-black/15 p-3 rounded-xl border border-amber-500/10 transition-all duration-300">
                     {firebaseConfig.projectId === 'asf013' ? (
