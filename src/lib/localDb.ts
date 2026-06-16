@@ -1,4 +1,4 @@
-import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
+import { AntenneGroup, DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 
 // Let's create an excellent Local Storage backup & fallback database for when Firestore Quota is exceeded
 const STORAGE_KEYS = {
@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   FOLDERS: 'asf_local_folders',
   ANTENNES: 'asf_local_antennes',
   DELEGATIONS: 'asf_local_delegations',
+  ANTENNE_GROUPS: 'asf_local_antenne_groups',
   SANDBOX_MODE: 'asf_quota_exceeded'
 };
 
@@ -266,6 +267,14 @@ export const localDb = {
     }
   },
 
+  getGroups(): AntenneGroup[] {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.ANTENNE_GROUPS) || '[]');
+    } catch {
+      return [];
+    }
+  },
+
   // METHODS FOR WRITING / MUTATIONS
   triggerUpdate() {
     if (typeof window !== 'undefined') {
@@ -341,6 +350,42 @@ export const localDb = {
     localStorage.setItem(STORAGE_KEYS.ANTENNES, JSON.stringify(current));
     this.triggerUpdate();
     return newItem;
+  },
+
+  saveGroup(group: AntenneGroup) {
+    const list = this.getGroups();
+    const index = list.findIndex(g => g.id === group.id);
+    if (index !== -1) {
+      list[index] = group;
+    } else {
+      list.push(group);
+    }
+    localStorage.setItem(STORAGE_KEYS.ANTENNE_GROUPS, JSON.stringify(list));
+    this.triggerUpdate();
+  },
+
+  deleteGroup(groupId: string) {
+    const list = this.getGroups();
+    const filtered = list.filter(g => g.id !== groupId);
+    localStorage.setItem(STORAGE_KEYS.ANTENNE_GROUPS, JSON.stringify(filtered));
+    this.triggerUpdate();
+  },
+
+  // Retire un id d'antenne de tous les groupes (nettoyage à la suppression d'une antenne).
+  removeAntenneFromAllGroups(antenneId: string) {
+    const list = this.getGroups();
+    let changed = false;
+    const updated = list.map(g => {
+      if (g.antenneIds.includes(antenneId)) {
+        changed = true;
+        return { ...g, antenneIds: g.antenneIds.filter(id => id !== antenneId), updatedAt: Date.now() };
+      }
+      return g;
+    });
+    if (changed) {
+      localStorage.setItem(STORAGE_KEYS.ANTENNE_GROUPS, JSON.stringify(updated));
+      this.triggerUpdate();
+    }
   },
 
   updateAntenneCoordinates(delegationId: string, antenneId: string, x: number, y: number) {

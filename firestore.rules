@@ -101,6 +101,14 @@ service cloud.firestore {
              (!('fallbackDataUrl' in data) || data.fallbackDataUrl == null || data.fallbackDataUrl is string);
     }
 
+    function isValidAntenneGroup(data) {
+      return data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() <= 100 &&
+             data.get('antenneIds', []) is list &&
+             (!('color' in data) || data.color == null || (data.color is string && data.color.size() <= 20)) &&
+             (!('createdAt' in data) || data.createdAt is number) &&
+             (!('updatedAt' in data) || data.updatedAt is number);
+    }
+
     function isValidFolder(data) {
       return data.keys().hasAll(['orgId', 'name', 'createdAt', 'createdBy']) &&
              data.get('orgId', '') is string && data.get('orgId', '').size() <= 128 &&
@@ -124,6 +132,13 @@ service cloud.firestore {
       allow read: if true; 
       allow create, update: if (isSuperAdmin() && isValidAntenne(incoming())) || 
                                (isSignedIn() && isValidAntenne(incoming()) && isAdminDelegation(incoming().get('delegation_id', '')));
+      allow delete: if isSuperAdmin();
+    }
+
+    // 2b. Antenne Groups (thematic groupings, super admin only for writes)
+    match /antenne_groups/{groupId} {
+      allow read: if true;
+      allow create, update: if isSuperAdmin() && isValidAntenneGroup(incoming());
       allow delete: if isSuperAdmin();
     }
 
