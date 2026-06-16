@@ -57,6 +57,8 @@ import AntenneGroupsManager from './AntenneGroupsManager';
 import { localDb } from '../lib/localDb';
 import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
+import { StatusBadge } from './ui';
+import { STATUS_META } from '../lib/status';
 
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
@@ -126,41 +128,9 @@ const DELEGATION_THEMES: Record<string, {
   }
 };
 
-const statusConfig: Record<SubmissionStatus, { bg: string; text: string; label: string; color: string; hover: string }> = {
-  'Pending': { 
-    bg: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200', 
-    text: 'text-amber-800 dark:text-amber-300', 
-    label: "En attente",
-    color: 'bg-amber-500',
-    hover: 'hover:bg-amber-100'
-  },
-  'Under review': { 
-    bg: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200', 
-    text: 'text-blue-800 dark:text-blue-300', 
-    label: "Révision",
-    color: 'bg-blue-500',
-    hover: 'hover:bg-blue-105'
-  },
-  'Validated': { 
-    bg: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200', 
-    text: 'text-emerald-800 dark:text-emerald-300', 
-    label: "Validé",
-    color: 'bg-emerald-500',
-    hover: 'hover:bg-emerald-100'
-  },
-  'Incomplete': { 
-    bg: 'bg-rose-50 dark:bg-rose-500/10 border-rose-200', 
-    text: 'text-rose-800 dark:text-rose-300', 
-    label: "Incomplet",
-    color: 'bg-rose-500',
-    hover: 'hover:bg-rose-100'
-  }
-};
-
-
 export default function AdminPanel() {
   const { organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION, antenneGroups } = useAuth();
-  const { theme, setTheme, themeConfig } = useTheme();
+  const { themeConfig } = useTheme();
   const { toast, confirm } = useFeedback();
 
   // Active Simulated Role State (For easy local testing of Admin roles)
@@ -873,9 +843,9 @@ export default function AdminPanel() {
         <div className="flex items-center gap-3">
           <LogoASF className="w-10 h-10 shrink-0" variant="color" />
           <div>
-            <h1 className="text-md font-bold text-slate-900 dark:text-white leading-tight font-display flex items-center gap-1.5">
+            <h1 className="text-md font-bold text-deep dark:text-white leading-tight font-display flex items-center gap-1.5">
               <span>Portail de Coordination Nationale</span>
-              <span className="text-[10px] bg-sky-50 text-[#1b98c4] border border-sky-100 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">Admin</span>
+              <span className="text-[10px] bg-azur-light text-azur border border-azur/15 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">Admin</span>
             </h1>
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400">
               Aviation Sans Frontières France — Pilotage des délégations et autorisations de vol.
@@ -913,7 +883,7 @@ export default function AdminPanel() {
           <div className="max-w-4xl mx-auto space-y-8 py-8">
             {/* Elegant Welcome Info Banner */}
             <div className="text-center space-y-2.5">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-2xl font-black font-display text-deep dark:text-white tracking-tight">
                 Cabinet de Pilotage National
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-lg mx-auto font-semibold">
@@ -931,7 +901,7 @@ export default function AdminPanel() {
                   setActiveTab('workspaces');
                   setCurrentFolderId(null);
                 }}
-                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-[#1b98c4] rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
+                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-azur rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
               >
                 {pendingFilesCount > 0 && (
                   <span
@@ -942,13 +912,13 @@ export default function AdminPanel() {
                     {pendingFilesCount}
                   </span>
                 )}
-                <div className="absolute top-0 right-0 w-36 h-36 bg-[#1b98c4]/5 rounded-full blur-2xl pointer-events-none group-hover:bg-[#1b98c4]/10 transition-all"></div>
+                <div className="absolute top-0 right-0 w-36 h-36 bg-azur/5 rounded-full blur-2xl pointer-events-none group-hover:bg-azur/10 transition-all"></div>
                 <div className="space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[#1b98c4]/10 text-[#1b98c4] flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-2xl bg-azur/10 text-azur flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
                     ✈️
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-[#1b98c4] transition-colors flex items-center gap-1.5">
+                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-azur transition-colors flex items-center gap-1.5">
                       <span>Programme Ailes du Sourire</span>
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
@@ -957,7 +927,7 @@ export default function AdminPanel() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#1b98c4] uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
+                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-azur uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
                   <span>Accéder à la supervision</span>
                   <ChevronRight className="w-4 h-4" />
                 </div>
@@ -987,7 +957,7 @@ export default function AdminPanel() {
                     👥
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-orange-500 transition-colors flex items-center gap-1.5">
+                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-orange-500 transition-colors flex items-center gap-1.5">
                       <span>Gestion des Utilisateurs</span>
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
@@ -1017,7 +987,7 @@ export default function AdminPanel() {
                     📍
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-amber-550 transition-colors flex items-center gap-1.5">
+                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-amber-550 transition-colors flex items-center gap-1.5">
                       <span>Gestion des Implantations</span>
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
@@ -1054,7 +1024,7 @@ export default function AdminPanel() {
             <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
               <div className="space-y-2 relative z-10">
-                <span className="text-[#1b98c4] text-[10px] tracking-widest font-mono uppercase font-black">
+                <span className="text-azur text-[10px] tracking-widest font-mono uppercase font-black">
                   DIRECTION PARIS SÉCURITÉ & LOGISTIQUE
                 </span>
                 <h2 className="text-2xl md:text-3xl font-black font-display tracking-tight leading-tight">
@@ -1067,7 +1037,7 @@ export default function AdminPanel() {
 
               <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 shrink-0 text-left min-w-[220px] relative z-10">
                 <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Total des Fichiers Nationaux</p>
-                <p className="text-3xl font-black font-display tracking-tight mt-1 text-[#1b98c4]">{files.length}</p>
+                <p className="text-3xl font-black font-display tracking-tight mt-1 text-azur">{files.length}</p>
                 <div className="flex gap-2.5 mt-2.5 text-[10.5px]">
                   <span className="text-slate-400">
                     📂 <strong className="text-white">{folders.length}</strong> dossiers
@@ -1087,11 +1057,11 @@ export default function AdminPanel() {
                   <button
                     key={del.id}
                     onClick={() => setActiveDelegationId(del.id)}
-                    className="group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 hover:border-[#1b98c4] shadow-xs hover:shadow-lg transition-all text-left flex flex-col justify-between h-56 cursor-pointer relative"
+                    className="group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 hover:border-azur shadow-xs hover:shadow-lg transition-all text-left flex flex-col justify-between h-56 cursor-pointer relative"
                   >
                     <div>
                       <div className="flex justify-between items-start mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#1b98c4] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
+                        <div className="w-10 h-10 rounded-xl bg-azur-light text-azur flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
                           <Layers className="w-5 h-5" />
                         </div>
                         <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 font-bold bg-slate-50 border px-2 py-0.5 rounded">
@@ -1099,7 +1069,7 @@ export default function AdminPanel() {
                         </span>
                       </div>
 
-                      <h3 className="text-base font-bold text-slate-950 dark:text-white font-sans tracking-tight group-hover:text-[#1b98c4] transition-colors">
+                      <h3 className="text-base font-bold text-deep dark:text-white font-sans tracking-tight group-hover:text-azur transition-colors">
                         {del.name}
                       </h3>
                       <p className="text-xs text-slate-400 dark:text-slate-400 mt-1 lines-clamp-2 leading-relaxed">
@@ -1151,7 +1121,7 @@ export default function AdminPanel() {
                 </button>
 
                 <div className="text-[10px] uppercase font-mono font-extrabold text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-slate-50 dark:bg-slate-905 border border-slate-200/80 dark:border-slate-800 px-3.5 py-2 rounded-2xl shadow-xs">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#1b98c4] animate-pulse"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-azur animate-pulse"></span>
                   <span>Portail Admin • {navigationView === 'ailes' ? 'Ailes du Sourire' : navigationView === 'users' ? 'Utilisateurs' : 'Implantations'}</span>
                 </div>
               </div>
@@ -1185,7 +1155,7 @@ export default function AdminPanel() {
 
                   {/* Mini Stats widget */}
                   <div className="flex flex-wrap gap-3 items-center shrink-0 relative z-10 w-full md:w-auto">
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-[#1b98c4]/15 px-5 py-3 rounded-2xl text-left min-w-[130px] shadow-xs flex-1 md:flex-none transition-all hover:bg-white dark:hover:bg-slate-900 border-slate-200/80 dark:border-slate-800">
+                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-azur/15 px-5 py-3 rounded-2xl text-left min-w-[130px] shadow-xs flex-1 md:flex-none transition-all hover:bg-white dark:hover:bg-slate-900 border-slate-200/80 dark:border-slate-800">
                       <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono uppercase tracking-wider font-extrabold text-xs">Antennes</p>
                       <p className="text-lg font-black text-slate-950 dark:text-white mt-1 leading-none">
                         {(ANTENNES_BY_DELEGATION[delegationFilterId] || []).length}
@@ -1204,7 +1174,7 @@ export default function AdminPanel() {
                       className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 px-4 py-4 rounded-2xl transition-all shadow-xs cursor-pointer w-full md:w-auto justify-center"
                       title="Télécharger le rapport de conformité de la délégation"
                     >
-                      <Download className="w-4 h-4 text-[#1b98c4]" />
+                      <Download className="w-4 h-4 text-azur" />
                       <span>Exporter (CSV)</span>
                     </button>
                   </div>
@@ -1496,7 +1466,7 @@ export default function AdminPanel() {
                       <div className={`p-4 rounded-2xl space-y-2 border ${themeAttr.badgeClass} bg-slate-50/50`}>
                         <div className="flex justify-between items-center text-xs font-bold text-slate-700 dark:text-slate-300">
                           <span className="flex items-center gap-1.5">
-                            <RefreshCw className="w-4 h-4 animate-spin text-indigo-500" />
+                            <RefreshCw className="w-4 h-4 animate-spin text-azur" />
                             Téléchargement du fichier de vol en cours...
                           </span>
                           <span className="font-mono">{uploadProgress}%</span>
@@ -1538,7 +1508,6 @@ export default function AdminPanel() {
                           <tbody className="divide-y text-slate-700 text-xs">
                             {filteredFiles.map((file) => {
                               const activeStatus = file.submissionStatus || 'Pending';
-                              const sc = statusConfig[activeStatus];
                               const uploaderPartner = orgProfiles.find(p => p.id === file.orgId);
                               const uploaderName = file.uploadedBy === 'admin' ? 'admin' : (uploaderPartner?.name || 'Organisme');
                               return (
@@ -1557,7 +1526,7 @@ export default function AdminPanel() {
                                         />
                                         <button
                                           type="submit"
-                                          className="bg-indigo-600 text-white hover:bg-indigo-700 px-2.5 py-1 rounded text-[10.5px] font-bold cursor-pointer shrink-0"
+                                          className="bg-azur text-white hover:bg-azur-hover px-2.5 py-1 rounded text-[10.5px] font-bold cursor-pointer shrink-0"
                                         >
                                           Enregistrer
                                         </button>
@@ -1579,8 +1548,8 @@ export default function AdminPanel() {
                                             <span>Déposé par :</span>
                                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight ${
                                               file.uploadedBy === 'admin' 
-                                                ? 'bg-amber-100/70 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50' 
-                                                : 'bg-indigo-50 text-[#1b98c4] dark:bg-indigo-950/40 dark:text-sky-400 border border-indigo-200/50'
+                                                ? 'bg-amber-100/70 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50'
+                                                : 'bg-azur-light text-azur dark:bg-azur/20 dark:text-azur-pastel border border-azur/30'
                                             }`}>
                                               {uploaderName}
                                             </span>
@@ -1600,25 +1569,22 @@ export default function AdminPanel() {
 
                                   <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                                     <div className="relative inline-block w-44 text-left group">
-                                      <div className={`px-2.5 py-1 rounded-lg border text-[11.5px] font-bold flex items-center justify-between cursor-pointer ${sc.bg} ${sc.text}`}>
-                                        <span className="flex items-center gap-1.5">
-                                          <span className={`w-2 h-2 rounded-full ${sc.color}`}></span>
-                                          {sc.label}
-                                        </span>
+                                      <div className="flex items-center justify-between gap-1.5 cursor-pointer">
+                                        <StatusBadge status={activeStatus} />
                                         <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                                       </div>
 
                                       {/* Quick Status Selection list */}
                                       <div className="absolute left-0 mt-1 w-full bg-white border rounded-lg shadow-lg z-30 hidden group-hover:block hover:block font-sans">
-                                        {(Object.keys(statusConfig) as SubmissionStatus[]).map((st) => {
-                                          const subSc = statusConfig[st];
+                                        {(Object.keys(STATUS_META) as SubmissionStatus[]).map((st) => {
+                                          const subSc = STATUS_META[st];
                                           return (
                                             <button
                                               key={st}
                                               onClick={() => handleUpdateStatus(file.id, st)}
                                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[11.5px] text-slate-800 flex items-center gap-2 cursor-pointer font-bold"
                                             >
-                                              <span className={`w-1.5 h-1.5 rounded-full ${subSc.color}`}></span>
+                                              <span className={`w-1.5 h-1.5 rounded-full ${subSc.dot}`}></span>
                                               <span>{subSc.label}</span>
                                             </button>
                                           );
@@ -1646,7 +1612,7 @@ export default function AdminPanel() {
                                           setRenamingFile(file);
                                           setRenameInput(file.name);
                                         }}
-                                        className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-indigo-600 cursor-pointer"
+                                        className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-azur cursor-pointer"
                                         title="Renommer"
                                       >
                                         <Edit2 className="w-4 h-4" />
@@ -1680,9 +1646,9 @@ export default function AdminPanel() {
               <div className="space-y-6 text-left">
                 
                 {/* Explain Banner */}
-                <div className="bg-[#1b98c4]/5 border border-[#1b98c4]/15 rounded-2xl p-5 text-left space-y-2">
-                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                    <ShieldAlert className="w-5 h-5 text-[#1b98c4]" />
+                <div className="bg-azur/5 border border-azur/15 rounded-2xl p-5 text-left space-y-2">
+                  <h3 className="text-sm font-black text-deep flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-azur" />
                     <span>Gestionnaire d'Accréditations de la Délégation</span>
                   </h3>
                   <p className="text-xs text-slate-650 leading-relaxed font-semibold">
@@ -1722,7 +1688,6 @@ export default function AdminPanel() {
                           <tbody className="divide-y text-slate-700 text-xs">
                             {orgProfiles.filter(p => p.delegation_id === delegationFilterId).map((org) => {
                               const st = org.submissionStatus || 'Pending';
-                              const conf = statusConfig[st] || statusConfig['Pending'];
                               return (
                                 <tr key={org.id} className="hover:bg-slate-50/50 transition-colors">
                                   
@@ -1733,7 +1698,7 @@ export default function AdminPanel() {
                                       onClick={() => {
                                         setSelectedOrgForFiles(org);
                                       }}
-                                      className="flex items-center gap-1.5 text-[11px] font-black bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-105 dark:border-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:border-indigo-200 px-3 py-1.5 rounded-xl mt-2.5 transition-all shadow-3xs cursor-pointer"
+                                      className="flex items-center gap-1.5 text-[11px] font-black bg-azur-light dark:bg-azur/20 text-azur dark:text-azur-pastel border border-azur/20 dark:border-azur/40 hover:bg-azur/10 dark:hover:bg-azur/30 hover:border-azur/40 px-3 py-1.5 rounded-xl mt-2.5 transition-all shadow-3xs cursor-pointer"
                                     >
                                       📂 Cabinet & justificatifs
                                     </button>
@@ -1741,7 +1706,7 @@ export default function AdminPanel() {
 
                                   <td className="px-5 py-4">
                                     <p className="font-bold text-slate-805">{org.contactName}</p>
-                                    <p className="text-[11px] text-[#1b98c4] font-semibold">{org.email}</p>
+                                    <p className="text-[11px] text-azur font-semibold">{org.email}</p>
                                     <p className="text-[11.5px] text-slate-500 font-mono">{org.phone}</p>
                                   </td>
 
@@ -1784,7 +1749,7 @@ export default function AdminPanel() {
                                           <button
                                             onClick={() => handleSaveOrgDelegationAntenne(org.id)}
                                             disabled={!editDelegation || !editAntenne}
-                                            className="bg-[#1b98c4] hover:bg-[#1682a8] text-white text-[10px] uppercase font-black px-2.5 py-1.5 rounded-lg cursor-pointer transition-all disabled:opacity-50"
+                                            className="bg-azur hover:bg-azur-hover text-white text-[10px] uppercase font-black px-2.5 py-1.5 rounded-lg cursor-pointer transition-all disabled:opacity-50"
                                           >
                                             Enregistrer
                                           </button>
@@ -1810,7 +1775,7 @@ export default function AdminPanel() {
                                             setEditDelegation(org.delegation_id || '');
                                             setEditAntenne(org.antenne_id || '');
                                           }}
-                                          className="text-[11px] text-[#1b98c4] hover:underline font-black mt-2 block cursor-pointer"
+                                          className="text-[11px] text-azur hover:underline font-black mt-2 block cursor-pointer"
                                         >
                                           ✏️ Modifier la ville
                                         </button>
@@ -1819,9 +1784,7 @@ export default function AdminPanel() {
                                   </td>
 
                                   <td className="px-5 py-4">
-                                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-black inline-block border ${conf.bg} ${conf.text}`}>
-                                      {conf.label}
-                                    </span>
+                                    <StatusBadge status={st} />
                                   </td>
 
                                   <td className="px-5 py-4 text-right">
@@ -1946,7 +1909,7 @@ export default function AdminPanel() {
                                           <button
                                             onClick={() => handleSaveOrgDelegationAntenne(org.id)}
                                             disabled={!editDelegation || !editAntenne}
-                                            className="bg-[#1b98c4] hover:bg-[#1682a8] text-white text-[10px] uppercase font-black px-2 py-1 rounded-lg cursor-pointer transition-all disabled:opacity-50"
+                                            className="bg-azur hover:bg-azur-hover text-white text-[10px] uppercase font-black px-2 py-1 rounded-lg cursor-pointer transition-all disabled:opacity-50"
                                           >
                                             Lier le compte
                                           </button>
@@ -1969,7 +1932,7 @@ export default function AdminPanel() {
                                             setEditDelegation(delegationFilterId || '');
                                             setEditAntenne('');
                                           }}
-                                          className="text-xs text-[#1b98c4] hover:underline font-black mt-2 block cursor-pointer"
+                                          className="text-xs text-azur hover:underline font-black mt-2 block cursor-pointer"
                                         >
                                           ⚡ Lier à ma délégation
                                         </button>
@@ -2361,8 +2324,8 @@ export default function AdminPanel() {
                                       }}
                                       className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
                                         member
-                                          ? 'bg-[#1b98c4] text-white border-[#1b98c4]'
-                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#1b98c4]/50'
+                                          ? 'bg-azur text-white border-azur'
+                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-azur/50'
                                       }`}
                                     >
                                       <span className="w-2 h-2 rounded-full border border-black/10" style={{ backgroundColor: grp.color || '#1b98c4' }} />
@@ -2492,8 +2455,8 @@ export default function AdminPanel() {
                                       )}
                                       className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
                                         checked
-                                          ? 'bg-[#1b98c4] text-white border-[#1b98c4]'
-                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#1b98c4]/50'
+                                          ? 'bg-azur text-white border-azur'
+                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-azur/50'
                                       }`}
                                     >
                                       <span className="w-2 h-2 rounded-full border border-black/10" style={{ backgroundColor: grp.color || '#1b98c4' }} />
@@ -2508,7 +2471,7 @@ export default function AdminPanel() {
                           <button
                             type="submit"
                             disabled={actionLoading || !newAntenneName.trim() || !newAntenneId.trim()}
-                            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-sky-500 dark:hover:bg-sky-600 text-white dark:text-slate-950 font-black rounded-xl text-xs transition duration-150 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                            className="w-full py-2.5 px-4 bg-azur hover:bg-azur-hover text-white font-black rounded-xl text-xs transition duration-150 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
                           >
                             <Plus className="w-4 h-4" />
                             <span>Confirmer l'ajout</span>
