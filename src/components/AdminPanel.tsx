@@ -820,6 +820,10 @@ export default function AdminPanel() {
 
   const currentFolder = folders.find(fd => fd.id === currentFolderId);
 
+  // Compteurs d'éléments en attente de validation, affichés en badge sur les cards du hub.
+  const pendingFilesCount = files.filter(f => f.submissionStatus === 'Pending').length;
+  const pendingOrgsCount = orgProfiles.filter(o => o.submissionStatus === 'Pending').length;
+
   return (
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>
       
@@ -906,6 +910,15 @@ export default function AdminPanel() {
                 }}
                 className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-[#1b98c4] rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
               >
+                {pendingFilesCount > 0 && (
+                  <span
+                    className="absolute top-3 right-3 z-10 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[11px] font-bold shadow-md"
+                    title={`${pendingFilesCount} fichier(s) en attente de validation`}
+                    aria-label={`${pendingFilesCount} fichiers en attente de validation`}
+                  >
+                    {pendingFilesCount}
+                  </span>
+                )}
                 <div className="absolute top-0 right-0 w-36 h-36 bg-[#1b98c4]/5 rounded-full blur-2xl pointer-events-none group-hover:bg-[#1b98c4]/10 transition-all"></div>
                 <div className="space-y-4">
                   <div className="w-12 h-12 rounded-2xl bg-[#1b98c4]/10 text-[#1b98c4] flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
@@ -936,6 +949,15 @@ export default function AdminPanel() {
                 }}
                 className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-orange-500 rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
               >
+                {pendingOrgsCount > 0 && (
+                  <span
+                    className="absolute top-3 right-3 z-10 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[11px] font-bold shadow-md"
+                    title={`${pendingOrgsCount} organisation(s) en attente de validation`}
+                    aria-label={`${pendingOrgsCount} organisations en attente de validation`}
+                  >
+                    {pendingOrgsCount}
+                  </span>
+                )}
                 <div className="absolute top-0 right-0 w-36 h-36 bg-orange-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-orange-500/10 transition-all"></div>
                 <div className="space-y-4">
                   <div className="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
