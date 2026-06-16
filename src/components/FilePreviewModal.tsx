@@ -21,6 +21,8 @@ import {
 import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DossierFile } from '../types';
+import { StatusBadge } from './ui';
+import { STATUS_META, STATUS_ORDER } from '../lib/status';
 
 interface FilePreviewModalProps {
   isOpen: boolean;
@@ -85,12 +87,12 @@ export default function FilePreviewModal({
     }
   };
 
-  const STATUS_OPTIONS = [
-    { value: 'Pending', label: 'En attente', color: 'bg-amber-500', bg: 'bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 border-amber-200' },
-    { value: 'Under review', label: 'Révision', color: 'bg-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/25 text-blue-800 dark:text-blue-300 border-blue-200' },
-    { value: 'Validated', label: 'Validé', color: 'bg-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-355 border-emerald-200' },
-    { value: 'Incomplete', label: 'Incomplet', color: 'bg-rose-500', bg: 'bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-300 border-rose-200' },
-  ];
+  // Sélecteur de statut unifié sur la source de vérité STATUS_META.
+  const STATUS_OPTIONS = STATUS_ORDER.map((value) => ({
+    value,
+    label: STATUS_META[value].label,
+    dot: STATUS_META[value].dot,
+  }));
 
   const isPdf = file ? (file.type === 'application/pdf' || file.name.endsWith('.pdf')) : false;
   const isDocx = file ? (file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') : false;
@@ -493,8 +495,6 @@ export default function FilePreviewModal({
   const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(file.name);
   const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogv)$/i.test(file.name);
 
-  const currentStatusConfig = STATUS_OPTIONS.find(opt => opt.value === localStatus) || STATUS_OPTIONS[0];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-955/80 bg-slate-955/70 dark:bg-slate-950/80 backdrop-blur-md transition-opacity">
       <div 
@@ -505,11 +505,11 @@ export default function FilePreviewModal({
         {/* Header bar */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950 shrink-0">
           <div className="flex items-center gap-3 min-w-0 text-left">
-            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
+            <div className="p-2.5 bg-azur-light dark:bg-azur/10 text-azur dark:text-azur-pastel rounded-xl">
               <FileText className="w-5.5 h-5.5" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-base font-black text-slate-850 dark:text-slate-100 truncate pr-5" title={file.name}>
+              <h3 className="text-base font-black font-display text-deep dark:text-slate-100 truncate pr-5" title={file.name}>
                 {file.name}
               </h3>
               <p className="text-[10px] text-slate-450 uppercase font-mono tracking-wider">
@@ -535,7 +535,7 @@ export default function FilePreviewModal({
             
             {loading ? (
               <div className="flex flex-col items-center gap-3 text-slate-300">
-                <RotateCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                <RotateCw className="w-8 h-8 text-azur animate-spin" />
                 <span className="text-xs font-bold">Chargement de l'aperçu en cours...</span>
               </div>
             ) : !dataUrl ? (
@@ -571,7 +571,7 @@ export default function FilePreviewModal({
                       <button
                         type="button"
                         onClick={() => setImageRotation(r => (r + 90) % 360)}
-                        className="px-3 py-1.5 bg-slate-800 text-[#1b98c4] border border-slate-700 hover:bg-slate-755 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95 shadow-sm"
+                        className="px-3 py-1.5 bg-slate-800 text-azur-pastel border border-slate-700 hover:bg-slate-755 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95 shadow-sm"
                         title="Faire pivoter de 90°"
                       >
                         <RotateCw className="w-3.5 h-3.5" />
@@ -675,7 +675,7 @@ export default function FilePreviewModal({
                     <div className="flex-grow w-full overflow-auto flex justify-center bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-inner relative">
                       {pdfLoading && (
                         <div className="absolute inset-0 flex flex-col justify-center items-center bg-slate-950/70 z-10 gap-2 text-white">
-                          <RotateCw className="w-6 h-6 text-indigo-400 animate-spin" />
+                          <RotateCw className="w-6 h-6 text-azur-pastel animate-spin" />
                           <span className="text-[11px] font-bold">Rendu PDF en cours...</span>
                         </div>
                       )}
@@ -725,7 +725,7 @@ export default function FilePreviewModal({
                       {!isEditingText && (
                         <button 
                           onClick={() => setIsEditingText(true)}
-                          className="flex items-center gap-1 text-indigo-400 hover:text-indigo-305 bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg font-bold border border-slate-700 cursor-pointer"
+                          className="flex items-center gap-1 text-azur-pastel hover:text-azur bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg font-bold border border-slate-700 cursor-pointer"
                         >
                           <Edit className="w-3 h-3" /> Éditer le texte
                         </button>
@@ -737,7 +737,7 @@ export default function FilePreviewModal({
                         <textarea
                           value={textContent}
                           onChange={(e) => setTextContent(e.target.value)}
-                          className="flex-1 border border-slate-800 p-4 rounded-xl text-sm font-mono focus:ring-1 focus:ring-indigo-500 focus:outline-none bg-slate-950 text-slate-100"
+                          className="flex-1 border border-slate-800 p-4 rounded-xl text-sm font-mono focus:ring-1 focus:ring-azur focus:outline-none bg-slate-950 text-slate-100"
                         />
                         <div className="flex justify-end gap-2 shrink-0">
                           <button 
@@ -751,7 +751,7 @@ export default function FilePreviewModal({
                             type="button"
                             disabled={savingText}
                             onClick={handleSaveTextChanges}
-                            className="bg-[#1b98c4] hover:bg-[#147fa5] text-white text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            className="bg-azur hover:bg-azur-hover text-white text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                           >
                             <Save className="w-3.5 h-3.5" />
                             {savingText ? 'Mise à jour...' : 'Sauvegarder'}
@@ -779,7 +779,7 @@ export default function FilePreviewModal({
                         </span>
                       </div>
                       {docxLoading && (
-                        <div className="flex items-center gap-2 text-indigo-400">
+                        <div className="flex items-center gap-2 text-azur-pastel">
                           <RotateCw className="w-3.5 h-3.5 animate-spin" />
                           <span className="text-[10px] uppercase font-bold">Rendu en cours...</span>
                         </div>
@@ -789,7 +789,7 @@ export default function FilePreviewModal({
                     <div className="flex-grow w-full overflow-auto flex justify-center bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-inner relative">
                       {docxLoading && (
                         <div className="absolute inset-0 flex flex-col justify-center items-center bg-slate-950/70 z-10 gap-2 text-white">
-                          <RotateCw className="w-6 h-6 text-indigo-400 animate-spin" />
+                          <RotateCw className="w-6 h-6 text-azur-pastel animate-spin" />
                           <span className="text-[11px] font-bold">Rendu du document...</span>
                         </div>
                       )}
@@ -827,7 +827,7 @@ export default function FilePreviewModal({
                     <button
                       type="button"
                       onClick={handleDownload}
-                      className="px-4 py-2 bg-[#1b98c4] hover:bg-[#147fa5] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm mt-2"
+                      className="px-4 py-2 bg-azur hover:bg-azur-hover text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm mt-2"
                     >
                       <Download className="w-4 h-4" />
                       <span>Télécharger le document .doc</span>
@@ -850,7 +850,7 @@ export default function FilePreviewModal({
                     <button
                       type="button"
                       onClick={handleDownload}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm mt-1"
+                      className="px-4 py-2 bg-azur hover:bg-azur-hover text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm mt-1"
                     >
                       <Download className="w-4.5 h-4.5" />
                       <span>Télécharger le fichier</span>
@@ -869,7 +869,7 @@ export default function FilePreviewModal({
               {isAdmin && (
                 <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-850 space-y-3">
                   <div className="text-left">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">👩‍✈️ Décision Conforme / Vol</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-azur dark:text-azur-pastel">👩‍✈️ Décision Conforme / Vol</span>
                     <span className="text-[11px] text-slate-455 dark:text-slate-505 block mt-0.5">Changez le statut réglementaire :</span>
                   </div>
 
@@ -881,15 +881,15 @@ export default function FilePreviewModal({
                         onClick={() => handleUpdateLocalStatus(opt.value)}
                         className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all border flex items-center justify-between cursor-pointer ${
                           localStatus === opt.value
-                            ? 'bg-white dark:bg-slate-900 border-indigo-400 dark:border-indigo-505 shadow-sm ring-2 ring-indigo-500/15'
+                            ? 'bg-white dark:bg-slate-900 border-azur dark:border-azur shadow-sm ring-2 ring-azur/15'
                             : 'bg-transparent border-transparent text-slate-600 hover:bg-white/40 dark:hover:bg-slate-900/50 dark:text-slate-400'
                         }`}
                       >
                         <span className="flex items-center gap-2">
-                          <span className={`w-2.5 h-2.5 rounded-full ${opt.color} ${localStatus === opt.value ? 'animate-pulse' : ''}`} />
+                          <span className={`w-2.5 h-2.5 rounded-full ${opt.dot} ${localStatus === opt.value ? 'animate-pulse' : ''}`} />
                           <span className={localStatus === opt.value ? 'font-black' : ''}>{opt.label}</span>
                         </span>
-                        {localStatus === opt.value && <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">✓ Actif</span>}
+                        {localStatus === opt.value && <span className="text-[10px] font-bold text-azur dark:text-azur-pastel">✓ Actif</span>}
                       </button>
                     ))}
                   </div>
@@ -898,12 +898,18 @@ export default function FilePreviewModal({
 
               <div className="space-y-4">
                 <span className="text-[10px] font-black tracking-widest text-[#94a3b8] dark:text-slate-400 uppercase flex items-center gap-1.5 mb-2 text-left">
-                  <Info className="w-3.5 h-3.5 text-indigo-500" /> Informations du Vol
+                  <Info className="w-3.5 h-3.5 text-azur" /> Informations du Vol
                 </span>
+
+                {/* Status Card */}
+                <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center justify-between gap-3 text-left">
+                  <p className="text-[9px] text-slate-450 font-bold uppercase">Statut</p>
+                  <StatusBadge status={localStatus as any} />
+                </div>
 
                 {/* Size Card */}
                 <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center gap-3 text-left">
-                  <HardDrive className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <HardDrive className="w-4 h-4 text-azur shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[9px] text-slate-450 font-bold uppercase">Taille</p>
                     <p className="text-xs font-black text-slate-800 dark:text-slate-101 dark:text-slate-100">{formatBytes(file.size)}</p>
@@ -912,7 +918,7 @@ export default function FilePreviewModal({
 
                 {/* Uploader Card */}
                 <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center gap-3 text-left">
-                  <User className="w-4 h-4 text-[#6366f1] shrink-0" />
+                  <User className="w-4 h-4 text-azur shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[9px] text-slate-455 font-bold uppercase font-sans">Auteur de l'envoi</p>
                     <p className="text-xs font-black text-slate-800 dark:text-slate-101 dark:text-slate-100 truncate pr-2">
@@ -923,7 +929,7 @@ export default function FilePreviewModal({
 
                 {/* Upload Date Card */}
                 <div className="bg-slate-50 dark:bg-slate-955 p-3 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center gap-3 text-left">
-                  <Calendar className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <Calendar className="w-4 h-4 text-azur shrink-0" />
                   <div className="min-w-0 text-left">
                     <p className="text-[9px] text-[#94a3b8] dark:text-slate-450 font-bold uppercase">Importé le</p>
                     <p className="text-xs font-black text-slate-800 dark:text-slate-101 dark:text-slate-100">
@@ -942,7 +948,7 @@ export default function FilePreviewModal({
               <button
                 onClick={handleDownload}
                 disabled={!dataUrl}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-indigo-600/10 shrink-0 cursor-pointer"
+                className="btn-asf w-full shrink-0"
               >
                 <Download className="w-4.5 h-4.5" />
                 Télécharger original
@@ -951,7 +957,7 @@ export default function FilePreviewModal({
               {onDelete && (
                 <button
                   onClick={() => onDelete(file)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-600 border border-rose-200 dark:border-rose-900/30 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer"
+                  className="btn-danger w-full shrink-0"
                 >
                   <Trash2 className="w-4 h-4" />
                   Supprimer
