@@ -237,15 +237,14 @@ service cloud.firestore {
                      ))
                    );
       
-      allow create: if (isSignedIn() && isValidFile(incoming()) && (
-                      incoming().get('orgId', '') == request.auth.uid || 
-                      isSuperAdmin() || 
+      allow create: if isSignedIn() && isValidFile(incoming()) && (
+                      incoming().get('orgId', '') == request.auth.uid ||
+                      isSuperAdmin() ||
                       (hasUserDoc() && (
                         (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == incoming().get('delegation_id', '')) ||
                         (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
                       ))
-                    )) ||
-                    (!isSignedIn() && isValidFile(incoming()) && incoming().get('orgId', '') == "public" && incoming().get('submissionStatus', '') == "Pending");
+                    );
       
       allow update: if isValidFile(incoming()) && (
                     isSuperAdmin() ||

@@ -13,11 +13,9 @@ import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
 import LandingPage from './components/LandingPage';
 
-import PublicUploadForm from './components/PublicUploadForm';
-
 function MainApp() {
   const { user, organization, loading, error, signOut } = useAuth();
-  const [view, setView] = useState<'landing' | 'login' | 'register' | 'public-upload'>('landing');
+  const [view, setView] = useState<'landing' | 'login' | 'register'>('landing');
 
   if (error) {
     let friendlyMessage = "Une erreur est survenue lors de la synchronisation de votre profil. Veuillez vérifier votre connexion Internet ou contacter un administrateur.";
@@ -102,15 +100,6 @@ function MainApp() {
       <LandingPage
         onNavigateLogin={() => setView('login')}
         onNavigateRegister={() => setView('register')}
-        onNavigateUpload={() => setView('public-upload')}
-      />
-    );
-  }
-
-  if (view === 'public-upload') {
-    return (
-      <PublicUploadForm 
-        onNavigateHome={() => setView('landing')}
       />
     );
   }

@@ -6,7 +6,6 @@ import { useTheme } from '../context/ThemeContext';
 interface LandingPageProps {
   onNavigateLogin: () => void;
   onNavigateRegister: () => void;
-  onNavigateUpload?: () => void;
 }
 
 // Logo SVG conforme à la charte graphique (mains entrelacées formant des ailes)
@@ -64,7 +63,7 @@ export function LogoASF({ className = "w-16 h-16", variant = "color" }: { classN
   );
 }
 
-export default function LandingPage({ onNavigateLogin, onNavigateRegister, onNavigateUpload }: LandingPageProps) {
+export default function LandingPage({ onNavigateLogin, onNavigateRegister }: LandingPageProps) {
   const { themeConfig } = useTheme();
 
   const officialMissions = [
@@ -109,12 +108,11 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onNav
               Se connecter
             </button>
             <button
-              onClick={onNavigateUpload}
-              id="cta-top-upload"
+              onClick={onNavigateRegister}
+              id="cta-top-register"
               className="text-xs font-bold bg-sourire hover:bg-sourire-dark text-white px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
-              <Upload className="w-3.5 h-3.5" />
-              Déposer un document
+              Créer un compte
             </button>
           </div>
         </div>
@@ -167,12 +165,11 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onNav
                 className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto"
               >
                 <button
-                  onClick={onNavigateUpload}
-                  id="cta-hero-upload"
+                  onClick={onNavigateRegister}
+                  id="cta-hero-register"
                   className="btn-sourire text-sm cursor-pointer group"
                 >
-                  <Upload className="w-4 h-4" />
-                  Déposer un document
+                  Créer mon compte
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button
@@ -184,15 +181,14 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onNav
                 </button>
               </motion.div>
 
-              <motion.button
+              <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                onClick={onNavigateRegister}
-                className="text-xs font-semibold text-slate-500 hover:text-azur transition-colors cursor-pointer"
+                className="text-xs font-medium text-slate-500"
               >
-                Pas encore de compte ? <span className="text-azur underline underline-offset-2">Demander un accès partenaire</span>
-              </motion.button>
+                Le dépôt de documents nécessite un compte partenaire validé.
+              </motion.p>
 
               {/* Mini counters */}
               <motion.div

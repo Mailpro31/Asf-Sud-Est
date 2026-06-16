@@ -34,13 +34,11 @@ service firebase.storage {
       allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
-    // Dépôts publics (formulaire public) : création autorisée sans
-    // authentification mais strictement limitée en taille et en type.
-    // Lecture/suppression réservées aux administrateurs.
+    // Dépôt public anonyme désactivé : un compte est obligatoire pour
+    // téléverser des documents (voir le chemin dossiers/{userId}).
     match /public_uploads/{fileName} {
-      allow create: if isAllowedFile();
       allow read, delete: if isAdmin();
-      allow update: if false;
+      allow create, update: if false;
     }
   }
 }
