@@ -1,0 +1,116 @@
+{
+  "entities": {
+    "Delegation": {
+      "title": "Delegation",
+      "description": "One of the 4 main delegations of Aviation Sans Frontières.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Delegation name" }
+      },
+      "required": ["name"]
+    },
+    "Antenne": {
+      "title": "Antenne",
+      "description": "A local branch of a delegation.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Antenna name" },
+        "delegation_id": { "type": "string", "description": "Reference ID of the delegation" }
+      },
+      "required": ["name", "delegation_id"]
+    },
+    "Organization": {
+      "title": "Organization",
+      "description": "An organization interacting with Aviation Sans Frontières.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Organization name" },
+        "contactName": { "type": "string", "description": "Contact person name" },
+        "email": { "type": "string", "description": "Contact email" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "submissionStatus": {
+          "type": "string",
+          "enum": ["Pending", "Under review", "Validated", "Incomplete"],
+          "description": "Status of their dossier"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["organization", "admin_delegation", "super_admin", "admin"],
+          "description": "Role of the user/admin"
+        },
+        "delegation_id": { "type": "string", "description": "Assigned delegation ID (optional for global admins)" },
+        "antenne_id": { "type": "string", "description": "Assigned antenna ID (optional for admins)" },
+        "createdAt": { "type": "number", "description": "Timestamp created" },
+        "updatedAt": { "type": "number", "description": "Timestamp updated" }
+      },
+      "required": ["name", "contactName", "email", "phone", "submissionStatus", "role", "createdAt", "updatedAt"]
+    },
+    "DossierFile": {
+      "title": "DossierFile",
+      "description": "A file uploaded by an organization or a public user for coordination.",
+      "type": "object",
+      "properties": {
+        "orgId": { "type": "string", "description": "The UID of the organization, or 'public' for anonymous uploads" },
+        "name": { "type": "string", "description": "Filename" },
+        "size": { "type": "number", "description": "File size in bytes" },
+        "type": { "type": "string", "description": "MIME type" },
+        "storagePath": { "type": "string", "description": "Path in Firebase Storage" },
+        "uploadDate": { "type": "number", "description": "Timestamp of upload" },
+        "delegation_id": { "type": "string", "description": "Reference ID of the delegation" },
+        "antenne_id": { "type": "string", "description": "Reference ID of the antenna" },
+        "submissionStatus": { "type": "string", "enum": ["Pending", "Under review", "Validated", "Incomplete"], "description": "Status of validation" }
+      },
+      "required": ["orgId", "name", "size", "type", "storagePath", "uploadDate", "delegation_id", "antenne_id", "submissionStatus"]
+    },
+    "FileChunk": {
+      "title": "FileChunk",
+      "description": "A piece of a chunked file Base64 string for files >= 1MB.",
+      "type": "object",
+      "properties": {
+        "index": { "type": "number", "description": "The sequence index of the chunk" },
+        "data": { "type": "string", "description": "Base64 string fragment of the file content" }
+      },
+      "required": ["index", "data"]
+    },
+    "Folder": {
+      "title": "Folder",
+      "description": "A subfolder representing an organism or city activity.",
+      "type": "object",
+      "properties": {
+        "orgId": { "type": "string", "description": "Owner organization ID or 'admin_created'" },
+        "name": { "type": "string", "description": "Folder name" },
+        "createdAt": { "type": "number", "description": "Timestamp created" },
+        "createdBy": { "type": "string", "description": "Created by 'user' or 'admin'" },
+        "delegation_id": { "type": "string", "description": "Reference ID of the delegation" },
+        "antenne_id": { "type": "string", "description": "Reference ID of the antenna" }
+      },
+      "required": ["orgId", "name", "createdAt", "createdBy"]
+    }
+  },
+  "firestore": {
+    "/delegations/{delegationId}": {
+      "schema": { "$ref": "#/entities/Delegation" },
+      "description": "Stores the delegations of Aviation Sans Frontières."
+    },
+    "/antennes/{antenneId}": {
+      "schema": { "$ref": "#/entities/Antenne" },
+      "description": "Stores the regional antennas."
+    },
+    "/organizations/{orgId}": {
+      "schema": { "$ref": "#/entities/Organization" },
+      "description": "Stores user profiles, partner setups, and admin scopes."
+    },
+    "/folders/{folderId}": {
+      "schema": { "$ref": "#/entities/Folder" },
+      "description": "Stores user and admin-created folders."
+    },
+    "/files/{fileId}": {
+      "schema": { "$ref": "#/entities/DossierFile" },
+      "description": "Stores metadata and status for uploaded files."
+    },
+    "/files/{fileId}/chunks/{chunkId}": {
+      "schema": { "$ref": "#/entities/FileChunk" },
+      "description": "Stores split Base64 chunks of larger uploaded files if Storage fallback is active."
+    }
+  }
+}

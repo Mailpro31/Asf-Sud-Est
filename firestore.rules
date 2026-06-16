@@ -1,0 +1,260 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Functions ---
+    function isSignedIn() { return request.auth != null; }
+    
+    function existing() { return resource.data; }
+    function incoming() { return request.resource.data; }
+    
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // Safe Admin Email Verification
+    function isSuperAdminEmail() {
+      return isSignedIn() && 
+             request.auth.token != null && 
+             'email' in request.auth.token && 
+             request.auth.token.email != null && 
+             (request.auth.token.email == "mailprosasha2@gmail.com" || 
+              request.auth.token.email.matches('(?i)mailprosasha2@gmail\\.com'));
+    }
+
+    // Checking if the user has a registered document in Firestore
+    function hasUserDoc() {
+      return isSignedIn() && exists(/databases/$(database)/documents/organizations/$(request.auth.uid));
+    }
+
+    // Safe retrieval of the user profile document data
+    function getUser() {
+      return get(/databases/$(database)/documents/organizations/$(request.auth.uid)).data;
+    }
+
+    // Roles: super_admin / admin (global headquarters), admin_delegation (delegation scope), organization (partners)
+    function isSuperAdmin() {
+      return isSuperAdminEmail() || 
+             (isSignedIn() && request.auth.uid == "YaC6654WHzSabEclQBeTwOdE4xp1") ||
+             (hasUserDoc() && (getUser().get('role', '') == 'super_admin' || getUser().get('role', '') == 'admin'));
+    }
+
+    function isAdminDelegation(delegationId) {
+      return isSignedIn() && 
+             hasUserDoc() && 
+             (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && 
+             getUser().get('delegation_id', '') == delegationId;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // --- Validation Helpers ---
+    function isValidDelegation(data) {
+      return data.keys().hasAll(['name']) &&
+             data.keys().size() == 1 &&
+             data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() <= 100;
+    }
+
+    function isValidAntenne(data) {
+      return data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() <= 100 &&
+             data.get('delegation_id', '') is string && data.get('delegation_id', '').size() <= 128 &&
+             (!('x' in data) || data.x == null || data.x is number) &&
+             (!('y' in data) || data.y == null || data.y is number) &&
+             (!('createdAt' in data) || data.createdAt is number) &&
+             (!('deleted' in data) || data.deleted is bool) &&
+             (!('updatedAt' in data) || data.updatedAt is number);
+    }
+
+    function isValidOrganization(data) {
+      return data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() <= 100 &&
+             data.get('email', '') is string && data.get('email', '').size() > 0 && data.get('email', '').size() <= 150 &&
+             data.get('submissionStatus', '') in ['Pending', 'Under review', 'Validated', 'Incomplete'] &&
+             data.get('role', '') in ['organization', 'admin_delegation', 'super_admin', 'admin'] &&
+             (!('contactName' in data) || data.contactName == null || (data.contactName is string && data.contactName.size() <= 100)) &&
+             (!('phone' in data) || data.phone == null || (data.phone is string && data.phone.size() <= 50)) &&
+             (!('createdAt' in data) || data.createdAt is number) &&
+             (!('updatedAt' in data) || data.updatedAt is number) &&
+             (!('delegation_id' in data) || data.delegation_id == null || data.delegation_id is string) &&
+             (!('antenne_id' in data) || data.antenne_id == null || data.antenne_id is string);
+    }
+
+    function isValidFile(data) {
+      return data.keys().hasAll(['orgId', 'name', 'size', 'type', 'storagePath', 'uploadDate', 'delegation_id', 'antenne_id', 'submissionStatus']) &&
+             data.get('orgId', '') is string && data.get('orgId', '').size() <= 128 &&
+             data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() <= 1000 &&
+             data.get('size', 0) is number && data.get('size', 0) > 0 &&
+             data.get('type', '') is string && data.get('type', '').size() > 0 && data.get('type', '').size() <= 250 &&
+             data.get('storagePath', '') is string && data.get('storagePath', '').size() > 0 && data.get('storagePath', '').size() <= 600 &&
+             data.get('uploadDate', 0) is number &&
+             (data.get('delegation_id', null) == null || (data.get('delegation_id', '') is string && data.get('delegation_id', '').size() <= 128)) &&
+             (data.get('antenne_id', null) == null || (data.get('antenne_id', '') is string && data.get('antenne_id', '').size() <= 128)) &&
+             data.get('submissionStatus', '') in ['Pending', 'Under review', 'Validated', 'Incomplete'] &&
+             (!('folderId' in data) || data.folderId == null || (data.folderId is string && data.folderId.size() <= 128)) &&
+             (!('uploadedBy' in data) || data.uploadedBy in ['admin', 'user', 'public']) &&
+             (!('fallbackDataUrl' in data) || data.fallbackDataUrl == null || data.fallbackDataUrl is string);
+    }
+
+    function isValidFolder(data) {
+      return data.keys().hasAll(['orgId', 'name', 'createdAt', 'createdBy']) &&
+             data.get('orgId', '') is string && data.get('orgId', '').size() <= 128 &&
+             data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() <= 200 &&
+             data.get('createdAt', 0) is number &&
+             data.get('createdBy', '') in ['user', 'admin'] &&
+             (!('delegation_id' in data) || data.delegation_id == null || data.delegation_id is string) &&
+             (!('antenne_id' in data) || data.antenne_id == null || data.antenne_id is string);
+    }
+
+    // --- Collections Match Rules ---
+
+    // 1. Delegations
+    match /delegations/{delegationId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin() && isValidDelegation(incoming());
+    }
+
+    // 2. Antennes
+    match /antennes/{antenneId} {
+      allow read: if true; 
+      allow create, update: if (isSuperAdmin() && isValidAntenne(incoming())) || 
+                               (isSignedIn() && isValidAntenne(incoming()) && isAdminDelegation(incoming().get('delegation_id', '')));
+      allow delete: if isSuperAdmin();
+    }
+
+    // 3. Organizations (Users / Partners Profiles)
+    match /organizations/{orgId} {
+      allow get: if isOwner(orgId) || isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && getUser().get('delegation_id', '') == existing().get('delegation_id', ''));
+      allow list: if isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin'));
+      
+      allow create: if isSignedIn() &&
+                    isValidId(orgId) &&
+                    isOwner(orgId) &&
+                    isValidOrganization(incoming()) &&
+                    (incoming().get('role', '') == 'organization' || isSuperAdmin());
+      
+      allow update: if isSignedIn() && isValidId(orgId) && isValidOrganization(incoming()) && (
+                    isSuperAdmin() || 
+                    (hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && (
+                      // Either they manage the existing delegation
+                      getUser().get('delegation_id', '') == existing().get('delegation_id', '') ||
+                      // Or they are adopting an orphan account into their own delegation
+                      (getUser().get('delegation_id', '') == incoming().get('delegation_id', '') && (!('delegation_id' in existing()) || existing().get('delegation_id', '') == null || existing().get('delegation_id', '') == ''))
+                    )) || 
+                    (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt']))
+                  );
+    }
+
+    // 4. Folders
+    match /folders/{folderId} {
+      allow get: if isSignedIn() && (
+                    existing().get('orgId', '') == request.auth.uid ||
+                    isSuperAdmin() ||
+                    (hasUserDoc() && (
+                      (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
+                      (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
+                      (getUser().get('delegation_id', '') == existing().get('delegation_id', '') && (existing().get('createdBy', '') == 'admin' || existing().get('orgId', '') == 'admin_created' || existing().get('orgId', '') == 'public'))
+                    ))
+                  );
+                    
+      allow list: if isSignedIn() && (
+                     resource.data.get('orgId', '') == request.auth.uid ||
+                     isSuperAdmin() ||
+                     (hasUserDoc() && (
+                       (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == resource.data.get('delegation_id', '')) ||
+                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
+                       (getUser().get('delegation_id', '') == resource.data.get('delegation_id', '') && (resource.data.get('createdBy', '') == 'admin' || resource.data.get('orgId', '') == 'admin_created' || resource.data.get('orgId', '') == 'public'))
+                     ))
+                   );
+       
+      allow create: if isSignedIn() && isValidFolder(incoming()) && (
+                      incoming().get('orgId', '') == request.auth.uid || 
+                      isSuperAdmin() || 
+                      (hasUserDoc() && (
+                        (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == incoming().get('delegation_id', '')) ||
+                        (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
+                      ))
+                    );
+       
+      allow update: if isSignedIn() && isValidFolder(incoming()) && (
+                      isSuperAdmin() ||
+                      existing().get('orgId', '') == request.auth.uid ||
+                      (hasUserDoc() && (
+                        (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
+                        (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
+                      ))
+                    );
+
+      allow delete: if isSignedIn() && (
+                    existing().get('orgId', '') == request.auth.uid ||
+                    isSuperAdmin() ||
+                    (hasUserDoc() && (
+                      (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
+                      (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
+                    ))
+                  );
+    }
+
+    // 5. Files Documents
+    match /files/{fileId} {
+      allow get: if isSignedIn() && (
+                    existing().get('orgId', '') == request.auth.uid ||
+                    isSuperAdmin() ||
+                    (hasUserDoc() && (
+                      (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
+                      (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
+                      (getUser().get('delegation_id', '') == existing().get('delegation_id', '') && (existing().get('uploadedBy', '') == 'admin' || existing().get('orgId', '') == 'admin_created' || existing().get('orgId', '') == 'public'))
+                    ))
+                  );
+                    
+      allow list: if isSignedIn() && (
+                     resource.data.get('orgId', '') == request.auth.uid ||
+                     isSuperAdmin() ||
+                     (hasUserDoc() && (
+                       (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == resource.data.get('delegation_id', '')) ||
+                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
+                       (getUser().get('delegation_id', '') == resource.data.get('delegation_id', '') && (resource.data.get('uploadedBy', '') == 'admin' || resource.data.get('orgId', '') == 'admin_created' || resource.data.get('orgId', '') == 'public'))
+                     ))
+                   );
+      
+      allow create: if (isSignedIn() && isValidFile(incoming()) && (
+                      incoming().get('orgId', '') == request.auth.uid || 
+                      isSuperAdmin() || 
+                      (hasUserDoc() && (
+                        (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == incoming().get('delegation_id', '')) ||
+                        (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
+                      ))
+                    )) ||
+                    (!isSignedIn() && isValidFile(incoming()) && incoming().get('orgId', '') == "public" && incoming().get('submissionStatus', '') == "Pending");
+      
+      allow update: if isValidFile(incoming()) && (
+                    isSuperAdmin() || 
+                    (isSignedIn() && existing().get('orgId', '') == request.auth.uid) || 
+                    (isSignedIn() && hasUserDoc() && (
+                      (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
+                      (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin' || getUser().get('role', '') == 'organization')
+                    ))
+                  );
+                     
+      allow delete: if isSignedIn() && (
+                    existing().get('orgId', '') == request.auth.uid ||
+                    isSuperAdmin() ||
+                    (hasUserDoc() && (
+                      (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
+                      (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
+                    ))
+                  );
+
+      match /chunks/{chunkId} {
+        allow read, write: if isSuperAdmin() || 
+                             (isSignedIn() && get(/databases/$(database)/documents/files/$(fileId)).data.get('orgId', '') == request.auth.uid) || 
+                             (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin'));
+      }
+    }
+  }
+}

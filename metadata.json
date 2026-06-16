@@ -1,0 +1,6 @@
+{
+  "name": "ASF Dossiers",
+  "description": "Portail documentaire sécurisé pour les autorisations de vol de l'ASF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
