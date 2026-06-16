@@ -347,8 +347,8 @@ export default function OrgCabinetModal({
             }`}>
               📍 {org.delegation_id?.toUpperCase()} - {org.antenne_id ? (ANTENNES_BY_DELEGATION[org.delegation_id || '']?.find((a: any) => a.id === org.antenne_id)?.name || org.antenne_id) : 'SANS VILLE'}
             </span>
-            <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-              📁 Cabinet Documentaire : <span className="text-[#1b98c4] font-black">{org.name}</span>
+            <h3 className="text-lg font-display font-black text-deep dark:text-white flex items-center gap-2">
+              📁 Cabinet Documentaire : <span className="text-azur font-black">{org.name}</span>
             </h3>
           </div>
           <button
@@ -389,7 +389,7 @@ export default function OrgCabinetModal({
                     placeholder="Rechercher un fichier..."
                     value={orgFilesSearch}
                     onChange={(e) => setOrgFilesSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl focus:outline-none"
+                    className="input-asf pl-9 text-xs dark:bg-slate-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -457,7 +457,7 @@ export default function OrgCabinetModal({
                           <tr key={file.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                             <td className="px-4 py-3">
                               {isOriginalRenaming ? (
-                                <div className="flex items-center gap-1.5 focus-within:ring-1 focus-within:ring-[#1b98c4] rounded p-1 bg-white dark:bg-slate-900 border">
+                                <div className="flex items-center gap-1.5 focus-within:ring-1 focus-within:ring-azur rounded p-1 bg-white dark:bg-slate-900 border">
                                   <input
                                     type="text"
                                     value={renameInput}
@@ -495,9 +495,9 @@ export default function OrgCabinetModal({
                             <td className="px-4 py-3">
                               <div className="flex flex-col gap-1 items-start">
                                 <span className={`px-1.5 py-0.5 text-[9.5px] font-black uppercase rounded ${
-                                  file.uploadedBy === 'admin' 
-                                    ? 'bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/25 dark:text-amber-400' 
-                                    : 'bg-indigo-50 text-indigo-700 border border-indigo-150 dark:bg-indigo-950/20 dark:border-indigo-900/25 dark:text-indigo-400'
+                                  file.uploadedBy === 'admin'
+                                    ? 'bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/25 dark:text-amber-400'
+                                    : 'bg-azur/10 text-azur border border-azur/20 dark:bg-azur/15'
                                 }`}>
                                   👤 {file.uploadedBy === 'admin' ? "Coordinateur" : "Organisme"}
                                 </span>
@@ -589,7 +589,7 @@ export default function OrgCabinetModal({
               {/* Sub-header inside Modal */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="text-left">
-                  <h4 className="text-sm font-black text-slate-900 dark:text-slate-550">📁 REPERTOIRES ASSOCIES ET JUSTIFICATIFS REGLEMENTAIRES</h4>
+                  <h4 className="text-sm font-display font-black text-deep dark:text-slate-550">📁 REPERTOIRES ASSOCIES ET JUSTIFICATIFS REGLEMENTAIRES</h4>
                   <p className="text-xs text-slate-400">Duffers de stockage virtuel contenant les récépissés de douane, assurances de bord et brevets de navigation.</p>
                 </div>
                 
@@ -597,7 +597,7 @@ export default function OrgCabinetModal({
                 {!isCreatingOrgFolder ? (
                   <button
                     onClick={() => setIsCreatingOrgFolder(true)}
-                    className="text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 shadow-md shrink-0 focus:outline-none font-bold"
+                    className="btn-asf text-xs px-4 py-2 shrink-0"
                   >
                     <Plus className="w-4 h-4" /> Nouveau Dossier
                   </button>
@@ -607,7 +607,7 @@ export default function OrgCabinetModal({
                       type="text"
                       name="name"
                       placeholder="Nom du dossier..."
-                      className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none font-medium"
+                      className="input-asf text-xs dark:bg-slate-950 dark:text-white font-medium"
                       required
                       maxLength={40}
                       autoFocus
@@ -621,7 +621,7 @@ export default function OrgCabinetModal({
                     <button
                       type="button"
                       onClick={() => setIsCreatingOrgFolder(false)}
-                      className="text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl cursor-pointer"
+                      className="btn-secondary text-[11px] px-3 py-1.5"
                     >
                       Annuler
                     </button>
@@ -646,13 +646,13 @@ export default function OrgCabinetModal({
                       <div
                         key={folder.id}
                         onClick={() => setOrgOpenFolderId(folder.id)}
-                        className="group p-5 bg-slate-50 dark:bg-slate-950 hover:bg-white dark:hover:bg-slate-900 border border-slate-100 hover:border-indigo-200 dark:border-slate-800 rounded-2xl shadow-xs cursor-pointer transition-all flex justify-between items-start relative overflow-hidden"
+                        className="group p-5 bg-slate-50 dark:bg-slate-950 hover:bg-white dark:hover:bg-slate-900 border border-slate-100 hover:border-azur/40 dark:border-slate-800 rounded-2xl shadow-xs cursor-pointer transition-all flex justify-between items-start relative overflow-hidden"
                       >
                         <div className="space-y-1 text-left">
                           <div className="flex items-center gap-1.5">
-                            <FolderIcon className="w-8 h-8 text-indigo-500 dark:text-indigo-400 animate-pulse duration-2000" />
+                            <FolderIcon className="w-8 h-8 text-azur dark:text-azur-pastel animate-pulse duration-2000" />
                             {folder.createdBy === 'admin' ? (
-                              <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-indigo-55 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900">
+                              <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-azur/10 text-azur dark:bg-azur/15 dark:text-azur-pastel border border-azur/20">
                                 Admin
                               </span>
                             ) : (
@@ -661,7 +661,7 @@ export default function OrgCabinetModal({
                               </span>
                             )}
                           </div>
-                          <p className="font-extrabold text-slate-900 dark:text-slate-200 text-xs tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mt-2">{folder.name}</p>
+                          <p className="font-extrabold text-deep dark:text-slate-200 text-xs tracking-tight group-hover:text-azur dark:group-hover:text-azur-pastel transition-colors mt-2">{folder.name}</p>
                           <span className="text-[10px] text-slate-400 font-mono font-bold uppercase">{folFiles.length} fichiers justificatifs</span>
                         </div>
                         <button
@@ -674,7 +674,7 @@ export default function OrgCabinetModal({
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                        <div className="absolute right-0 bottom-0 bg-indigo-500 w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute right-0 bottom-0 bg-azur w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     );
                   })}
@@ -684,7 +684,7 @@ export default function OrgCabinetModal({
               {/* Files uploaded at root block */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3 text-left">
                 <div className="text-left">
-                  <h4 className="text-xs font-black text-slate-900 dark:text-white">📄 PIECES VERSES A LA RACINE (HORS DOSSIERS)</h4>
+                  <h4 className="text-xs font-display font-black text-deep dark:text-white">📄 PIECES VERSES A LA RACINE (HORS DOSSIERS)</h4>
                   <span className="text-[10px] text-slate-400 block mt-0.5">Fichiers uploadés par l'organisme sans dossier de classement associé.</span>
                 </div>
 
@@ -713,7 +713,7 @@ export default function OrgCabinetModal({
                               </p>
                             </td>
                             <td className="px-4 py-3">
-                              <span className="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 px-1.5 py-0.5 text-[9.5px] font-black uppercase rounded">
+                              <span className="bg-azur/10 dark:bg-azur/15 text-azur border border-azur/20 px-1.5 py-0.5 text-[9.5px] font-black uppercase rounded">
                                 👤 Organisme
                               </span>
                             </td>
@@ -776,7 +776,7 @@ export default function OrgCabinetModal({
           </span>
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl text-xs font-black bg-slate-900 hover:bg-slate-950 text-white dark:bg-slate-950 dark:hover:bg-slate-900 transition-all shadow-md shrink-0 cursor-pointer font-bold"
+            className="btn-secondary text-xs px-5 py-2.5 shrink-0"
           >
             Fermer le Cabinet
           </button>

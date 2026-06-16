@@ -25,6 +25,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
+import { StatusBadge } from './ui';
 
 interface AntenneDashboardModalProps {
   isOpen: boolean;
@@ -273,7 +274,7 @@ export default function AntenneDashboardModal({
               onClick={() => setActiveTab('stats')}
               className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                 activeTab === 'stats'
-                  ? 'border-[#1b98c4] text-[#1b98c4] dark:text-sky-400'
+                  ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -283,7 +284,7 @@ export default function AntenneDashboardModal({
               onClick={() => setActiveTab('orgs')}
               className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                 activeTab === 'orgs'
-                  ? 'border-[#1b98c4] text-[#1b98c4] dark:text-sky-400'
+                  ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -293,7 +294,7 @@ export default function AntenneDashboardModal({
               onClick={() => setActiveTab('documents')}
               className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                 activeTab === 'documents'
-                  ? 'border-[#1b98c4] text-[#1b98c4] dark:text-sky-400'
+                  ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -319,7 +320,7 @@ export default function AntenneDashboardModal({
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-3xs text-left">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-xs font-bold text-slate-500 uppercase">Indice de Conformité Réglementaire</span>
-                        <span className="text-xs font-mono font-bold text-[#1b98c4]">{validatedFiles}/{totalFiles} fichiers validés</span>
+                        <span className="text-xs font-mono font-bold text-azur">{validatedFiles}/{totalFiles} fichiers validés</span>
                       </div>
                       
                       {/* Simulated elegant progress gauge */}
@@ -328,7 +329,7 @@ export default function AntenneDashboardModal({
                           initial={{ width: 0 }}
                           animate={{ width: `${complianceRate}%` }}
                           transition={{ duration: 0.6 }}
-                          className="h-full bg-gradient-to-r from-sky-400 to-[#1b98c4]"
+                          className="h-full bg-gradient-to-r from-azur-pastel to-azur"
                         />
                       </div>
                       
@@ -343,7 +344,7 @@ export default function AntenneDashboardModal({
                     {/* Local Coordinator & Contact card */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-3xs text-left space-y-4">
                       <div className="flex items-center gap-2 border-b border-slate-50 dark:border-slate-800/60 pb-3">
-                        <Users className="w-5 h-5 text-[#1b98c4]" />
+                        <Users className="w-5 h-5 text-azur" />
                         <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-350 tracking-wider">Coordinateur Référent d'Antenne</h4>
                       </div>
 
@@ -375,7 +376,7 @@ export default function AntenneDashboardModal({
                     {/* Simulated Flight plans / Operations Card */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-3xs text-left">
                       <div className="flex items-center gap-2 border-b border-slate-50 dark:border-slate-800/60 pb-3 mb-3">
-                        <PlaneTakeoff className="w-5 h-5 text-[#1b98c4]" />
+                        <PlaneTakeoff className="w-5 h-5 text-azur" />
                         <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-350 tracking-wider">Missions & Vols Actifs "Ailes du Sourire"</h4>
                       </div>
 
@@ -395,7 +396,7 @@ export default function AntenneDashboardModal({
                             <strong className="text-xs text-slate-800 dark:text-slate-200">Visite d'aérodrome locale</strong>
                             <p className="text-[10px] text-slate-400">Encadrement des enfants en situation de fragilité</p>
                           </div>
-                          <span className="bg-sky-50 text-[#1b98c4] text-[10px] font-bold px-2 py-1 rounded-md border border-sky-100">
+                          <span className="bg-azur-light text-azur text-[10px] font-bold px-2 py-1 rounded-md border border-azur/20">
                             VALIDÉ PAR COMM.
                           </span>
                         </div>
@@ -406,9 +407,9 @@ export default function AntenneDashboardModal({
                   {/* Right Action column */}
                   <div className="space-y-6">
                     {/* Workspace redirection */}
-                    <div className="bg-gradient-to-br from-indigo-50 to-sky-50 dark:from-slate-950/20 dark:to-slate-950/50 border border-indigo-100/40 dark:border-slate-800 p-4.5 rounded-2xl text-left space-y-3 text-xs font-medium">
-                      <Compass className="w-5 h-5 text-indigo-500" />
-                      <h4 className="font-extrabold text-[#1b98c4]">Accéder aux dossiers</h4>
+                    <div className="bg-azur-light dark:from-slate-950/20 dark:to-slate-950/50 dark:bg-none border border-azur/20 dark:border-slate-800 p-4.5 rounded-2xl text-left space-y-3 text-xs font-medium">
+                      <Compass className="w-5 h-5 text-azur" />
+                      <h4 className="font-extrabold text-azur">Accéder aux dossiers</h4>
                       <p className="text-slate-500 leading-normal">
                         Focaliser complètement l'espace de transit réglementaire de la direction principale d'ASF sur l'antenne locale de {antenne.name}.
                       </p>
@@ -418,7 +419,7 @@ export default function AntenneDashboardModal({
                           onFilterWorkspace(antenneId);
                           onClose();
                         }}
-                        className="w-full bg-[#1b98c4] hover:bg-sky-700 text-white font-black py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs mt-2 text-xs"
+                        className="btn-asf w-full py-2 px-3 mt-2 text-xs"
                       >
                         <span>Filtrer cet espace sur {antenne.name}</span>
                         <ChevronRight className="w-4 h-4 shrink-0 animate-pulse" />
@@ -451,7 +452,7 @@ export default function AntenneDashboardModal({
                   className="space-y-4 text-left"
                 >
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">Organismes partenaires enregistrés</h3>
+                    <h3 className="text-sm font-display font-black text-deep dark:text-slate-200 uppercase">Organismes partenaires enregistrés</h3>
                     <span className="text-xs text-slate-400">{localOrgs.length} organismes rattachés</span>
                   </div>
 
@@ -467,16 +468,10 @@ export default function AntenneDashboardModal({
                           <div key={org.id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-3xs relative group flex flex-col justify-between">
                             <div>
                               <div className="flex justify-between items-start">
-                                <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-tight truncate max-w-[210px]" title={org.name}>
+                                <h4 className="text-xs font-extrabold text-deep dark:text-slate-200 uppercase tracking-tight truncate max-w-[210px]" title={org.name}>
                                   🏢 {org.name || "Partenaire non spécifié"}
                                 </h4>
-                                <span className={`text-[9.5px] px-2 py-0.5 rounded-full font-black uppercase ${
-                                  org.submissionStatus === 'Validated' 
-                                    ? 'bg-emerald-50 text-emerald-700' 
-                                    : 'bg-amber-50 text-amber-700'
-                                }`}>
-                                  {org.submissionStatus === 'Validated' ? 'Validé d\'office' : 'En examen'}
-                                </span>
+                                <StatusBadge status={org.submissionStatus} />
                               </div>
 
                               <p className="text-[11px] text-slate-400 mt-2 font-mono">ID : {org.id.substring(0, 10)}</p>
@@ -493,7 +488,7 @@ export default function AntenneDashboardModal({
                                   onFilterWorkspace(antenneId);
                                   onClose();
                                 }}
-                                className="text-[10px] font-black text-[#1b98c4] hover:underline flex items-center gap-0.5"
+                                className="text-[10px] font-black text-azur hover:underline flex items-center gap-0.5"
                               >
                                 <span>Voir le cabinet</span>
                                 <ExternalLink className="w-3 h-3" />
@@ -517,7 +512,7 @@ export default function AntenneDashboardModal({
                   className="space-y-4 text-left"
                 >
                   <div className="flex items-center justify-between shrink-0">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">Documents transmis par l'antenne</h3>
+                    <h3 className="text-sm font-display font-black text-deep dark:text-slate-200 uppercase">Documents transmis par l'antenne</h3>
                     <span className="text-xs text-slate-400 font-mono">{localFiles.length} justificatif(s)</span>
                   </div>
 
@@ -557,7 +552,7 @@ export default function AntenneDashboardModal({
                                           <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-tight ${
                                             file.uploadedBy === 'admin'
                                               ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50'
-                                              : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-150'
+                                              : 'bg-azur/10 text-azur dark:bg-azur/15 border border-azur/20'
                                           }`}>{uploaderName}</span>
                                         </span>
                                       </div>
@@ -565,23 +560,12 @@ export default function AntenneDashboardModal({
                                   </div>
                                 </td>
                                 
-                                <td className="px-3 py-3 text-xs text-[#1b98c4] font-bold">
+                                <td className="px-3 py-3 text-xs text-azur font-bold">
                                   {partner?.name || 'Inconnu'}
                                 </td>
 
                                 <td className="px-3 py-3">
-                                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase border leading-none ${
-                                    fileStatus === 'Validated' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                    fileStatus === 'Incomplete' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                                    fileStatus === 'Under review' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                    'bg-amber-50 text-amber-700 border-amber-200'
-                                  }`}>
-                                    <span>{
-                                      fileStatus === 'Validated' ? 'Validé' :
-                                      fileStatus === 'Incomplete' ? 'Non conforme' :
-                                      fileStatus === 'Under review' ? 'En étude' : 'En attente'
-                                    }</span>
-                                  </span>
+                                  <StatusBadge status={fileStatus} />
                                 </td>
 
                                 <td className="px-4 py-3 text-right">
