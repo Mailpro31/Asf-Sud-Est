@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { 
@@ -23,6 +23,19 @@ import { localDb } from '../lib/localDb';
 interface RegisterProps {
   onNavigateLogin: () => void;
   onNavigateHome?: () => void;
+}
+
+/**
+ * Vérifie la robustesse d'un mot de passe.
+ * Retourne un message d'erreur, ou null si le mot de passe est valide.
+ */
+function validatePasswordStrength(password: string): string | null {
+  if (password.length < 12) return 'Le mot de passe doit contenir au moins 12 caractères.';
+  if (!/[A-Z]/.test(password)) return 'Le mot de passe doit contenir au moins une majuscule.';
+  if (!/[a-z]/.test(password)) return 'Le mot de passe doit contenir au moins une minuscule.';
+  if (!/[0-9]/.test(password)) return 'Le mot de passe doit contenir au moins un chiffre.';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Le mot de passe doit contenir au moins un caractère spécial.';
+  return null;
 }
 
 export default function Register({ onNavigateLogin, onNavigateHome }: RegisterProps) {
@@ -79,11 +92,24 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
       return;
     }
 
+    const passwordError = validatePasswordStrength(formData.password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
     setLoading(true);
     savePendingRegistration({});
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
+
+      // Envoi (non bloquant) de l'email de vérification.
+      try {
+        await sendEmailVerification(user);
+      } catch (verifErr) {
+        console.warn('Envoi de l\'email de vérification impossible', verifErr);
+      }
 
       const now = Date.now();
       
@@ -401,10 +427,13 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                       value={formData.password}
                       onChange={handleChange}
                       className={`w-full pl-10 pr-4 py-3 border ${themeConfig.cardBorder} ${inputRounded} bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1b98c4]/20 focus:border-[#1b98c4] text-sm transition-all shadow-3xs`}
-                      placeholder="Minimum 6 caractères"
-                      minLength={6}
+                      placeholder="Minimum 12 caractères"
+                      minLength={12}
                     />
                   </div>
+                  <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    Au moins 12 caractères, avec majuscule, minuscule, chiffre et caractère spécial.
+                  </p>
                 </div>
               </div>
             )}

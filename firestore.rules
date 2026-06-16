@@ -39,8 +39,8 @@ service cloud.firestore {
 
     // Roles: super_admin / admin (global headquarters), admin_delegation (delegation scope), organization (partners)
     function isSuperAdmin() {
-      return isSuperAdminEmail() || 
-             (isSignedIn() && request.auth.uid == "YaC6654WHzSabEclQBeTwOdE4xp1") ||
+      return isSuperAdminEmail() ||
+             (isSignedIn() && 'admin' in request.auth.token && request.auth.token.admin == true) ||
              (hasUserDoc() && (getUser().get('role', '') == 'super_admin' || getUser().get('role', '') == 'admin'));
     }
 
@@ -233,11 +233,11 @@ service cloud.firestore {
                     (!isSignedIn() && isValidFile(incoming()) && incoming().get('orgId', '') == "public" && incoming().get('submissionStatus', '') == "Pending");
       
       allow update: if isValidFile(incoming()) && (
-                    isSuperAdmin() || 
-                    (isSignedIn() && existing().get('orgId', '') == request.auth.uid) || 
+                    isSuperAdmin() ||
+                    (isSignedIn() && existing().get('orgId', '') == request.auth.uid) ||
                     (isSignedIn() && hasUserDoc() && (
                       (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
-                      (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin' || getUser().get('role', '') == 'organization')
+                      (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
                     ))
                   );
                      

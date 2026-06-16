@@ -1,15 +1,46 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /dossiers/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && (
-        request.auth.uid == userId ||
-        request.auth.uid == "YaC6654WHzSabEclQBeTwOdE4xp1" ||
-        (request.auth.token.email == "mailprosasha2@gmail.com") ||
+
+    // Détermine si l'utilisateur authentifié est administrateur.
+    function isAdmin() {
+      return request.auth != null && (
+        // Custom Claim recommandé (défini côté serveur via le SDK Admin).
+        request.auth.token.admin == true ||
+        // Repli : email administrateur connu.
+        request.auth.token.email == "mailprosasha2@gmail.com" ||
         firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) ||
-        (firestore.exists(/databases/(default)/documents/organizations/$(request.auth.uid)) && 
+        (firestore.exists(/databases/(default)/documents/organizations/$(request.auth.uid)) &&
          firestore.get(/databases/(default)/documents/organizations/$(request.auth.uid)).data.role == "admin")
       );
+    }
+
+    // Contraintes communes aux fichiers déposés.
+    function isAllowedFile() {
+      return request.resource.size <= 10 * 1024 * 1024 &&
+        request.resource.contentType in [
+          'application/pdf',
+          'image/jpeg',
+          'image/png',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+    }
+
+    // Espace privé des organisations : accès au propriétaire ou aux admins.
+    match /dossiers/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin()) && isAllowedFile();
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Dépôts publics (formulaire public) : création autorisée sans
+    // authentification mais strictement limitée en taille et en type.
+    // Lecture/suppression réservées aux administrateurs.
+    match /public_uploads/{fileName} {
+      allow create: if isAllowedFile();
+      allow read, delete: if isAdmin();
+      allow update: if false;
     }
   }
 }
