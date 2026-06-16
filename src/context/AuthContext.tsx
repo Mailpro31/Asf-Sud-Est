@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { Organization } from '../types';
+import { AntenneGroup, Organization } from '../types';
 import { localDb } from '../lib/localDb';
 
 export const DEFAULT_DELEGATIONS = [
@@ -32,6 +32,7 @@ interface AuthContextType {
   clearError: () => void;
   delegations: { id: string; name: string }[];
   antennes: Record<string, { id: string; name: string; x?: number; y?: number }[]>;
+  antenneGroups: AntenneGroup[];
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -44,6 +45,7 @@ const AuthContext = createContext<AuthContextType>({
   clearError: () => {},
   delegations: DEFAULT_DELEGATIONS,
   antennes: DEFAULT_ANTENNES,
+  antenneGroups: [],
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -53,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [delegations, setDelegations] = useState<{ id: string; name: string }[]>(DEFAULT_DELEGATIONS);
   const [antennes, setAntennes] = useState<Record<string, { id: string; name: string }[]>>(DEFAULT_ANTENNES);
+  const [antenneGroups, setAntenneGroups] = useState<AntenneGroup[]>([]);
 
 
   const fetchOrg = async (uid: string, email?: string | null, displayName?: string | null) => {
@@ -381,13 +384,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Real-time loading of antenne groups (super admin feature). Public read.
+  useEffect(() => {
+    let unsubGroups = () => {};
+
+    const loadLocalGroups = () => setAntenneGroups(localDb.getGroups());
+
+    if (localDb.isSandboxActive()) {
+      loadLocalGroups();
+      const handleLocalDbUpdate = () => {
+        if (localDb.isSandboxActive()) loadLocalGroups();
+      };
+      window.addEventListener('localdb-update', handleLocalDbUpdate);
+      return () => window.removeEventListener('localdb-update', handleLocalDbUpdate);
+    }
+
+    try {
+      unsubGroups = onSnapshot(collection(db, 'antenne_groups'), (snapshot) => {
+        const list: AntenneGroup[] = [];
+        snapshot.forEach((d) => {
+          const data = d.data();
+          list.push({
+            id: d.id,
+            name: data.name,
+            color: data.color || undefined,
+            antenneIds: Array.isArray(data.antenneIds) ? data.antenneIds : [],
+            createdAt: data.createdAt || 0,
+            updatedAt: data.updatedAt || 0,
+          });
+        });
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        setAntenneGroups(list);
+      }, (err) => {
+        console.error("Error loading antenne groups, activating local fallback:", err);
+        localDb.setSandboxActive(true);
+        loadLocalGroups();
+      });
+    } catch (e) {
+      console.error("Snapshot error for antenne groups, fallback to local:", e);
+      localDb.setSandboxActive(true);
+      loadLocalGroups();
+    }
+
+    return () => unsubGroups();
+  }, []);
+
   const signOut = async () => {
     await firebaseSignOut(auth);
     setError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, organization, loading, error, signOut, refreshOrganization, clearError, delegations, antennes }}>
+    <AuthContext.Provider value={{ user, organization, loading, error, signOut, refreshOrganization, clearError, delegations, antennes, antenneGroups }}>
       {children}
     </AuthContext.Provider>
   );

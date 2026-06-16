@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
-import { Organization, DossierFile, Folder, SubmissionStatus } from '../types';
+import { Organization, DossierFile, Folder, SubmissionStatus, AntenneGroup } from '../types';
 import { 
   ShieldAlert, 
   LogOut, 
@@ -53,8 +53,10 @@ import UserProfileModal from './UserProfileModal';
 import OrgCabinetModal from './OrgCabinetModal';
 import { LogoASF } from './LandingPage';
 import AilesDuSourireDashboard from './AilesDuSourireDashboard';
+import AntenneGroupsManager from './AntenneGroupsManager';
 import { localDb } from '../lib/localDb';
 import { formatBytes } from '../lib/utils';
+import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
 
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
@@ -157,7 +159,7 @@ const statusConfig: Record<SubmissionStatus, { bg: string; text: string; label: 
 
 
 export default function AdminPanel() {
-  const { organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION } = useAuth();
+  const { organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION, antenneGroups } = useAuth();
   const { theme, setTheme, themeConfig } = useTheme();
   const { toast, confirm } = useFeedback();
 
@@ -227,6 +229,7 @@ export default function AdminPanel() {
   const [newDelegationId, setNewDelegationId] = useState('');
   const [newAntenneName, setNewAntenneName] = useState('');
   const [newAntenneId, setNewAntenneId] = useState('');
+  const [newAntenneGroupIds, setNewAntenneGroupIds] = useState<string[]>([]);
   const [selectedDelegationForAntenne, setSelectedDelegationForAntenne] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -265,8 +268,17 @@ export default function AdminPanel() {
         createdAt: Date.now(),
         deleted: false
       });
+      // Inclure la nouvelle antenne dans les groupes cochés.
+      if (newAntenneGroupIds.length > 0) {
+        try {
+          await setAntenneMembership(cleanId, newAntenneGroupIds, antenneGroups);
+        } catch (groupErr) {
+          console.error("Error assigning antenne groups:", groupErr);
+        }
+      }
       setNewAntenneName('');
       setNewAntenneId('');
+      setNewAntenneGroupIds([]);
       setTempCoords(null);
     } catch (err: any) {
       console.error("Error creating antenne:", err);
@@ -284,6 +296,12 @@ export default function AdminPanel() {
         deleted: true,
         updatedAt: Date.now()
       }, { merge: true });
+      // Nettoyage : retirer cette antenne de tous les groupes qui la contiennent.
+      try {
+        await removeAntenneFromAllGroups(antId, antenneGroups);
+      } catch (groupErr) {
+        console.error("Error cleaning antenne from groups:", groupErr);
+      }
       if (editingAntenne?.id === antId) {
         setEditingAntenne(null);
       }
@@ -823,6 +841,11 @@ export default function AdminPanel() {
   // Compteurs d'éléments en attente de validation, affichés en badge sur les cards du hub.
   const pendingFilesCount = files.filter(f => f.submissionStatus === 'Pending').length;
   const pendingOrgsCount = orgProfiles.filter(o => o.submissionStatus === 'Pending').length;
+
+  // Liste plate de toutes les antennes (toutes délégations) pour la gestion des groupes.
+  const allAntennesFlat: { id: string; name: string }[] = Object.values(ANTENNES_BY_DELEGATION)
+    .flat()
+    .map((a: { id: string; name: string }) => ({ id: a.id, name: a.name }));
 
   return (
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>
@@ -2317,6 +2340,40 @@ export default function AdminPanel() {
                             />
                           </div>
 
+                          {antenneGroups.length > 0 && (
+                            <div>
+                              <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1.5">
+                                Groupes d'antennes
+                              </label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {antenneGroups.map((grp) => {
+                                  const member = grp.antenneIds.includes(editingAntenne.id);
+                                  return (
+                                    <button
+                                      key={grp.id}
+                                      type="button"
+                                      onClick={async () => {
+                                        try {
+                                          await toggleAntenneInGroup(grp, editingAntenne.id, !member);
+                                        } catch (err: any) {
+                                          toast("Erreur lors de la mise à jour des groupes : " + (err?.message || err), 'error');
+                                        }
+                                      }}
+                                      className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                        member
+                                          ? 'bg-[#1b98c4] text-white border-[#1b98c4]'
+                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#1b98c4]/50'
+                                      }`}
+                                    >
+                                      <span className="w-2 h-2 rounded-full border border-black/10" style={{ backgroundColor: grp.color || '#1b98c4' }} />
+                                      {member ? '✓ ' : ''}{grp.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
                           <div className="flex gap-2">
                             <button
                               type="submit"
@@ -2418,6 +2475,36 @@ export default function AdminPanel() {
                             />
                           </div>
 
+                          {antenneGroups.length > 0 && (
+                            <div>
+                              <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1.5">
+                                Groupes d'antennes (optionnel)
+                              </label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {antenneGroups.map((grp) => {
+                                  const checked = newAntenneGroupIds.includes(grp.id);
+                                  return (
+                                    <button
+                                      key={grp.id}
+                                      type="button"
+                                      onClick={() => setNewAntenneGroupIds(prev =>
+                                        checked ? prev.filter(id => id !== grp.id) : [...prev, grp.id]
+                                      )}
+                                      className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                        checked
+                                          ? 'bg-[#1b98c4] text-white border-[#1b98c4]'
+                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#1b98c4]/50'
+                                      }`}
+                                    >
+                                      <span className="w-2 h-2 rounded-full border border-black/10" style={{ backgroundColor: grp.color || '#1b98c4' }} />
+                                      {checked ? '✓ ' : ''}{grp.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
                           <button
                             type="submit"
                             disabled={actionLoading || !newAntenneName.trim() || !newAntenneId.trim()}
@@ -2518,6 +2605,10 @@ export default function AdminPanel() {
                     })}
                   </div>
                 </div>
+
+                {isSuperAdminMode && (
+                  <AntenneGroupsManager groups={antenneGroups} antennes={allAntennesFlat} />
+                )}
               </div>
             )}
           </div>

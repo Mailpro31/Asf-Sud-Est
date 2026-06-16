@@ -40,3 +40,14 @@ export interface Folder {
   delegation_id?: string;
   antenne_id?: string;
 }
+
+// Groupe thématique d'antennes (relation many-to-many : une antenne peut
+// appartenir à plusieurs groupes, ou à aucun). Géré par le super admin.
+export interface AntenneGroup {
+  id: string;
+  name: string;
+  color?: string;
+  antenneIds: string[];
+  createdAt: number;
+  updatedAt: number;
+}
