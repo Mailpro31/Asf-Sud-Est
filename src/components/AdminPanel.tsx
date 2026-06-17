@@ -57,6 +57,8 @@ import AntenneGroupsManager from './AntenneGroupsManager';
 import { localDb } from '../lib/localDb';
 import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
+import { StatusBadge } from './ui';
+import { STATUS_META } from '../lib/status';
 
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
@@ -71,13 +73,13 @@ const DELEGATION_THEMES: Record<string, {
 }> = {
   'ouest': {
     colorClass: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/30',
-    gradientClass: 'from-indigo-500/10 to-sky-500/5',
+    gradientClass: 'from-indigo-500/10 to-azur/5',
     badgeClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900',
     bgDecorative: 'bg-indigo-500/10',
     icon: '⛵',
     bannerBorder: 'border-indigo-100 dark:border-indigo-900/60',
     accentText: 'text-indigo-600 dark:text-indigo-400',
-    hoverAccent: 'hover:border-indigo-405 hover:bg-indigo-50/10 hover:shadow-indigo-500/5',
+    hoverAccent: 'hover:border-indigo-400 hover:bg-indigo-50/10 hover:shadow-indigo-500/5',
     ringColor: 'focus:ring-indigo-500'
   },
   'occitanie': {
@@ -120,47 +122,15 @@ const DELEGATION_THEMES: Record<string, {
     bgDecorative: 'bg-slate-500/5',
     icon: '📍',
     bannerBorder: 'border-slate-200 dark:border-slate-800/60',
-    accentText: 'text-slate-755 dark:text-slate-300',
+    accentText: 'text-slate-700 dark:text-slate-300',
     hoverAccent: 'hover:border-slate-400 hover:bg-slate-50/10',
     ringColor: 'focus:ring-slate-500'
   }
 };
 
-const statusConfig: Record<SubmissionStatus, { bg: string; text: string; label: string; color: string; hover: string }> = {
-  'Pending': { 
-    bg: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200', 
-    text: 'text-amber-800 dark:text-amber-300', 
-    label: "En attente",
-    color: 'bg-amber-500',
-    hover: 'hover:bg-amber-100'
-  },
-  'Under review': { 
-    bg: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200', 
-    text: 'text-blue-800 dark:text-blue-300', 
-    label: "Révision",
-    color: 'bg-blue-500',
-    hover: 'hover:bg-blue-105'
-  },
-  'Validated': { 
-    bg: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200', 
-    text: 'text-emerald-800 dark:text-emerald-300', 
-    label: "Validé",
-    color: 'bg-emerald-500',
-    hover: 'hover:bg-emerald-100'
-  },
-  'Incomplete': { 
-    bg: 'bg-rose-50 dark:bg-rose-500/10 border-rose-200', 
-    text: 'text-rose-800 dark:text-rose-300', 
-    label: "Incomplet",
-    color: 'bg-rose-500',
-    hover: 'hover:bg-rose-100'
-  }
-};
-
-
 export default function AdminPanel() {
   const { organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION, antenneGroups } = useAuth();
-  const { theme, setTheme, themeConfig } = useTheme();
+  const { themeConfig } = useTheme();
   const { toast, confirm } = useFeedback();
 
   // Active Simulated Role State (For easy local testing of Admin roles)
@@ -292,7 +262,25 @@ export default function AdminPanel() {
     if (!await confirm(`Voulez-vous vraiment supprimer l'antenne "${antId}" ?`)) return;
     setActionLoading(true);
     try {
+      // Retrouver l'antenne (et sa délégation) pour écrire un document valide
+      // même lorsqu'elle n'existe pas encore dans Firestore (antennes par
+      // défaut) : un setDoc/merge agit alors comme une création et la règle
+      // isValidAntenne exige name + delegation_id.
+      let antDelegationId = delegationFilterId || 'france';
+      let antData: { id: string; name: string; x?: number; y?: number } | undefined;
+      for (const [delId, list] of Object.entries(ANTENNES_BY_DELEGATION) as [string, { id: string; name: string; x?: number; y?: number }[]][]) {
+        const found = (list || []).find(a => a.id === antId);
+        if (found) {
+          antDelegationId = delId;
+          antData = found;
+          break;
+        }
+      }
       await setDoc(doc(db, 'antennes', antId), {
+        name: antData?.name || antId,
+        delegation_id: antDelegationId,
+        x: antData?.x ?? null,
+        y: antData?.y ?? null,
         deleted: true,
         updatedAt: Date.now()
       }, { merge: true });
@@ -873,9 +861,9 @@ export default function AdminPanel() {
         <div className="flex items-center gap-3">
           <LogoASF className="w-10 h-10 shrink-0" variant="color" />
           <div>
-            <h1 className="text-md font-bold text-slate-900 dark:text-white leading-tight font-display flex items-center gap-1.5">
+            <h1 className="text-md font-bold text-deep dark:text-white leading-tight font-display flex items-center gap-1.5">
               <span>Portail de Coordination Nationale</span>
-              <span className="text-[10px] bg-sky-50 text-[#1b98c4] border border-sky-100 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">Admin</span>
+              <span className="text-[10px] bg-azur-light text-azur border border-azur/15 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">Admin</span>
             </h1>
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400">
               Aviation Sans Frontières France — Pilotage des délégations et autorisations de vol.
@@ -910,15 +898,37 @@ export default function AdminPanel() {
 
         {/* --- PORTAL HUB VIEW --- */}
         {navigationView === 'hub' && (
-          <div className="max-w-4xl mx-auto space-y-8 py-8">
-            {/* Elegant Welcome Info Banner */}
-            <div className="text-center space-y-2.5">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Cabinet de Pilotage National
+          <div className="max-w-5xl mx-auto space-y-8 py-6">
+            {/* Welcome header */}
+            <div className="space-y-1.5">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-azur font-bold">Cabinet de pilotage national</p>
+              <h2 className="text-2xl sm:text-3xl font-black font-display text-deep dark:text-white tracking-tight">
+                Bonjour {organization?.contactName?.split(' ')[0] || 'Administrateur'} 👋
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-lg mx-auto font-semibold">
-                Bienvenue sur l'outil de coordination et de contrôle de conformité aéronautique d'Aviation Sans Frontières.
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl font-medium">
+                Coordination et contrôle de conformité aéronautique d'Aviation Sans Frontières.
               </p>
+            </div>
+
+            {/* KPI strip */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: 'Documents en attente', value: pendingFilesCount, tone: 'text-amber-600 bg-amber-50', accent: pendingFilesCount > 0 },
+                { label: 'Organismes en attente', value: pendingOrgsCount, tone: 'text-orange-600 bg-orange-50', accent: pendingOrgsCount > 0 },
+                { label: 'Justificatifs', value: files.length, tone: 'text-azur bg-azur/10', accent: false },
+                { label: 'Organismes rattachés', value: folders.length, tone: 'text-deep bg-azur-light', accent: false },
+              ].map((k) => (
+                <div key={k.label} className={`card-asf p-4 ${k.accent ? 'ring-1 ring-amber-200' : ''}`}>
+                  <p className="font-display text-3xl font-extrabold text-deep dark:text-white">{k.value}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">{k.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Section title */}
+            <div className="flex items-center gap-2 pt-1">
+              <h3 className="font-display text-deep dark:text-white font-bold tracking-tight">Espaces de travail</h3>
+              <span className="flex-1 h-px bg-slate-200/70 dark:bg-slate-800" />
             </div>
 
             {/* Hub Cards Grid */}
@@ -931,7 +941,7 @@ export default function AdminPanel() {
                   setActiveTab('workspaces');
                   setCurrentFolderId(null);
                 }}
-                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-[#1b98c4] rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
+                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-azur rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
               >
                 {pendingFilesCount > 0 && (
                   <span
@@ -942,22 +952,22 @@ export default function AdminPanel() {
                     {pendingFilesCount}
                   </span>
                 )}
-                <div className="absolute top-0 right-0 w-36 h-36 bg-[#1b98c4]/5 rounded-full blur-2xl pointer-events-none group-hover:bg-[#1b98c4]/10 transition-all"></div>
+                <div className="absolute top-0 right-0 w-36 h-36 bg-azur/5 rounded-full blur-2xl pointer-events-none group-hover:bg-azur/10 transition-all"></div>
                 <div className="space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[#1b98c4]/10 text-[#1b98c4] flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-2xl bg-azur/10 text-azur flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
                     ✈️
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-[#1b98c4] transition-colors flex items-center gap-1.5">
+                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-azur transition-colors flex items-center gap-1.5">
                       <span>Programme Ailes du Sourire</span>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
                       Supervisez les antennes de vol, les justificatifs réglementaires de navigabilité et accédez aux dossiers d'organismes.
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#1b98c4] uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
+                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-azur uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
                   <span>Accéder à la supervision</span>
                   <ChevronRight className="w-4 h-4" />
                 </div>
@@ -987,10 +997,10 @@ export default function AdminPanel() {
                     👥
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-orange-500 transition-colors flex items-center gap-1.5">
+                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-orange-500 transition-colors flex items-center gap-1.5">
                       <span>Gestion des Utilisateurs</span>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
                       Gerez les habilitations, les permissions des structures affiliees, et attribuez les accreditations de coordinateurs.
                     </p>
                   </div>
@@ -1009,24 +1019,24 @@ export default function AdminPanel() {
                   setActiveTab('delegations');
                   setCurrentFolderId(null);
                 }}
-                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-amber-550 rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
+                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-amber-500 rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-36 h-36 bg-amber-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/10 transition-all"></div>
                 <div className="space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-550 flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
                     📍
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-amber-550 transition-colors flex items-center gap-1.5">
+                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-amber-500 transition-colors flex items-center gap-1.5">
                       <span>Gestion des Implantations</span>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
                       Cartographiez les antennes nationales d'initiations sur la carte interactive de France et configurez de nouveaux relais.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-amber-550 uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
+                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-amber-500 uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
                   <span>Configurer l'implantation</span>
                   <ChevronRight className="w-4 h-4" />
                 </div>
@@ -1035,7 +1045,7 @@ export default function AdminPanel() {
             </div>
 
             {/* Quick overview metric line */}
-            <div className="bg-slate-50 dark:bg-slate-950/40 p-4 border border-slate-100 dark:border-slate-850 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold">
+            <div className="bg-slate-50 dark:bg-slate-950/40 p-4 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                 <span className="text-slate-500 dark:text-slate-400">Toutes les bases de données sont connectées et synchronisées en temps réel.</span>
@@ -1052,9 +1062,9 @@ export default function AdminPanel() {
           <div className="space-y-6">
             {/* National Supervisor Card */}
             <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="absolute top-0 right-0 w-96 h-96 bg-azur/10 rounded-full blur-3xl pointer-events-none"></div>
               <div className="space-y-2 relative z-10">
-                <span className="text-[#1b98c4] text-[10px] tracking-widest font-mono uppercase font-black">
+                <span className="text-azur text-[10px] tracking-widest font-mono uppercase font-black">
                   DIRECTION PARIS SÉCURITÉ & LOGISTIQUE
                 </span>
                 <h2 className="text-2xl md:text-3xl font-black font-display tracking-tight leading-tight">
@@ -1067,7 +1077,7 @@ export default function AdminPanel() {
 
               <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 shrink-0 text-left min-w-[220px] relative z-10">
                 <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Total des Fichiers Nationaux</p>
-                <p className="text-3xl font-black font-display tracking-tight mt-1 text-[#1b98c4]">{files.length}</p>
+                <p className="text-3xl font-black font-display tracking-tight mt-1 text-azur">{files.length}</p>
                 <div className="flex gap-2.5 mt-2.5 text-[10.5px]">
                   <span className="text-slate-400">
                     📂 <strong className="text-white">{folders.length}</strong> dossiers
@@ -1087,11 +1097,11 @@ export default function AdminPanel() {
                   <button
                     key={del.id}
                     onClick={() => setActiveDelegationId(del.id)}
-                    className="group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 hover:border-[#1b98c4] shadow-xs hover:shadow-lg transition-all text-left flex flex-col justify-between h-56 cursor-pointer relative"
+                    className="group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 hover:border-azur shadow-xs hover:shadow-lg transition-all text-left flex flex-col justify-between h-56 cursor-pointer relative"
                   >
                     <div>
                       <div className="flex justify-between items-start mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#1b98c4] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
+                        <div className="w-10 h-10 rounded-xl bg-azur-light text-azur flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
                           <Layers className="w-5 h-5" />
                         </div>
                         <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 font-bold bg-slate-50 border px-2 py-0.5 rounded">
@@ -1099,7 +1109,7 @@ export default function AdminPanel() {
                         </span>
                       </div>
 
-                      <h3 className="text-base font-bold text-slate-950 dark:text-white font-sans tracking-tight group-hover:text-[#1b98c4] transition-colors">
+                      <h3 className="text-base font-bold text-deep dark:text-white font-sans tracking-tight group-hover:text-azur transition-colors">
                         {del.name}
                       </h3>
                       <p className="text-xs text-slate-400 dark:text-slate-400 mt-1 lines-clamp-2 leading-relaxed">
@@ -1140,18 +1150,24 @@ export default function AdminPanel() {
               
               {/* Back breadcrumb navigation to Admin Hub */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
-                <button
-                  onClick={() => {
-                    setNavigationView('hub');
-                    setCurrentFolderId(null);
-                  }}
-                  className={`flex items-center gap-2 text-xs font-black px-4.5 py-2.5 rounded-2xl transition-all cursor-pointer border ${themeAttr.badgeClass} hover:bg-slate-150 dark:hover:bg-slate-800 shadow-xs`}
-                >
-                  <ArrowLeft className="w-4 h-4 shrink-0" /> <span>← Retour au Hub Principal</span>
-                </button>
+                <nav className="flex items-center gap-2.5 flex-wrap" aria-label="Fil d'ariane">
+                  <button
+                    onClick={() => {
+                      setNavigationView('hub');
+                      setCurrentFolderId(null);
+                    }}
+                    className={`flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer border ${themeAttr.badgeClass} hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs`}
+                  >
+                    <ArrowLeft className="w-4 h-4 shrink-0" /> <span>Retour au Hub</span>
+                  </button>
+                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
+                  <span className="text-xs font-bold text-deep dark:text-white font-display tracking-tight">
+                    {navigationView === 'ailes' ? 'Ailes du Sourire' : navigationView === 'users' ? 'Membres' : 'Implantations'}
+                  </span>
+                </nav>
 
-                <div className="text-[10px] uppercase font-mono font-extrabold text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-slate-50 dark:bg-slate-905 border border-slate-200/80 dark:border-slate-800 px-3.5 py-2 rounded-2xl shadow-xs">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#1b98c4] animate-pulse"></span>
+                <div className="text-[10px] uppercase font-mono font-extrabold text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-3.5 py-2 rounded-xl shadow-xs">
+                  <span className="w-2.5 h-2.5 rounded-full bg-azur animate-pulse"></span>
                   <span>Portail Admin • {navigationView === 'ailes' ? 'Ailes du Sourire' : navigationView === 'users' ? 'Utilisateurs' : 'Implantations'}</span>
                 </div>
               </div>
@@ -1170,7 +1186,7 @@ export default function AdminPanel() {
                         <span className={`text-[9.5px] tracking-widest font-black uppercase px-2.5 py-1 rounded-lg border leading-none ${themeAttr.badgeClass}`}>
                           Espace de travail régional
                         </span>
-                        <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-805 px-2 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
                           REG-ID : {delegationFilterId.toUpperCase()}
                         </span>
                       </div>
@@ -1185,7 +1201,7 @@ export default function AdminPanel() {
 
                   {/* Mini Stats widget */}
                   <div className="flex flex-wrap gap-3 items-center shrink-0 relative z-10 w-full md:w-auto">
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-[#1b98c4]/15 px-5 py-3 rounded-2xl text-left min-w-[130px] shadow-xs flex-1 md:flex-none transition-all hover:bg-white dark:hover:bg-slate-900 border-slate-200/80 dark:border-slate-800">
+                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-azur/15 px-5 py-3 rounded-2xl text-left min-w-[130px] shadow-xs flex-1 md:flex-none transition-all hover:bg-white dark:hover:bg-slate-900 border-slate-200/80 dark:border-slate-800">
                       <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono uppercase tracking-wider font-extrabold text-xs">Antennes</p>
                       <p className="text-lg font-black text-slate-950 dark:text-white mt-1 leading-none">
                         {(ANTENNES_BY_DELEGATION[delegationFilterId] || []).length}
@@ -1204,7 +1220,7 @@ export default function AdminPanel() {
                       className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 px-4 py-4 rounded-2xl transition-all shadow-xs cursor-pointer w-full md:w-auto justify-center"
                       title="Télécharger le rapport de conformité de la délégation"
                     >
-                      <Download className="w-4 h-4 text-[#1b98c4]" />
+                      <Download className="w-4 h-4 text-azur" />
                       <span>Exporter (CSV)</span>
                     </button>
                   </div>
@@ -1228,9 +1244,9 @@ export default function AdminPanel() {
 
                 {/* 4. CHOOSE TOWN (Onglets de Villes / Antennes locaux) */}
                 <div className="space-y-3">
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-500 font-bold uppercase tracking-wider">
                     <Building2 className="w-4 h-4 text-slate-400" />
-                    <span>Sélectionner l'Antenne Régionale (Villes actives) :</span>
+                    <span>Sélectionner l'antenne régionale (villes actives)</span>
                   </div>
               
                   <div className="flex flex-wrap gap-2.5 pt-1">
@@ -1250,8 +1266,8 @@ export default function AdminPanel() {
                             onClick={() => setActiveAntenneId(ant.id)}
                             className={`px-5 py-3 rounded-2xl text-xs font-bold tracking-tight transition-all duration-200 cursor-pointer flex items-center gap-2.5 border shadow-3xs ${
                               active 
-                                ? `bg-white dark:bg-slate-900 ${themeAttr.accentText} border-slate-350 dark:border-slate-700 shadow-xs font-black`
-                                : 'bg-white/40 dark:bg-slate-950/20 text-slate-550 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60'
+                                ? `bg-white dark:bg-slate-900 ${themeAttr.accentText} border-slate-300 dark:border-slate-700 shadow-xs font-black`
+                                : 'bg-white/40 dark:bg-slate-950/20 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60'
                             }`}
                           >
                             <span className="text-base leading-none">📍</span>
@@ -1283,13 +1299,18 @@ export default function AdminPanel() {
                     {!currentFolderId ? (
                       <div className="space-y-4">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                          <div>
-                            <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                              Dossiers des Organismes Partenaires ({selectedAntennes?.name})
-                            </h3>
-                            <p className="text-xs text-slate-455 mt-1 leading-relaxed">
-                              Répertoires d'archivage réglementaires pour les compagnies et associations partenaires locales.
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-xl ${themeAttr.colorClass} flex items-center justify-center shrink-0 border border-current/10 shadow-3xs`}>
+                              <FolderIcon className="w-5 h-5 fill-current" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-display font-bold tracking-tight text-deep dark:text-white leading-tight">
+                                Dossiers des organismes partenaires <span className="text-slate-400 font-semibold">· {selectedAntennes?.name}</span>
+                              </h3>
+                              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                                Répertoires d'archivage réglementaires pour les compagnies et associations partenaires locales.
+                              </p>
+                            </div>
                           </div>
 
                           <button
@@ -1307,22 +1328,22 @@ export default function AdminPanel() {
 
                         {/* Search bar inside Town tab */}
                         <div className="relative max-w-sm">
-                          <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
                           <input
                             type="text"
                             placeholder="Rechercher un dossier d'organisme..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className={`w-full pl-10 pr-4 py-2.5 text-xs border rounded-2xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-1 ${themeAttr.ringColor}`}
+                            className="input-asf pl-10 text-xs"
                           />
                         </div>
 
                         {filteredFolders.length === 0 ? (
                           <div className="border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-3xs">
-                            <FolderIcon className="w-12 h-12 text-slate-350 bg-slate-50 dark:bg-slate-855 p-3 rounded-full" />
+                            <FolderIcon className="w-12 h-12 text-slate-300 bg-slate-50 dark:bg-slate-800 p-3 rounded-full" />
                             <div>
                               <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Aucun Organisme créé</h4>
-                              <p className="text-xs text-slate-450 dark:text-slate-400 mt-1 max-w-md">
+                              <p className="text-xs text-slate-400 dark:text-slate-400 mt-1 max-w-md">
                                 Vous n'avez pas encore configuré de dossier d'organisme pour l'antenne locale de {selectedAntennes?.name}. Ajoutez-en un pour démarrer.
                               </p>
                             </div>
@@ -1358,7 +1379,7 @@ export default function AdminPanel() {
                                   </div>
 
                                   <div className="mt-4">
-                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-slate-850 dark:group-hover:text-slate-100 transition-colors truncate">
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-slate-800 dark:group-hover:text-slate-100 transition-colors truncate">
                                       {folder.name}
                                     </h4>
                                     <p className="text-[10.5px] text-slate-400 dark:text-slate-500 mt-1 font-mono flex items-center justify-between">
@@ -1399,11 +1420,11 @@ export default function AdminPanel() {
                         >
                           <CornerLeftUp className="w-3.5 h-3.5" /> Dossiers
                         </button>
-                        <ChevronRight className="w-4 h-4 text-slate-350" />
+                        <ChevronRight className="w-4 h-4 text-slate-300" />
                         <span className={`text-xs px-2.5 py-1 rounded-lg border font-black uppercase max-w-[140px] truncate ${themeAttr.badgeClass}`}>
                           📍 {selectedAntennes?.name}
                         </span>
-                        <ChevronRight className="w-4 h-4 text-slate-350" />
+                        <ChevronRight className="w-4 h-4 text-slate-300" />
                         <h4 className="text-sm font-black text-slate-900 dark:text-white border-l border-slate-200 dark:border-slate-800 pl-2">
                           📂 {currentFolder?.name}
                         </h4>
@@ -1452,7 +1473,7 @@ export default function AdminPanel() {
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               fileTypeFilter === 'all' 
                                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' 
-                                : 'text-slate-500 hover:text-slate-805'
+                                : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
                             Tous
@@ -1462,7 +1483,7 @@ export default function AdminPanel() {
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               fileTypeFilter === 'pdfs' 
                                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' 
-                                : 'text-slate-500 hover:text-slate-805'
+                                : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
                             PDF
@@ -1472,7 +1493,7 @@ export default function AdminPanel() {
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               fileTypeFilter === 'images' 
                                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' 
-                                : 'text-slate-500 hover:text-slate-805'
+                                : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
                             Images
@@ -1496,12 +1517,12 @@ export default function AdminPanel() {
                       <div className={`p-4 rounded-2xl space-y-2 border ${themeAttr.badgeClass} bg-slate-50/50`}>
                         <div className="flex justify-between items-center text-xs font-bold text-slate-700 dark:text-slate-300">
                           <span className="flex items-center gap-1.5">
-                            <RefreshCw className="w-4 h-4 animate-spin text-indigo-500" />
+                            <RefreshCw className="w-4 h-4 animate-spin text-azur" />
                             Téléchargement du fichier de vol en cours...
                           </span>
                           <span className="font-mono">{uploadProgress}%</span>
                         </div>
-                        <div className="w-full bg-slate-205 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                           <div className={`h-full transition-all duration-300 ${
                             delegationFilterId === 'ouest' ? 'bg-indigo-600' :
                             delegationFilterId === 'occitanie' ? 'bg-rose-600' :
@@ -1514,7 +1535,7 @@ export default function AdminPanel() {
 
                     {/* Documents list table */}
                     {filteredFiles.length === 0 ? (
-                      <div className="py-12 text-center text-slate-450 border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/20 rounded-3xl flex flex-col items-center justify-center space-y-4">
+                      <div className="py-12 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/20 rounded-3xl flex flex-col items-center justify-center space-y-4">
                         <FileText className="w-12 h-12 text-slate-300" />
                         <div>
                           <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Dossier vide</p>
@@ -1524,10 +1545,10 @@ export default function AdminPanel() {
                         </div>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto border rounded-2xl bg-white">
+                      <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="text-[10px] font-bold uppercase tracking-wider border-b bg-slate-50 text-slate-500">
+                            <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50/80 text-slate-500">
                               <th className="px-5 py-3">Document de vol</th>
                               <th className="px-5 py-3 w-40">Taille & Format</th>
                               <th className="px-5 py-3 w-44">Date de dépôt</th>
@@ -1535,14 +1556,13 @@ export default function AdminPanel() {
                               <th className="px-5 py-3 text-right w-24">Actions</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y text-slate-700 text-xs">
+                          <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                             {filteredFiles.map((file) => {
                               const activeStatus = file.submissionStatus || 'Pending';
-                              const sc = statusConfig[activeStatus];
                               const uploaderPartner = orgProfiles.find(p => p.id === file.orgId);
                               const uploaderName = file.uploadedBy === 'admin' ? 'admin' : (uploaderPartner?.name || 'Organisme');
                               return (
-                                <tr key={file.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setPreviewingFile(file)}>
+                                <tr key={file.id} className="hover:bg-slate-50/70 transition-colors cursor-pointer" onClick={() => setPreviewingFile(file)}>
                                   
                                   <td className="px-5 py-3.5 flex items-center gap-3 font-semibold text-slate-800" onClick={(e) => renamingFile?.id === file.id && e.stopPropagation()}>
                                     <FileText className="w-4 h-4 text-slate-400 shrink-0" />
@@ -1557,7 +1577,7 @@ export default function AdminPanel() {
                                         />
                                         <button
                                           type="submit"
-                                          className="bg-indigo-600 text-white hover:bg-indigo-700 px-2.5 py-1 rounded text-[10.5px] font-bold cursor-pointer shrink-0"
+                                          className="bg-azur text-white hover:bg-azur-hover px-2.5 py-1 rounded text-[10.5px] font-bold cursor-pointer shrink-0"
                                         >
                                           Enregistrer
                                         </button>
@@ -1573,14 +1593,14 @@ export default function AdminPanel() {
                                       <div className="max-w-[480px] min-w-[240px]" title={file.name}>
                                         <p className="truncate font-bold text-slate-900">{file.name}</p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                          <span className="text-[9.5px] text-slate-450 font-mono tracking-wider">ID : {file.id.substring(0, 8)}</span>
+                                          <span className="text-[9.5px] text-slate-400 font-mono tracking-wider">ID : {file.id.substring(0, 8)}</span>
                                           <span className="text-[9px] text-slate-300">•</span>
-                                          <span className="text-[10px] text-slate-550 font-medium flex items-center gap-1">
+                                          <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
                                             <span>Déposé par :</span>
                                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight ${
                                               file.uploadedBy === 'admin' 
-                                                ? 'bg-amber-100/70 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50' 
-                                                : 'bg-indigo-50 text-[#1b98c4] dark:bg-indigo-950/40 dark:text-sky-400 border border-indigo-200/50'
+                                                ? 'bg-amber-100/70 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50'
+                                                : 'bg-azur-light text-azur dark:bg-azur/20 dark:text-azur-pastel border border-azur/30'
                                             }`}>
                                               {uploaderName}
                                             </span>
@@ -1600,25 +1620,22 @@ export default function AdminPanel() {
 
                                   <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                                     <div className="relative inline-block w-44 text-left group">
-                                      <div className={`px-2.5 py-1 rounded-lg border text-[11.5px] font-bold flex items-center justify-between cursor-pointer ${sc.bg} ${sc.text}`}>
-                                        <span className="flex items-center gap-1.5">
-                                          <span className={`w-2 h-2 rounded-full ${sc.color}`}></span>
-                                          {sc.label}
-                                        </span>
+                                      <div className="flex items-center justify-between gap-1.5 cursor-pointer">
+                                        <StatusBadge status={activeStatus} />
                                         <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                                       </div>
 
                                       {/* Quick Status Selection list */}
                                       <div className="absolute left-0 mt-1 w-full bg-white border rounded-lg shadow-lg z-30 hidden group-hover:block hover:block font-sans">
-                                        {(Object.keys(statusConfig) as SubmissionStatus[]).map((st) => {
-                                          const subSc = statusConfig[st];
+                                        {(Object.keys(STATUS_META) as SubmissionStatus[]).map((st) => {
+                                          const subSc = STATUS_META[st];
                                           return (
                                             <button
                                               key={st}
                                               onClick={() => handleUpdateStatus(file.id, st)}
                                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[11.5px] text-slate-800 flex items-center gap-2 cursor-pointer font-bold"
                                             >
-                                              <span className={`w-1.5 h-1.5 rounded-full ${subSc.color}`}></span>
+                                              <span className={`w-1.5 h-1.5 rounded-full ${subSc.dot}`}></span>
                                               <span>{subSc.label}</span>
                                             </button>
                                           );
@@ -1646,7 +1663,7 @@ export default function AdminPanel() {
                                           setRenamingFile(file);
                                           setRenameInput(file.name);
                                         }}
-                                        className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-indigo-600 cursor-pointer"
+                                        className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-azur cursor-pointer"
                                         title="Renommer"
                                       >
                                         <Edit2 className="w-4 h-4" />
@@ -1680,12 +1697,12 @@ export default function AdminPanel() {
               <div className="space-y-6 text-left">
                 
                 {/* Explain Banner */}
-                <div className="bg-[#1b98c4]/5 border border-[#1b98c4]/15 rounded-2xl p-5 text-left space-y-2">
-                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                    <ShieldAlert className="w-5 h-5 text-[#1b98c4]" />
-                    <span>Gestionnaire d'Accréditations de la Délégation</span>
+                <div className="bg-azur/5 border border-azur/15 rounded-2xl p-5 text-left space-y-2">
+                  <h3 className="text-base font-display font-bold tracking-tight text-deep flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-azur" />
+                    <span>Gestionnaire d'accréditations de la délégation</span>
                   </h3>
-                  <p className="text-xs text-slate-650 leading-relaxed font-semibold">
+                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">
                     Les compagnies et associations partenaires d'Aviation Sans Frontières s'enregistrent ici. En tant que coordinateur d'Aviation Sans Frontières pour la région <strong>{selectedDelegationData?.name}</strong>, vous devez affecter une antenne locale de rattachement à chaque organisme candidat et approuver officiellement sa connexion pour activer son droit de dépôt réglementaire.
                   </p>
                 </div>
@@ -1693,14 +1710,19 @@ export default function AdminPanel() {
                 <div className="space-y-6">
                   
                   {/* Category 1: Regional Members */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900">
-                        Comptes Partenaires enregistrés sous la délégation : {selectedDelegationData?.name}
-                      </h4>
-                      <p className="text-xs text-slate-450 mt-1">
-                        Utilisateurs ayant formulé leur inscription ou rattachés à votre section de vol régionale.
-                      </p>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-azur-light text-azur flex items-center justify-center shrink-0 border border-azur/15">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-display font-bold tracking-tight text-deep dark:text-white">
+                          Comptes partenaires <span className="text-slate-400 font-semibold">· {selectedDelegationData?.name}</span>
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Utilisateurs ayant formulé leur inscription ou rattachés à votre section de vol régionale.
+                        </p>
+                      </div>
                     </div>
 
                     {orgProfiles.filter(p => p.delegation_id === delegationFilterId).length === 0 ? (
@@ -1711,20 +1733,19 @@ export default function AdminPanel() {
                       <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="text-[10px] font-black uppercase tracking-wider border-b bg-slate-50 text-slate-550">
-                              <th className="px-5 py-3">Raison Sociale / Organisme</th>
+                            <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50/80 text-slate-500">
+                              <th className="px-5 py-3">Raison sociale / Organisme</th>
                               <th className="px-5 py-3">Point de contact</th>
-                              <th className="px-5 py-3 w-64">Attribution Régionale</th>
-                              <th className="px-5 py-3 w-40">Statut d'Accès</th>
-                              <th className="px-5 py-3 text-right">Décision d'Accréditation</th>
+                              <th className="px-5 py-3 w-64">Attribution régionale</th>
+                              <th className="px-5 py-3 w-40">Statut d'accès</th>
+                              <th className="px-5 py-3 text-right">Décision d'accréditation</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y text-slate-700 text-xs">
+                          <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                             {orgProfiles.filter(p => p.delegation_id === delegationFilterId).map((org) => {
                               const st = org.submissionStatus || 'Pending';
-                              const conf = statusConfig[st] || statusConfig['Pending'];
                               return (
-                                <tr key={org.id} className="hover:bg-slate-50/50 transition-colors">
+                                <tr key={org.id} className="hover:bg-slate-50/70 transition-colors">
                                   
                                   <td className="px-5 py-4 font-bold text-slate-900">
                                     <p className="font-extrabold text-slate-900">{org.name || "Néant"}</p>
@@ -1733,15 +1754,15 @@ export default function AdminPanel() {
                                       onClick={() => {
                                         setSelectedOrgForFiles(org);
                                       }}
-                                      className="flex items-center gap-1.5 text-[11px] font-black bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-105 dark:border-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:border-indigo-200 px-3 py-1.5 rounded-xl mt-2.5 transition-all shadow-3xs cursor-pointer"
+                                      className="flex items-center gap-1.5 text-[11px] font-black bg-azur-light dark:bg-azur/20 text-azur dark:text-azur-pastel border border-azur/20 dark:border-azur/40 hover:bg-azur/10 dark:hover:bg-azur/30 hover:border-azur/40 px-3 py-1.5 rounded-xl mt-2.5 transition-all shadow-3xs cursor-pointer"
                                     >
                                       📂 Cabinet & justificatifs
                                     </button>
                                   </td>
 
                                   <td className="px-5 py-4">
-                                    <p className="font-bold text-slate-805">{org.contactName}</p>
-                                    <p className="text-[11px] text-[#1b98c4] font-semibold">{org.email}</p>
+                                    <p className="font-bold text-slate-800">{org.contactName}</p>
+                                    <p className="text-[11px] text-azur font-semibold">{org.email}</p>
                                     <p className="text-[11.5px] text-slate-500 font-mono">{org.phone}</p>
                                   </td>
 
@@ -1756,7 +1777,7 @@ export default function AdminPanel() {
                                               setEditDelegation(e.target.value);
                                               setEditAntenne('');
                                             }}
-                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-808"
+                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800"
                                           >
                                             <option value="">Sélectionner...</option>
                                             {DELEGATIONS.map(del => (
@@ -1771,7 +1792,7 @@ export default function AdminPanel() {
                                             value={editAntenne}
                                             onChange={(e) => setEditAntenne(e.target.value)}
                                             disabled={!editDelegation}
-                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-808 disabled:opacity-50"
+                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800 disabled:opacity-50"
                                           >
                                             <option value="">Sélectionner...</option>
                                             {(ANTENNES_BY_DELEGATION[editDelegation] || []).map(ant => (
@@ -1780,11 +1801,30 @@ export default function AdminPanel() {
                                           </select>
                                         </div>
 
+                                        {isSuperAdminMode && (
+                                          <div>
+                                            <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Rôle du compte</label>
+                                            <select
+                                              value={org.role || 'organization'}
+                                              onChange={(e) => handleUpdateOrgRole(org.id, e.target.value)}
+                                              className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800"
+                                              title="Définir le rôle du compte"
+                                            >
+                                              <option value="organization">Partenaire / Organisme</option>
+                                              <option value="admin_antenne">Gestionnaire d'antenne</option>
+                                              <option value="admin_delegation">Coordinateur de délégation</option>
+                                            </select>
+                                            <p className="text-[9.5px] text-slate-400 font-semibold mt-1 leading-snug">
+                                              « Gestionnaire d'antenne » donne accès au dashboard de l'antenne sélectionnée ci-dessus.
+                                            </p>
+                                          </div>
+                                        )}
+
                                         <div className="flex gap-2 pt-1">
                                           <button
                                             onClick={() => handleSaveOrgDelegationAntenne(org.id)}
                                             disabled={!editDelegation || !editAntenne}
-                                            className="bg-[#1b98c4] hover:bg-[#1682a8] text-white text-[10px] uppercase font-black px-2.5 py-1.5 rounded-lg cursor-pointer transition-all disabled:opacity-50"
+                                            className="bg-azur hover:bg-azur-hover text-white text-[10px] uppercase font-black px-2.5 py-1.5 rounded-lg cursor-pointer transition-all disabled:opacity-50"
                                           >
                                             Enregistrer
                                           </button>
@@ -1801,7 +1841,7 @@ export default function AdminPanel() {
                                         <p className="font-bold text-slate-900 capitalize text-[13px] flex items-center gap-1">
                                           <span>⛵ {DELEGATIONS.find(d => d.id === org.delegation_id)?.name || "Non défini"}</span>
                                         </p>
-                                        <p className="text-[11.5px] text-slate-450 font-semibold font-mono">
+                                        <p className="text-[11.5px] text-slate-400 font-semibold font-mono">
                                           📍 {org.antenne_id ? (ANTENNES_BY_DELEGATION[org.delegation_id || '']?.find(a => a.id === org.antenne_id)?.name || org.antenne_id) : "Non affecté"}
                                         </p>
                                         <button
@@ -1810,7 +1850,7 @@ export default function AdminPanel() {
                                             setEditDelegation(org.delegation_id || '');
                                             setEditAntenne(org.antenne_id || '');
                                           }}
-                                          className="text-[11px] text-[#1b98c4] hover:underline font-black mt-2 block cursor-pointer"
+                                          className="text-[11px] text-azur hover:underline font-black mt-2 block cursor-pointer"
                                         >
                                           ✏️ Modifier la ville
                                         </button>
@@ -1819,9 +1859,7 @@ export default function AdminPanel() {
                                   </td>
 
                                   <td className="px-5 py-4">
-                                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-black inline-block border ${conf.bg} ${conf.text}`}>
-                                      {conf.label}
-                                    </span>
+                                    <StatusBadge status={st} />
                                   </td>
 
                                   <td className="px-5 py-4 text-right">
@@ -1838,7 +1876,7 @@ export default function AdminPanel() {
                                       {org.submissionStatus === 'Validated' && (
                                         <button
                                           onClick={() => handleUpdateOrgStatus(org.id, 'Incomplete')}
-                                          className="bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold border border-rose-250 text-[11.5px] px-3.5 py-1.5 rounded-xl cursor-pointer transition-all"
+                                          className="bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold border border-rose-200 text-[11.5px] px-3.5 py-1.5 rounded-xl cursor-pointer transition-all"
                                         >
                                           ✗ Suspendre
                                         </button>
@@ -1847,7 +1885,7 @@ export default function AdminPanel() {
                                       {org.submissionStatus === 'Pending' && (
                                         <button
                                           onClick={() => handleUpdateOrgStatus(org.id, 'Under review')}
-                                          className="bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold border border-blue-200 text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all"
+                                          className="bg-azur-light hover:bg-azur/10 text-deep font-bold border border-azur-pastel text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all"
                                         >
                                           Mettre en examen
                                         </button>
@@ -1865,11 +1903,11 @@ export default function AdminPanel() {
                   </div>
 
                   {/* Category 2: Orphan Accounts waitlist */}
-                  <div className="bg-amber-500/5 border border-amber-200/40 rounded-3xl p-6 shadow-xs space-y-4">
+                  <div className="bg-amber-500/5 border border-amber-200/40 rounded-2xl p-6 shadow-xs space-y-4">
                     <div>
-                      <h4 className="text-sm font-black text-amber-955 flex items-center gap-1.5">
+                      <h4 className="text-base font-display font-bold tracking-tight text-amber-900 flex items-center gap-2">
                         <AlertCircle className="w-5 h-5 text-amber-600 animate-pulse" />
-                        <span>Candidatures Hors Délégation (Comptes orphelins à lier à une antenne)</span>
+                        <span>Candidatures hors délégation (comptes orphelins à lier à une antenne)</span>
                       </h4>
                       <p className="text-xs text-amber-900 font-semibold leading-relaxed">
                         Ces candidats se sont enregistrés en ligne mais leur profil n'est affecté à aucun bureau. En tant que coordinateur, vous pouvez adopter leur compte dans votre délégation, leur attribuer une ville et leur donner un accès direct.
@@ -1877,24 +1915,24 @@ export default function AdminPanel() {
                     </div>
 
                     {orgProfiles.filter(p => !p.delegation_id || p.delegation_id === '').length === 0 ? (
-                      <div className="py-8 text-center text-xs text-amber-705 font-semibold italic">
+                      <div className="py-8 text-center text-xs text-amber-700 font-semibold italic">
                         ✓ Aucune candidature orpheline nationale en suspens.
                       </div>
                     ) : (
                       <div className="overflow-x-auto border border-amber-200 rounded-2xl bg-white">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="text-[10px] font-bold uppercase tracking-wider border-b bg-amber-50 text-amber-800">
+                            <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-amber-200 bg-amber-50 text-amber-800">
                               <th className="px-5 py-3">Adresse de connexion</th>
                               <th className="px-5 py-3">Profil renseigné</th>
-                              <th className="px-5 py-3 w-64">Attribution Interne</th>
-                              <th className="px-5 py-3 text-right font-black">Action d'Accréditation d'urgence</th>
+                              <th className="px-5 py-3 w-64">Attribution interne</th>
+                              <th className="px-5 py-3 text-right">Action d'accréditation d'urgence</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y text-slate-700 text-xs">
+                          <tbody className="divide-y divide-amber-100/70 text-slate-700 text-xs">
                             {orgProfiles.filter(p => !p.delegation_id || p.delegation_id === '').map((org) => {
                               return (
-                                <tr key={org.id} className="hover:bg-amber-50/10 transition-all">
+                                <tr key={org.id} className="hover:bg-amber-50/40 transition-colors">
                                   
                                   <td className="px-5 py-4 font-black text-slate-900">
                                     <p className="text-amber-900 font-mono font-black text-[13px]">{org.email}</p>
@@ -1911,14 +1949,14 @@ export default function AdminPanel() {
                                     {editingOrgId === org.id ? (
                                       <div className="space-y-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                                         <div>
-                                          <label className="text-[9.5px] uppercase tracking-wider text-slate-450 font-black block">Délégation d'accueil</label>
+                                          <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Délégation d'accueil</label>
                                           <select
                                             value={editDelegation}
                                             onChange={(e) => {
                                               setEditDelegation(e.target.value);
                                               setEditAntenne('');
                                             }}
-                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-808"
+                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800"
                                           >
                                             <option value="">Sélectionner...</option>
                                             {DELEGATIONS.map(del => (
@@ -1928,12 +1966,12 @@ export default function AdminPanel() {
                                         </div>
 
                                         <div>
-                                          <label className="text-[9.5px] uppercase tracking-wider text-slate-450 font-black block">Antenne locale / Ville</label>
+                                          <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Antenne locale / Ville</label>
                                           <select
                                             value={editAntenne}
                                             onChange={(e) => setEditAntenne(e.target.value)}
                                             disabled={!editDelegation}
-                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-808 disabled:opacity-50"
+                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800 disabled:opacity-50"
                                           >
                                             <option value="">Sélectionner...</option>
                                             {(ANTENNES_BY_DELEGATION[editDelegation] || []).map(ant => (
@@ -1946,7 +1984,7 @@ export default function AdminPanel() {
                                           <button
                                             onClick={() => handleSaveOrgDelegationAntenne(org.id)}
                                             disabled={!editDelegation || !editAntenne}
-                                            className="bg-[#1b98c4] hover:bg-[#1682a8] text-white text-[10px] uppercase font-black px-2 py-1 rounded-lg cursor-pointer transition-all disabled:opacity-50"
+                                            className="bg-azur hover:bg-azur-hover text-white text-[10px] uppercase font-black px-2 py-1 rounded-lg cursor-pointer transition-all disabled:opacity-50"
                                           >
                                             Lier le compte
                                           </button>
@@ -1960,7 +1998,7 @@ export default function AdminPanel() {
                                       </div>
                                     ) : (
                                       <div>
-                                        <span className="text-[10px] bg-amber-100 text-amber-805 font-extrabold px-2.5 py-1 rounded-full block text-center max-w-[140px]">
+                                        <span className="text-[10px] bg-amber-100 text-amber-800 font-extrabold px-2.5 py-1 rounded-full block text-center max-w-[140px]">
                                           ⚠️ Non affecté
                                         </span>
                                         <button
@@ -1969,7 +2007,7 @@ export default function AdminPanel() {
                                             setEditDelegation(delegationFilterId || '');
                                             setEditAntenne('');
                                           }}
-                                          className="text-xs text-[#1b98c4] hover:underline font-black mt-2 block cursor-pointer"
+                                          className="text-xs text-azur hover:underline font-black mt-2 block cursor-pointer"
                                         >
                                           ⚡ Lier à ma délégation
                                         </button>
@@ -2017,12 +2055,12 @@ export default function AdminPanel() {
             {activeTab === 'delegations' && (
               <div className="space-y-6 text-left">
                 {/* Visual Sky Banner */}
-                <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/60 p-5 text-left space-y-2 rounded-2xl">
-                  <h3 className="text-sm font-extrabold text-sky-900 dark:text-sky-305 flex items-center gap-2">
-                    <Compass className="w-5 h-5 text-sky-600 dark:text-sky-400 animate-spin" />
-                    <span>Réseau National Aviation Sans Frontières (Carte Interactive de France)</span>
+                <div className="bg-azur-light dark:bg-deep-dark/30 border border-azur-pastel dark:border-deep/60 p-5 text-left space-y-2 rounded-2xl">
+                  <h3 className="text-base font-display font-bold tracking-tight text-deep dark:text-azur-pastel flex items-center gap-2">
+                    <Compass className="w-5 h-5 text-azur-hover dark:text-azur animate-spin" />
+                    <span>Réseau national Aviation Sans Frontières — carte interactive de France</span>
                   </h3>
-                  <p className="text-xs text-sky-700 dark:text-sky-400 leading-relaxed font-medium">
+                  <p className="text-xs text-azur-dark dark:text-azur leading-relaxed font-medium">
                     Cartographiez en direct l'implantation de vos antennes. Cliquez sur la carte de France pour désigner/modifier précisément l'emplacement d'une antenne nationale, ou cliquez sur un repère existant pour modifier ses détails.
                   </p>
                 </div>
@@ -2062,7 +2100,7 @@ export default function AdminPanel() {
                     </div>
 
                     {/* SVG France Map Container */}
-                    <div className="w-full bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl border border-slate-150 dark:border-slate-800/80 p-4 flex items-center justify-center relative overflow-hidden group">
+                    <div className="w-full bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl border border-slate-100 dark:border-slate-800/80 p-4 flex items-center justify-center relative overflow-hidden group">
                       <svg
                         viewBox="0 0 600 600"
                         className="w-full max-w-[480px] h-auto cursor-crosshair select-none relative z-10 drop-shadow-sm filter dark:drop-shadow-[0_0_15px_rgba(30,41,59,0.5)]"
@@ -2080,7 +2118,7 @@ export default function AdminPanel() {
                         }}
                       >
                         {/* Sea/Ocean Accent Grid */}
-                        <g className="stroke-slate-150/40 dark:stroke-slate-800/20 stroke-[0.5]" pointerEvents="none">
+                        <g className="stroke-slate-100/40 dark:stroke-slate-800/20 stroke-[0.5]" pointerEvents="none">
                           <line x1="100" y1="0" x2="100" y2="600" />
                           <line x1="200" y1="0" x2="200" y2="600" />
                           <line x1="300" y1="0" x2="300" y2="600" />
@@ -2121,12 +2159,12 @@ export default function AdminPanel() {
                              C 180,90 200,105 220,100
                              C 240,95 260,80 275,65
                              C 290,50 315,25 330,20 Z"
-                          className="fill-sky-50 dark:fill-slate-800/20 stroke-sky-200 dark:stroke-slate-750 stroke-2 outline-none transition-colors duration-300"
+                          className="fill-azur-light dark:fill-slate-800/20 stroke-azur-pastel dark:stroke-slate-700 stroke-2 outline-none transition-colors duration-300"
                         />
 
                         {/* Captions representing oceanic borders */}
-                        <text x="140" y="80" className="fill-slate-405/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">La Manche</text>
-                        <text x="50" y="440" className="fill-slate-405/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Océan Atlantique</text>
+                        <text x="140" y="80" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">La Manche</text>
+                        <text x="50" y="440" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Océan Atlantique</text>
                         <text x="440" y="550" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Mer Méditerranée</text>
 
                         {/* Corsica Map Accent */}
@@ -2137,7 +2175,7 @@ export default function AdminPanel() {
                              C 510,525 505,530 500,525
                              C 495,520 497,490 505,480
                              Z"
-                          className="fill-sky-50 dark:fill-slate-800/20 stroke-sky-200 dark:stroke-slate-750 stroke-2 transition-all duration-350"
+                          className="fill-azur-light dark:fill-slate-800/20 stroke-azur-pastel dark:stroke-slate-700 stroke-2 transition-all duration-350"
                         />
 
                         {/* Permanent Active Antennas Beacons */}
@@ -2167,7 +2205,7 @@ export default function AdminPanel() {
                                 className={`${
                                   isCurrentlySelected 
                                     ? "fill-amber-400/30 stroke-amber-500 animate-pulse stroke-2" 
-                                    : "fill-sky-400/20 group-hover/pin:fill-sky-400/40 stroke-sky-400 stroke-[1.5]"
+                                    : "fill-azur/20 group-hover/pin:fill-azur/40 stroke-azur stroke-[1.5]"
                                 } transition-all duration-305 pointer-events-none`}
                               />
                               <circle
@@ -2177,7 +2215,7 @@ export default function AdminPanel() {
                                 className={`${
                                   isCurrentlySelected 
                                     ? "fill-amber-500 stroke-dark" 
-                                    : "fill-sky-500 stroke-white dark:stroke-slate-900 stroke-2"
+                                    : "fill-azur stroke-white dark:stroke-slate-900 stroke-2"
                                 } transition-transform duration-350 group-hover/pin:scale-125`}
                               />
                               
@@ -2262,7 +2300,7 @@ export default function AdminPanel() {
                                 setTempCoords({ x: city.x, y: city.y });
                               }
                             }}
-                            className="text-[10px] bg-sky-50 dark:bg-sky-950/40 border border-sky-100/80 dark:border-sky-900/40 hover:border-sky-300 hover:bg-sky-100 text-sky-700 dark:text-sky-300 px-2 py-1 rounded-lg font-bold transition-all cursor-pointer shadow-xs"
+                            className="text-[10px] bg-azur-light dark:bg-deep-dark/40 border border-azur-pastel/80 dark:border-deep/40 hover:border-azur-pastel hover:bg-azur-pastel text-azur-dark dark:text-azur-pastel px-2 py-1 rounded-lg font-bold transition-all cursor-pointer shadow-xs"
                           >
                             + {city.name}
                           </button>
@@ -2297,7 +2335,7 @@ export default function AdminPanel() {
                             <div>
                               <div className="flex justify-between text-[10px] font-extrabold text-slate-500 uppercase">
                                 <span>Position X (Est)</span>
-                                <span className="font-mono text-amber-600 dark:text-amber-455">{editingAntenne.x}%</span>
+                                <span className="font-mono text-amber-600 dark:text-amber-400">{editingAntenne.x}%</span>
                               </div>
                               <input
                                 type="range"
@@ -2313,7 +2351,7 @@ export default function AdminPanel() {
                             <div>
                               <div className="flex justify-between text-[10px] font-extrabold text-slate-500 uppercase">
                                 <span>Position Y (Sud)</span>
-                                <span className="font-mono text-amber-600 dark:text-amber-455">{editingAntenne.y}%</span>
+                                <span className="font-mono text-amber-600 dark:text-amber-400">{editingAntenne.y}%</span>
                               </div>
                               <input
                                 type="range"
@@ -2336,7 +2374,7 @@ export default function AdminPanel() {
                               required
                               value={editingAntenne.name}
                               onChange={(e) => setEditingAntenne(prev => prev ? { ...prev, name: e.target.value } : null)}
-                              className="w-full mt-1 px-3 py-2 border border-slate-250 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-amber-500/25 focus:border-amber-500 focus:outline-none font-bold"
+                              className="input-asf mt-1 text-xs font-bold focus:ring-amber-500/25 focus:border-amber-500"
                             />
                           </div>
 
@@ -2361,8 +2399,8 @@ export default function AdminPanel() {
                                       }}
                                       className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
                                         member
-                                          ? 'bg-[#1b98c4] text-white border-[#1b98c4]'
-                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#1b98c4]/50'
+                                          ? 'bg-azur text-white border-azur'
+                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-azur/50'
                                       }`}
                                     >
                                       <span className="w-2 h-2 rounded-full border border-black/10" style={{ backgroundColor: grp.color || '#1b98c4' }} />
@@ -2385,7 +2423,7 @@ export default function AdminPanel() {
                             <button
                               type="button"
                               onClick={() => setEditingAntenne(null)}
-                              className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-medium rounded-xl text-xs transition duration-150 cursor-pointer"
+                              className="btn-secondary text-xs cursor-pointer"
                             >
                               Annuler
                             </button>
@@ -2414,7 +2452,7 @@ export default function AdminPanel() {
                                 type="number"
                                 disabled
                                 value={tempCoords ? tempCoords.x : 50}
-                                className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-750 dark:text-slate-400 rounded-xl text-xs font-mono"
+                                className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-400 rounded-xl text-xs font-mono"
                               />
                             </div>
 
@@ -2426,7 +2464,7 @@ export default function AdminPanel() {
                                 type="number"
                                 disabled
                                 value={tempCoords ? tempCoords.y : 50}
-                                className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-750 dark:text-slate-400 rounded-xl text-xs font-mono"
+                                className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-400 rounded-xl text-xs font-mono"
                               />
                             </div>
                           </div>
@@ -2457,7 +2495,7 @@ export default function AdminPanel() {
                                   .replace(/^-|-$/g, '');
                                 setNewAntenneId(slugified);
                               }}
-                              className="w-full mt-1 px-3 py-2 border border-slate-250 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-sky-505/20 focus:border-sky-500 focus:outline-none font-bold"
+                              className="input-asf mt-1 text-xs font-bold"
                             />
                           </div>
 
@@ -2492,8 +2530,8 @@ export default function AdminPanel() {
                                       )}
                                       className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
                                         checked
-                                          ? 'bg-[#1b98c4] text-white border-[#1b98c4]'
-                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#1b98c4]/50'
+                                          ? 'bg-azur text-white border-azur'
+                                          : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-azur/50'
                                       }`}
                                     >
                                       <span className="w-2 h-2 rounded-full border border-black/10" style={{ backgroundColor: grp.color || '#1b98c4' }} />
@@ -2508,7 +2546,7 @@ export default function AdminPanel() {
                           <button
                             type="submit"
                             disabled={actionLoading || !newAntenneName.trim() || !newAntenneId.trim()}
-                            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-sky-500 dark:hover:bg-sky-600 text-white dark:text-slate-950 font-black rounded-xl text-xs transition duration-150 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                            className="btn-asf w-full text-xs cursor-pointer"
                           >
                             <Plus className="w-4 h-4" />
                             <span>Confirmer l'ajout</span>
@@ -2522,13 +2560,18 @@ export default function AdminPanel() {
 
                 {/* LISTE RÉCAPITULATIVE INTERACTIVE */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-xs space-y-4">
-                  <div>
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                      Gestion des Antennes Actives ({ (ANTENNES_BY_DELEGATION['france'] || []).length })
-                    </h4>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Consultez la liste des antennes locales rattachées à l'infrastructure nationale d'Aviation Sans Frontières.
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-azur-light text-azur flex items-center justify-center shrink-0 border border-azur/15">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-display font-bold tracking-tight text-deep dark:text-white">
+                        Gestion des antennes actives <span className="text-slate-400 font-semibold">· {(ANTENNES_BY_DELEGATION['france'] || []).length}</span>
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Consultez la liste des antennes locales rattachées à l'infrastructure nationale d'Aviation Sans Frontières.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -2541,8 +2584,8 @@ export default function AdminPanel() {
                           key={ant.id}
                           className={`flex justify-between items-center p-4 rounded-2xl border transition-all duration-200 ${
                             isCurrentlySel 
-                              ? "bg-amber-500/5 dark:bg-amber-505/2 border-amber-500/40 shadow-xs ring-1 ring-amber-500/10" 
-                              : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-150 dark:border-slate-800 hover:border-sky-500/40"
+                              ? "bg-amber-500/5 dark:bg-amber-500/2 border-amber-500/40 shadow-xs ring-1 ring-amber-500/10" 
+                              : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-100 dark:border-slate-800 hover:border-azur/40"
                           }`}
                         >
                           <div className="space-y-1 text-left">
@@ -2557,9 +2600,9 @@ export default function AdminPanel() {
                                 });
                                 setTempCoords(null);
                               }}
-                              className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 hover:text-sky-600 dark:hover:text-sky-400 transition-colors text-left"
+                              className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 hover:text-azur-hover dark:hover:text-azur transition-colors text-left"
                             >
-                              <span className={`w-2 h-2 rounded-full ${isCurrentlySel ? 'bg-amber-500 animate-ping' : 'bg-sky-500'}`}></span>
+                              <span className={`w-2 h-2 rounded-full ${isCurrentlySel ? 'bg-amber-500 animate-ping' : 'bg-azur'}`}></span>
                               <span>{ant.name}</span>
                             </button>
                             <p className="text-[10px] text-slate-400 font-mono">
@@ -2585,7 +2628,7 @@ export default function AdminPanel() {
                               className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                                 isCurrentlySel 
                                   ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400" 
-                                  : "hover:bg-sky-50 dark:hover:bg-sky-950/40 text-sky-600 border-transparent hover:border-sky-100 dark:hover:border-sky-900/40"
+                                  : "hover:bg-azur-light dark:hover:bg-deep-dark/40 text-azur-hover border-transparent hover:border-azur-pastel dark:hover:border-deep/40"
                               }`}
                               title="Modifier visuellement cette antenne"
                             >

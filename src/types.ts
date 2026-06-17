@@ -7,7 +7,7 @@ export interface Organization {
   email: string;
   phone: string;
   submissionStatus: SubmissionStatus;
-  role: 'super_admin' | 'admin' | 'admin_delegation' | 'organization';
+  role: 'super_admin' | 'admin' | 'admin_delegation' | 'admin_antenne' | 'organization';
   delegation_id?: string;
   antenne_id?: string;
   createdAt: number;

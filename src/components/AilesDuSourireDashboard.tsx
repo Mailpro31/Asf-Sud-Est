@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { 
-  FileText, 
-  Download, 
-  Check, 
-  X, 
+import {
+  FileText,
+  Download,
+  Check,
+  X,
   ExternalLink,
   Search,
-  AlertCircle,
-  Clock,
   RotateCw,
   TrendingUp,
-  FileCheck2,
   FolderOpen,
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
+import { StatusBadge } from './ui';
 import AntenneDashboardModal from './AntenneDashboardModal';
 
 interface AilesDuSourireDashboardProps {
@@ -38,33 +36,6 @@ interface AilesDuSourireDashboardProps {
     bannerBorder: string;
   };
 }
-
-const STATUS_CONFIG = {
-  'Pending': { 
-    bg: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-900/30', 
-    text: 'text-amber-800 dark:text-amber-300', 
-    label: "En attente",
-    icon: Clock,
-  },
-  'Under review': { 
-    bg: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-900/30', 
-    text: 'text-blue-800 dark:text-blue-300', 
-    label: "En cours d'analyse",
-    icon: Search,
-  },
-  'Validated': { 
-    bg: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-900/30', 
-    text: 'text-emerald-800 dark:text-emerald-300', 
-    label: "Validé",
-    icon: FileCheck2,
-  },
-  'Incomplete': { 
-    bg: 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-900/30', 
-    text: 'text-rose-800 dark:text-rose-300', 
-    label: "Non conforme/Incomplet",
-    icon: AlertCircle,
-  }
-};
 
 export default function AilesDuSourireDashboard({
   files,
@@ -128,14 +99,14 @@ export default function AilesDuSourireDashboard({
     <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-slate-800/80 p-6 shadow-sm overflow-hidden text-left relative">
       
       {/* Decorative gradient header backdrop */}
-      <div className={`absolute top-0 left-0 right-0 h-[5px] ${themeAttr?.gradientClass || 'bg-[#1b98c4]'}`} />
+      <div className={`absolute top-0 left-0 right-0 h-[5px] ${themeAttr?.gradientClass || 'bg-azur'}`} />
 
       {/* Header and Counters */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pt-1">
         <div>
           <div className="flex items-center gap-2">
-            <FolderOpen className={`w-5 h-5 ${themeAttr?.accentText || 'text-[#1b98c4]'}`} />
-            <h3 className="text-base font-black tracking-tight text-slate-800 dark:text-slate-100 uppercase">
+            <FolderOpen className={`w-5 h-5 ${themeAttr?.accentText || 'text-azur'}`} />
+            <h3 className="text-base font-display font-black tracking-tight text-deep dark:text-slate-100 uppercase">
               📂 Documents nécessitant votre attention
             </h3>
           </div>
@@ -152,7 +123,7 @@ export default function AilesDuSourireDashboard({
             <span>À traiter : {attentionFiles.length} dossiers</span>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-350 text-xs px-3.5 py-1.5 rounded-2xl font-bold flex items-center gap-2">
+          <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs px-3.5 py-1.5 rounded-2xl font-bold flex items-center gap-2">
             <TrendingUp className="w-3.5 h-3.5 text-xs" />
             <span>Conformité : {validationRate}%</span>
           </div>
@@ -169,7 +140,7 @@ export default function AilesDuSourireDashboard({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Rechercher par document, organisme partenaire ou antenne..."
-          className="w-full pl-10 pr-4 py-3 text-xs font-semibold rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1b98c4]/20 focus:border-[#1b98c4] transition-all"
+          className="input-asf pl-10 text-xs font-semibold rounded-2xl dark:bg-slate-950/40 dark:border-slate-800 dark:text-slate-100"
         />
       </div>
 
@@ -177,7 +148,7 @@ export default function AilesDuSourireDashboard({
       {filteredFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-8 text-center bg-slate-50/50 dark:bg-slate-950/20 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
           <Check className="w-9 h-9 text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-full mb-3 shadow-xs" />
-          <p className="text-xs font-extrabold text-slate-700 dark:text-slate-250">
+          <p className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
             {searchTerm ? "Aucun document ne correspond à ce filtre." : "Félicitations ! Excellent travail."}
           </p>
           <p className="text-[11px] text-slate-400 mt-1 max-w-[340px]">
@@ -191,7 +162,7 @@ export default function AilesDuSourireDashboard({
         <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/60 shadow-3xs">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-950/50 text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider border-b border-slate-100 dark:border-slate-850">
+              <tr className="bg-slate-50 dark:bg-slate-950/50 text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <th className="px-5 py-3 w-[45%]">Document & Organisme</th>
                 <th className="px-4 py-3 w-[18%]">Antenne de rattachement</th>
                 <th className="px-4 py-3 w-[15%]">Versé le</th>
@@ -199,14 +170,11 @@ export default function AilesDuSourireDashboard({
                 <th className="px-5 py-3 text-right w-[10%]">Validation Instantanée</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-850 bg-white dark:bg-slate-900/30">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900/30">
               <AnimatePresence initial={false}>
                 {filteredFiles.map((file) => {
                   const org = orgProfiles.find(p => p.id === file.orgId);
                   const antenneInfo = getAntenneInfo(file, org);
-                  const fileStatus = file.submissionStatus || 'Pending';
-                  const cnf = STATUS_CONFIG[fileStatus] || STATUS_CONFIG['Pending'];
-                  const StatusIcon = cnf.icon;
 
                   return (
                     <motion.tr
@@ -221,13 +189,13 @@ export default function AilesDuSourireDashboard({
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 shadow-3xs">
-                            <FileText className="w-4 h-4 text-slate-400 group-hover:text-[#1b98c4] transition-colors" />
+                            <FileText className="w-4 h-4 text-slate-400 group-hover:text-azur transition-colors" />
                           </div>
                           <div>
-                            <p className="text-xs font-black text-slate-800 dark:text-slate-200 line-clamp-1 leading-snug">
+                            <p className="text-xs font-display font-black text-deep dark:text-slate-200 line-clamp-1 leading-snug">
                               {file.name}
                             </p>
-                            <p className="text-[10px] font-black text-[#1b98c4] dark:text-sky-400 mt-0.5 uppercase tracking-wide">
+                            <p className="text-[10px] font-black text-azur dark:text-azur mt-0.5 uppercase tracking-wide">
                               🏢 {org?.name || 'Compagnie Partenaire'}
                             </p>
                           </div>
@@ -239,14 +207,14 @@ export default function AilesDuSourireDashboard({
                         {antenneInfo ? (
                           <button
                             onClick={() => setSelectedAntenneDashboardId(antenneInfo.id)}
-                            className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#1b98c4] hover:text-sky-600 dark:text-sky-400 dark:hover:text-sky-300 uppercase tracking-tight bg-[#1b98c4]/5 dark:bg-sky-400/5 hover:bg-[#1b98c4]/10 border border-[#1b98c4]/10 dark:border-sky-400/10 px-2 py-1 rounded-xl transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1 text-[11px] font-extrabold text-azur hover:text-azur-hover dark:text-azur dark:hover:text-azur-pastel uppercase tracking-tight bg-azur/5 dark:bg-azur/5 hover:bg-azur/10 border border-azur/10 dark:border-azur/10 px-2 py-1 rounded-xl transition-all cursor-pointer"
                             title="Voir le dashboard personnalisé d'antenne"
                           >
                             <span>📍 {antenneInfo.name}</span>
                             <ExternalLink className="w-3 h-3 text-[11px] text-slate-400 shrink-0" />
                           </button>
                         ) : (
-                          <span className="inline-flex items-center text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border border-dashed border-slate-200 dark:border-slate-850 px-2 py-1 rounded-xl bg-slate-50/50 dark:bg-slate-950/10">
+                          <span className="inline-flex items-center text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border border-dashed border-slate-200 dark:border-slate-800 px-2 py-1 rounded-xl bg-slate-50/50 dark:bg-slate-950/10">
                             📍 SANS ANTENNE
                           </span>
                         )}
@@ -263,10 +231,7 @@ export default function AilesDuSourireDashboard({
 
                       {/* Status flag */}
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-[10.5px] font-black border uppercase tracking-tight ${cnf.bg} ${cnf.text}`}>
-                          <StatusIcon className="w-3.5 h-3.5 shrink-0" />
-                          <span>{cnf.label}</span>
-                        </span>
+                        <StatusBadge status={file.submissionStatus || 'Pending'} />
                       </td>
 
                       {/* Instant validation actions */}
@@ -278,7 +243,7 @@ export default function AilesDuSourireDashboard({
                             <a
                               href={file.fallbackDataUrl}
                               download={file.name}
-                              className="p-1 px-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-505 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 cursor-pointer transition-all shadow-3xs"
+                              className="p-1 px-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 cursor-pointer transition-all shadow-3xs"
                               title="Télécharger le document"
                             >
                               <Download className="w-4 h-4 stroke-[2]" />
@@ -288,7 +253,7 @@ export default function AilesDuSourireDashboard({
                           {/* Cycle or Reevaluate action */}
                           <button
                             onClick={() => handleCycleStatus(file.id, file.submissionStatus)}
-                            className="p-1 px-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-505 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 cursor-pointer transition-all shadow-3xs"
+                            className="p-1 px-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 cursor-pointer transition-all shadow-3xs"
                             title="Changer le statut temporaire"
                           >
                             <RotateCw className="w-4 h-4 stroke-[2]" />
@@ -324,7 +289,7 @@ export default function AilesDuSourireDashboard({
       )}
 
       {/* Info footer box */}
-      <div className="mt-4 flex items-start gap-2 text-[10.5px] leading-relaxed text-slate-405 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-3 border border-slate-100 dark:border-slate-850">
+      <div className="mt-4 flex items-start gap-2 text-[10.5px] leading-relaxed text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
         <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
         <span>
           En cliquant sur l'étiquette d'une <strong className="font-extrabold text-slate-600 dark:text-slate-400">Antenne de rattachement</strong>, un tableau de bord complet et personnalisé par antenne locale s'ouvrira, vous permettant de suivre les statistiques, d'accéder aux partenaires, et de valider les documents.

@@ -22,6 +22,21 @@
   --color-sourire: #f39200;
   --color-sourire-dark: #d97e00;
   --color-sourire-light: #fff4e6;
+
+  /* Couleurs sémantiques de statut (dossiers) */
+  --color-status-pending: #f59e0b;   /* ambre — En attente */
+  --color-status-review: #1b98c4;    /* azur — En révision */
+  --color-status-validated: #10b981; /* émeraude — Validé */
+  --color-status-incomplete: #f43f5e;/* rose — Incomplet */
+
+  /* Rayons standardisés */
+  --radius-asf: 1rem;
+  --radius-asf-lg: 1.5rem;
+
+  /* Ombres standardisées */
+  --shadow-asf-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-asf-md: 0 6px 18px rgba(27, 152, 196, 0.10);
+  --shadow-asf-lg: 0 18px 40px -12px rgba(14, 94, 118, 0.22);
 }
 
 @layer base {
@@ -88,12 +103,140 @@
     box-shadow: 0 6px 18px rgba(243, 146, 0, 0.30);
   }
 
+  /* Bouton secondaire (contour neutre) */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.875rem;
+    padding: 0.75rem 1.5rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--color-deep);
+    background: #fff;
+    border: 1px solid rgb(226 232 240);
+    box-shadow: var(--shadow-asf-sm);
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .btn-secondary:hover {
+    background: rgb(248 250 252);
+    border-color: rgb(203 213 225);
+  }
+
+  /* Bouton ghost (sans fond) */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.875rem;
+    padding: 0.625rem 1rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: rgb(71 85 105);
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-ghost:hover {
+    background: rgb(241 245 249);
+    color: var(--color-deep);
+  }
+
+  /* Bouton danger (suppression) */
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.875rem;
+    padding: 0.75rem 1.5rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: #fff;
+    background: #e11d48;
+    box-shadow: 0 1px 2px rgba(225, 29, 72, 0.15);
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .btn-danger:hover {
+    background: #be123c;
+    box-shadow: 0 6px 18px rgba(225, 29, 72, 0.25);
+  }
+
+  .btn-asf:disabled,
+  .btn-sourire:disabled,
+  .btn-secondary:disabled,
+  .btn-ghost:disabled,
+  .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* Champ de saisie standard */
+  .input-asf {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(226 232 240);
+    background: #fff;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: rgb(15 23 42);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-asf::placeholder {
+    color: rgb(148 163 184);
+  }
+  .input-asf:focus {
+    outline: none;
+    border-color: var(--color-azur);
+    box-shadow: 0 0 0 3px rgba(27, 152, 196, 0.15);
+  }
+
   /* Carte standard */
   .card-asf {
     background: #fff;
     border: 1px solid rgb(226 232 240);
-    border-radius: 1.5rem;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    border-radius: var(--radius-asf-lg);
+    box-shadow: var(--shadow-asf-sm);
+  }
+
+  /* Badge de statut — base + variantes sémantiques */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    white-space: nowrap;
+  }
+  .badge-pending    { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+  .badge-review     { background: var(--color-azur-light); color: var(--color-deep); border-color: var(--color-azur-pastel); }
+  .badge-validated  { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+  .badge-incomplete { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+
+  /* Coque de modale */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+  }
+  .modal-panel {
+    width: 100%;
+    background: #fff;
+    border-radius: var(--radius-asf-lg);
+    box-shadow: var(--shadow-asf-lg);
+    overflow: hidden;
   }
 }
 

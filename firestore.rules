@@ -45,9 +45,21 @@ service cloud.firestore {
     }
 
     function isAdminDelegation(delegationId) {
-      return isSignedIn() && 
-             hasUserDoc() && 
-             (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && 
+      return isSignedIn() &&
+             hasUserDoc() &&
+             (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') &&
+             getUser().get('delegation_id', '') == delegationId;
+    }
+
+    // Antenne-scoped admin: manages a single antenne (matched by delegation_id + antenne_id).
+    // antenne_id must be a non-empty exact match to avoid granting blanket access.
+    function isAdminAntenneOf(delegationId, antenneId) {
+      return isSignedIn() &&
+             hasUserDoc() &&
+             getUser().get('role', '') == 'admin_antenne' &&
+             getUser().get('antenne_id', '') != '' &&
+             antenneId != '' &&
+             getUser().get('antenne_id', '') == antenneId &&
              getUser().get('delegation_id', '') == delegationId;
     }
 
@@ -76,7 +88,7 @@ service cloud.firestore {
       return data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() <= 100 &&
              data.get('email', '') is string && data.get('email', '').size() > 0 && data.get('email', '').size() <= 150 &&
              data.get('submissionStatus', '') in ['Pending', 'Under review', 'Validated', 'Incomplete'] &&
-             data.get('role', '') in ['organization', 'admin_delegation', 'super_admin', 'admin'] &&
+             data.get('role', '') in ['organization', 'admin_delegation', 'admin_antenne', 'super_admin', 'admin'] &&
              (!('contactName' in data) || data.contactName == null || (data.contactName is string && data.contactName.size() <= 100)) &&
              (!('phone' in data) || data.phone == null || (data.phone is string && data.phone.size() <= 50)) &&
              (!('createdAt' in data) || data.createdAt is number) &&
@@ -144,8 +156,8 @@ service cloud.firestore {
 
     // 3. Organizations (Users / Partners Profiles)
     match /organizations/{orgId} {
-      allow get: if isOwner(orgId) || isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && getUser().get('delegation_id', '') == existing().get('delegation_id', ''));
-      allow list: if isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin'));
+      allow get: if isOwner(orgId) || isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) || isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', ''));
+      allow list: if isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')) || (isSignedIn() && hasUserDoc() && getUser().get('role', '') == 'admin_antenne' && getUser().get('antenne_id', '') != '' && resource.data.get('antenne_id', '') == getUser().get('antenne_id', ''));
       
       allow create: if isSignedIn() &&
                     isValidId(orgId) &&
@@ -161,6 +173,7 @@ service cloud.firestore {
                       // Or they are adopting an orphan account into their own delegation
                       (getUser().get('delegation_id', '') == incoming().get('delegation_id', '') && (!('delegation_id' in existing()) || existing().get('delegation_id', '') == null || existing().get('delegation_id', '') == ''))
                     )) || 
+                    (isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) && incoming().diff(existing()).affectedKeys().hasOnly(['submissionStatus', 'updatedAt'])) ||
                     (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt']))
                   );
     }
@@ -170,35 +183,39 @@ service cloud.firestore {
       allow get: if isSignedIn() && (
                     existing().get('orgId', '') == request.auth.uid ||
                     isSuperAdmin() ||
+                    isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (hasUserDoc() && (
                       (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
                       (getUser().get('delegation_id', '') == existing().get('delegation_id', '') && (existing().get('createdBy', '') == 'admin' || existing().get('orgId', '') == 'admin_created' || existing().get('orgId', '') == 'public'))
                     ))
                   );
-                    
+
       allow list: if isSignedIn() && (
                      resource.data.get('orgId', '') == request.auth.uid ||
                      isSuperAdmin() ||
+                     isAdminAntenneOf(resource.data.get('delegation_id', ''), resource.data.get('antenne_id', '')) ||
                      (hasUserDoc() && (
                        (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == resource.data.get('delegation_id', '')) ||
                        (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
                        (getUser().get('delegation_id', '') == resource.data.get('delegation_id', '') && (resource.data.get('createdBy', '') == 'admin' || resource.data.get('orgId', '') == 'admin_created' || resource.data.get('orgId', '') == 'public'))
                      ))
                    );
-       
+
       allow create: if isSignedIn() && isValidFolder(incoming()) && (
-                      incoming().get('orgId', '') == request.auth.uid || 
-                      isSuperAdmin() || 
+                      incoming().get('orgId', '') == request.auth.uid ||
+                      isSuperAdmin() ||
+                      isAdminAntenneOf(incoming().get('delegation_id', ''), incoming().get('antenne_id', '')) ||
                       (hasUserDoc() && (
                         (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == incoming().get('delegation_id', '')) ||
                         (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
                       ))
                     );
-       
+
       allow update: if isSignedIn() && isValidFolder(incoming()) && (
                       isSuperAdmin() ||
                       existing().get('orgId', '') == request.auth.uid ||
+                      isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                       (hasUserDoc() && (
                         (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
                         (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
@@ -208,6 +225,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (
                     existing().get('orgId', '') == request.auth.uid ||
                     isSuperAdmin() ||
+                    isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (hasUserDoc() && (
                       (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
@@ -220,44 +238,49 @@ service cloud.firestore {
       allow get: if isSignedIn() && (
                     existing().get('orgId', '') == request.auth.uid ||
                     isSuperAdmin() ||
+                    isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (hasUserDoc() && (
                       (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
                       (getUser().get('delegation_id', '') == existing().get('delegation_id', '') && (existing().get('uploadedBy', '') == 'admin' || existing().get('orgId', '') == 'admin_created' || existing().get('orgId', '') == 'public'))
                     ))
                   );
-                    
+
       allow list: if isSignedIn() && (
                      resource.data.get('orgId', '') == request.auth.uid ||
                      isSuperAdmin() ||
+                     isAdminAntenneOf(resource.data.get('delegation_id', ''), resource.data.get('antenne_id', '')) ||
                      (hasUserDoc() && (
                        (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == resource.data.get('delegation_id', '')) ||
                        (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
                        (getUser().get('delegation_id', '') == resource.data.get('delegation_id', '') && (resource.data.get('uploadedBy', '') == 'admin' || resource.data.get('orgId', '') == 'admin_created' || resource.data.get('orgId', '') == 'public'))
                      ))
                    );
-      
+
       allow create: if isSignedIn() && isValidFile(incoming()) && (
                       incoming().get('orgId', '') == request.auth.uid ||
                       isSuperAdmin() ||
+                      isAdminAntenneOf(incoming().get('delegation_id', ''), incoming().get('antenne_id', '')) ||
                       (hasUserDoc() && (
                         (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == incoming().get('delegation_id', '')) ||
                         (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
                       ))
                     );
-      
+
       allow update: if isValidFile(incoming()) && (
                     isSuperAdmin() ||
                     (isSignedIn() && existing().get('orgId', '') == request.auth.uid) ||
+                    isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (isSignedIn() && hasUserDoc() && (
                       (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
                     ))
                   );
-                     
+
       allow delete: if isSignedIn() && (
                     existing().get('orgId', '') == request.auth.uid ||
                     isSuperAdmin() ||
+                    isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (hasUserDoc() && (
                       (getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) ||
                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
@@ -265,8 +288,9 @@ service cloud.firestore {
                   );
 
       match /chunks/{chunkId} {
-        allow read, write: if isSuperAdmin() || 
-                             (isSignedIn() && get(/databases/$(database)/documents/files/$(fileId)).data.get('orgId', '') == request.auth.uid) || 
+        allow read, write: if isSuperAdmin() ||
+                             (isSignedIn() && get(/databases/$(database)/documents/files/$(fileId)).data.get('orgId', '') == request.auth.uid) ||
+                             isAdminAntenneOf(get(/databases/$(database)/documents/files/$(fileId)).data.get('delegation_id', ''), get(/databases/$(database)/documents/files/$(fileId)).data.get('antenne_id', '')) ||
                              (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin'));
       }
     }

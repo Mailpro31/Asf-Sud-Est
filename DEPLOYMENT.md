@@ -185,3 +185,32 @@ instructions DNS. Pensez ensuite à ajouter ce domaine dans
 - [ ] Domaine de l'hébergeur autorisé dans Firebase Authentication
 - [ ] Secret `FIREBASE_SERVICE_ACCOUNT` ajouté pour le déploiement automatique
 - [ ] Test de connexion / upload sur l'URL de production
+
+---
+
+## 11. Dépannage — `auth/unauthorized-domain`
+
+**Symptôme :** à la connexion (surtout via **« Connexion Google Workspace »**),
+Firebase renvoie `Firebase: Error (auth/unauthorized-domain)`.
+
+**Cause :** ce n'est **pas** un bug de l'application. Firebase n'autorise les
+flux d'authentification que depuis une liste de **domaines autorisés**. Par
+défaut, seuls `localhost` et les domaines `*.firebaseapp.com` / `*.web.app` du
+projet le sont. Les domaines **Vercel / Netlify ne le sont pas**, et les URL
+d'**aperçu** (preview) Vercel changent à chaque déploiement (hash aléatoire).
+
+**Correction :**
+
+1. Firebase Console → projet **`asf-sud-est-prod-524c1`**
+2. **Authentication → Settings → Authorized domains → Add domain**
+3. Ajouter :
+   - le **domaine de production stable** de l'hébergeur
+     (ex. `asf-sud-est.vercel.app` ou votre domaine personnalisé) ;
+   - éventuellement `localhost` (déjà présent par défaut) pour les tests locaux.
+
+> Les URL d'aperçu Vercel (`...-git-<branche>-<hash>-....vercel.app`) ne sont pas
+> stables : testez l'authentification sur le **domaine de prod** plutôt que sur
+> une preview, ou ajoutez ponctuellement l'URL de preview en cours.
+
+> Rappel : la connexion **email / mot de passe** ne déclenche pas cette erreur ;
+> seuls les flux OAuth (popup/redirect, ex. Google) vérifient le domaine.

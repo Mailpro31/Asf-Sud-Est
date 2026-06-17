@@ -5,6 +5,7 @@ import {
   Smartphone, Loader2, AlertCircle, RefreshCw, KeyRound, QrCode, ClipboardCheck 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { StatusBadge } from './ui';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { updatePassword, updateEmail } from 'firebase/auth';
@@ -269,7 +270,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                     Changer
                   </span>
                 </div>
-                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 truncate w-full px-1">
+                <h4 className="text-sm font-display font-black text-deep dark:text-slate-100 truncate w-full px-1">
                   {contactName || organization.contactName}
                 </h4>
                 <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
@@ -329,7 +330,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
             <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 relative">
               {/* Header inside frame */}
               <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                <h3 className="text-base font-display font-extrabold text-deep dark:text-slate-100">
                   {activeTab === 'profile' && 'Informations Personnelles'}
                   {activeTab === 'security' && 'Sécurité et Accès'}
                   {activeTab === 'sessions' && 'Appareils et Sessions Actives'}
@@ -382,14 +383,14 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                                 onClick={() => setSelectedAvatarId(av.id)}
                                 className={`h-11 rounded-xl flex items-center justify-center text-xl transition-all cursor-pointer relative ${av.bgColor} ${
                                   selectedAvatarId === av.id
-                                    ? 'ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-slate-900 scale-105'
+                                    ? 'ring-2 ring-azur ring-offset-2 dark:ring-offset-slate-900 scale-105'
                                     : 'opacity-70 hover:opacity-100'
                                 }`}
                                 title={av.label}
                               >
                                 <span>{av.emoji}</span>
                                 {selectedAvatarId === av.id && (
-                                  <span className="absolute -top-1 -right-1 bg-indigo-600 text-white rounded-full p-0.5 border border-white dark:border-slate-800">
+                                  <span className="absolute -top-1 -right-1 bg-azur text-white rounded-full p-0.5 border border-white dark:border-slate-800">
                                     <Check className="w-1.5 h-1.5" />
                                   </span>
                                 )}
@@ -410,7 +411,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                               value={contactName}
                               onChange={(e) => setContactName(e.target.value)}
                               placeholder="Jean Dupont"
-                              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                              className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
                             />
                           </div>
 
@@ -424,7 +425,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                               value={orgName}
                               onChange={(e) => setOrgName(e.target.value)}
                               placeholder="e.g. Flight Academy, HeliSport"
-                              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                              className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
                             />
                           </div>
                         </div>
@@ -440,7 +441,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                               value={email}
                               onChange={(e) => setEmail(e.target.value)}
                               placeholder="contact@compagnie.com"
-                              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                              className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
                             />
                           </div>
 
@@ -453,7 +454,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                               value={phone}
                               onChange={(e) => setPhone(e.target.value)}
                               placeholder="+33 6 12 34 56 78"
-                              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                              className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
                             />
                           </div>
                         </div>
@@ -462,9 +463,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                         <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 mt-4 text-[11px] space-y-1.5 text-slate-500 font-medium">
                           <div className="flex justify-between items-center">
                             <span>Statut réglementaire du compte :</span>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">
-                              {organization.submissionStatus === 'Validated' ? '✓ Validé' : '⌛ En cours d\'examen'}
-                            </span>
+                            <StatusBadge status={organization.submissionStatus} />
                           </div>
                           <div className="flex justify-between items-center">
                             <span>Rôle attribué au profil :</span>
@@ -475,7 +474,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                           {organization.delegation_id && (
                             <div className="flex justify-between items-center pt-1 border-t border-slate-100 dark:border-slate-800/60">
                               <span>Délégation d'appartenance :</span>
-                              <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                              <span className="font-bold text-azur dark:text-azur-pastel">
                                 📍 {getDelegationName(organization.delegation_id)}
                               </span>
                             </div>
@@ -495,7 +494,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                           <button
                             type="submit"
                             disabled={isSavingProfile}
-                            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-55 text-white font-semibold text-xs px-5 py-2.5 rounded-xl cursor-pointer shadow-md transition-all flex items-center gap-2"
+                            className="btn-asf text-xs px-5 py-2.5"
                           >
                             {isSavingProfile ? (
                               <>
@@ -524,13 +523,13 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                       className="space-y-6"
                     >
                       {/* Section 1: Change password */}
-                      <div className="bg-slate-50/50 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-100 dark:border-slate-850 space-y-4">
+                      <div className="bg-slate-50/50 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
                         <div className="flex items-start gap-3">
-                          <div className="p-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                          <div className="p-2 bg-azur/10 dark:bg-azur/15 text-azur rounded-xl">
                             <KeyRound className="w-4 h-4" />
                           </div>
                           <div>
-                            <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">Modifier mon mot de passe</h4>
+                            <h4 className="text-xs font-extrabold text-deep dark:text-slate-100 uppercase tracking-wider">Modifier mon mot de passe</h4>
                             <p className="text-[11px] text-slate-400">Gardez votre accès protégé par un mot de passe robuste.</p>
                           </div>
                         </div>
@@ -555,7 +554,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 placeholder="Nouveau mot de passe"
-                                className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                                className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
                               />
                             </div>
                             <div>
@@ -565,7 +564,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                                 value={confirmNewPassword}
                                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                                 placeholder="Confirmer le nouveau mot de passe"
-                                className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                                className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
                               />
                             </div>
                           </div>
@@ -574,7 +573,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                             <button
                               type="submit"
                               disabled={isChangingPassword}
-                              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-45 text-white font-semibold text-[11px] px-4 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                              className="btn-asf text-[11px] px-4 py-1.5"
                             >
                               {isChangingPassword ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Key className="w-3.5 h-3.5" />}
                               <span>Modifier le mot de passe</span>
@@ -584,14 +583,14 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                       </div>
 
                       {/* Section 2: Two-Factor auth (2FA) */}
-                      <div className="bg-slate-50/50 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-100 dark:border-slate-850 space-y-4">
+                      <div className="bg-slate-50/50 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-start gap-3">
-                            <div className="p-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                            <div className="p-2 bg-azur/10 dark:bg-azur/15 text-azur rounded-xl">
                               <Smartphone className="w-4 h-4" />
                             </div>
                             <div>
-                              <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">Double Authentification (MFA / 2FA)</h4>
+                              <h4 className="text-xs font-extrabold text-deep dark:text-slate-100 uppercase tracking-wider">Double Authentification (MFA / 2FA)</h4>
                               <p className="text-[11px] text-slate-400">Complétez votre protection par un code à usage unique (TOTP/MFA).</p>
                             </div>
                           </div>
@@ -601,7 +600,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                             onClick={handleToggleMfa}
                             type="button"
                             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              mfaEnabled || showMfaSetup ? 'bg-[#001f3f]' : 'bg-slate-300'
+                              mfaEnabled || showMfaSetup ? 'bg-azur' : 'bg-slate-300'
                             }`}
                           >
                             <span
@@ -632,7 +631,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                                 <p className="font-bold text-slate-800 dark:text-slate-200">1. Scannez le QR Code ou copiez la clé d'installation</p>
                                 <p>Recherchez l'application Google Authenticator ou Authy sur votre appareil mobile.</p>
                                 
-                                <div className="flex items-center gap-2 mt-1 bg-slate-150 dark:bg-slate-950 p-2 rounded-lg border">
+                                <div className="flex items-center gap-2 mt-1 bg-slate-100 dark:bg-slate-950 p-2 rounded-lg border">
                                   <code className="text-azur dark:text-azur-pastel font-mono text-[10px] select-all font-semibold uppercase">
                                     AVIATION-B6F2-990E-401A-X9A2
                                   </code>
@@ -660,11 +659,11 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                                   maxLength={6}
                                   value={totpCode}
                                   onChange={(e) => setTotpCode(e.target.value)}
-                                  className="w-28 px-3 py-2 text-center text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono font-bold tracking-widest text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                                  className="input-asf w-28 text-center text-sm font-mono font-bold tracking-widest dark:bg-slate-950 dark:text-slate-100"
                                 />
                                 <button
                                   type="submit"
-                                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-lg cursor-pointer"
+                                  className="btn-asf text-xs px-4 py-2"
                                 >
                                   Activer la double authentification
                                 </button>
@@ -673,8 +672,8 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                             </form>
 
                             {/* Recovery Codes block */}
-                            <div className="p-3 bg-indigo-50/50 dark:bg-slate-950 rounded-xl border border-indigo-150 text-[11px]">
-                              <span className="font-extrabold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider block mb-1">
+                            <div className="p-3 bg-azur-light/50 dark:bg-slate-950 rounded-xl border border-azur/20 text-[11px]">
+                              <span className="font-extrabold text-deep dark:text-azur-pastel uppercase tracking-wider block mb-1">
                                 Codes de sauvegarde
                               </span>
                               <p className="text-slate-500 dark:text-slate-400 mb-2">Notez précieusement ces codes au cas où vous perdriez accès à votre mobile.</p>
@@ -708,14 +707,14 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                       initial={{ opacity: 0, x: 5 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -5 }}
-                      className="space-y-6 text-xs text-slate-600 dark:text-slate-350"
+                      className="space-y-6 text-xs text-slate-600 dark:text-slate-300"
                     >
                       <h4 className="font-semibold text-slate-800 dark:text-slate-200">Appareils et Connexions Actuelles</h4>
                       <p className="text-[11px] text-slate-400">Ci-dessous la liste des sessions détectées sur votre compte. Déconnectez toute activité suspecte.</p>
 
                       <div className="space-y-3">
-                        <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850 flex items-start gap-4">
-                          <div className="p-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-start gap-4">
+                          <div className="p-2 bg-azur/10 dark:bg-azur/15 text-azur rounded-xl">
                             <Laptop className="w-5 h-5" />
                           </div>
                           <div className="flex-grow min-w-0">
@@ -730,7 +729,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                           </div>
                         </div>
 
-                        <div className="p-4 bg-slate-50/50 dark:bg-slate-950/10 rounded-2xl border border-slate-100/60 dark:border-slate-850 flex items-start gap-4 opacity-70">
+                        <div className="p-4 bg-slate-50/50 dark:bg-slate-950/10 rounded-2xl border border-slate-100/60 dark:border-slate-800 flex items-start gap-4 opacity-70">
                           <div className="p-2 bg-slate-100 dark:bg-slate-900 text-slate-500 rounded-xl">
                             <Smartphone className="w-5 h-5" />
                           </div>

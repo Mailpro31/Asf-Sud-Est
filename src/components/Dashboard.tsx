@@ -5,10 +5,8 @@ import {
   CloudUpload, 
   FileText, 
   Trash2, 
-  LogOut, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
+  LogOut,
+  AlertCircle,
   RefreshCw, 
   Edit2, 
   FolderPlus, 
@@ -29,7 +27,7 @@ import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
-import { useTheme, themeOptions, AppTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 import { useFeedback } from '../hooks/useFeedback';
 import { DossierFile, SubmissionStatus, Folder } from '../types';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -39,18 +37,13 @@ import UserProfileModal from './UserProfileModal';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
 import { firebaseConfig } from '../lib/firebaseConfig';
-
-const statusConfig: Record<SubmissionStatus, { color: string; bgClass: string; textClass: string; icon: React.ElementType }> = {
-  'Pending': { color: 'bg-amber-500', bgClass: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30', textClass: 'text-amber-700 dark:text-amber-400', icon: Clock },
-  'Under review': { color: 'bg-blue-500', bgClass: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/30', textClass: 'text-blue-700 dark:text-blue-400', icon: RefreshCw },
-  'Validated': { color: 'bg-emerald-500', bgClass: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40', textClass: 'text-emerald-700 dark:text-emerald-400', icon: CheckCircle2 },
-  'Incomplete': { color: 'bg-rose-500', bgClass: 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30', textClass: 'text-rose-700 dark:text-rose-400', icon: AlertCircle },
-};
+import { StatusBadge } from './ui';
+import { getStatusMeta } from '../lib/status';
 
 
 export default function Dashboard() {
   const { user, organization, signOut, antennes, delegations } = useAuth();
-  const { theme, setTheme, themeConfig } = useTheme();
+  const { themeConfig } = useTheme();
   const { toast } = useFeedback();
 
   const getDelegationName = (id: string) =>
@@ -71,7 +64,6 @@ export default function Dashboard() {
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [isWarningDismissed, setIsWarningDismissed] = useState(() => localStorage.getItem('asf_sandbox_warn_dismissed') === 'true');
   const [showWarningDetails, setShowWarningDetails] = useState(false);
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const refreshLocalState = useCallback(() => {
@@ -706,16 +698,12 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-500 font-sans">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-blue-900 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-azur border-t-transparent rounded-full animate-spin"></div>
           <p className="text-sm font-medium">Chargement du portail équipage...</p>
         </div>
       </div>
     );
   }
-
-  const StatusIcon = statusConfig[organization.submissionStatus]?.icon || Clock;
-  const statusColors = statusConfig[organization.submissionStatus]?.bgClass || statusConfig['Pending'].bgClass;
-  const badgeDotColor = statusConfig[organization.submissionStatus]?.color || 'bg-slate-400';
 
   const MAX_STORAGE = 100 * 1024 * 1024; // 100 MB max storage
   const totalStorageUsed = files.reduce((acc, file) => acc + file.size, 0);
@@ -760,7 +748,6 @@ export default function Dashboard() {
   const containerRounded = 'rounded-2xl';
   const cardShadow = 'shadow-xs';
   const borderStyle = `border ${themeConfig.cardBorder}`;
-  const titleFont = 'font-sans font-bold tracking-tight';
 
   return (
     <div className={`flex min-h-screen lg:h-screen ${themeConfig.bg} overflow-y-auto lg:overflow-hidden ${themeConfig.fontFamily} text-[#1a1a1a] transition-colors duration-500`}>
@@ -774,7 +761,7 @@ export default function Dashboard() {
               <span className="text-xs font-black tracking-wide text-white uppercase block leading-tight">
                 AVIATION
               </span>
-              <span className="text-[10px] text-sky-300 font-medium block">
+              <span className="text-[10px] text-azur-pastel font-medium block">
                 Sans Frontières France
               </span>
             </div>
@@ -782,7 +769,7 @@ export default function Dashboard() {
 
           <nav className="space-y-6">
             <div>
-              <p className={`text-[10px] uppercase tracking-[0.2em] mb-4 ${theme === 'vintage' ? 'text-amber-200/50' : 'text-slate-400'} font-bold`}>Menu principal</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] mb-4 text-slate-400 font-bold">Menu principal</p>
               <ul className="space-y-1.5">
                 <li>
                   <button 
@@ -793,7 +780,7 @@ export default function Dashboard() {
                         : `${themeConfig.sidebarText}`
                     }`}
                   >
-                    <FileText className="w-4 h-4 text-indigo-505" /> 
+                    <FileText className="w-4 h-4 text-azur" />
                     <span className="font-medium">Mes Fichiers & Dossiers</span>
                   </button>
                 </li>
@@ -809,17 +796,17 @@ export default function Dashboard() {
             onClick={() => setIsProfileOpen(true)}
             className="w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 text-left transition-all mb-3 cursor-pointer group"
           >
-            <div className={`w-9 h-9 rounded-full ${theme === 'vintage' ? 'bg-[#9c6a3c] text-white' : theme === 'neo-dark' ? 'bg-[#1e293b] text-cyan-400' : 'bg-slate-300 text-[#001f3f]'} flex items-center justify-center text-xs font-bold shrink-0 shadow-xs group-hover:scale-105 transition-transform`}>
+            <div className="w-9 h-9 rounded-full bg-slate-300 text-deep flex items-center justify-center text-xs font-bold shrink-0 shadow-xs group-hover:scale-105 transition-transform">
               {organization.contactName.charAt(0).toUpperCase()}
             </div>
             <div className="overflow-hidden flex-grow text-left">
               <div className="flex items-center gap-1">
-                <p className={`text-xs font-semibold truncate ${theme === 'vintage' || theme === 'neo-dark' || theme === 'navy' ? 'text-white' : 'text-slate-200'}`}>{organization.contactName}</p>
+                <p className="text-xs font-semibold truncate text-white">{organization.contactName}</p>
                 <Settings className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
               </div>
               <p className="text-[10px] text-slate-400 truncate font-sans font-semibold text-left">{organization.name}</p>
               {organization.delegation_id && (
-                <p className="text-[9px] text-[#1b98c4] truncate font-sans font-black mt-0.5 flex items-center gap-1 text-left">
+                <p className="text-[9px] text-azur truncate font-sans font-black mt-0.5 flex items-center gap-1 text-left">
                   <span>📍 {getDelegationName(organization.delegation_id)}</span>
                   {organization.antenne_id && (
                     <>
@@ -854,7 +841,7 @@ export default function Dashboard() {
               onClick={() => setIsProfileOpen(true)}
               className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-white/10 transition-all cursor-pointer text-left"
             >
-              <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold shrink-0">
+              <div className="w-7 h-7 rounded-full bg-azur text-white flex items-center justify-center text-xs font-bold shrink-0">
                 {organization.contactName.charAt(0).toUpperCase()}
               </div>
               <span className="font-bold tracking-wider text-xs font-sans text-left truncate max-w-[120px]">{organization.contactName}</span>
@@ -879,22 +866,22 @@ export default function Dashboard() {
         <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 shrink-0 gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1.5 text-left">
-              <span className={`text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded bg-[#1b98c4]/5 text-[#1b98c4] border border-[#1b98c4]/20`}>
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded bg-azur/10 text-azur border border-azur/20">
                 Autorisation de mission Aviation Sans Frontières
               </span>
-              <span className="text-[10px] uppercase font-bold text-slate-455 text-slate-400">/ Organisme</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400">/ Organisme</span>
               {organization.delegation_id && (
-                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-indigo-500/10 text-indigo-505 text-indigo-400 border border-indigo-550/20">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-azur/10 text-azur border border-azur/20">
                   📍 {getDelegationName(organization.delegation_id)}
                 </span>
               )}
               {organization.antenne_id && (
-                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-505 text-emerald-400 border border-emerald-555/20">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-500 text-emerald-400 border border-emerald-500/20">
                   🏢 {getAntenneName(organization.delegation_id, organization.antenne_id)}
                 </span>
               )}
             </div>
-            <h1 className={`text-2xl md:text-3xl ${titleFont} ${themeConfig.textColor}`}>
+            <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-deep">
               Soumission des Dossiers & Autorisations
             </h1>
             <p className={`text-xs mt-1 ${themeConfig.textMuted}`}>
@@ -904,18 +891,13 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-3">
             {/* Submission Status Card */}
-            <div className={`border px-5 py-3 ${containerRounded} flex items-center gap-3 shadow-xs ${statusColors}`}>
+            <div className={`card-asf px-5 py-3 ${containerRounded} flex items-center gap-3`}>
               <div className="text-left">
-                <p className="text-[9px] uppercase tracking-widest font-bold opacity-75">Statut de la revue</p>
-                <p className="text-sm font-black uppercase leading-tight font-sans">
-                  {organization.submissionStatus === 'Pending' ? "En attente" :
-                   organization.submissionStatus === 'Under review' ? "En révision" :
-                   organization.submissionStatus === 'Validated' ? "Validé / Autorisé" :
-                   organization.submissionStatus === 'Incomplete' ? "Incomplet" :
-                   organization.submissionStatus}
-                </p>
+                <p className={`text-[9px] uppercase tracking-widest font-bold ${themeConfig.textMuted}`}>Statut de la revue</p>
+                <div className="mt-1">
+                  <StatusBadge status={organization.submissionStatus} />
+                </div>
               </div>
-              <div className={`w-2.5 h-2.5 rounded-full ${badgeDotColor} animate-pulse shadow-[0_0_8px_currentColor]`}></div>
             </div>
           </div>
         </header>
@@ -936,13 +918,13 @@ export default function Dashboard() {
             </button>
 
             <div className="flex items-start gap-3 pr-8">
-              <AlertCircle className="w-5 h-5 text-amber-650 dark:text-amber-450 shrink-0 mt-0.5 animate-pulse" />
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 animate-pulse" />
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="font-bold text-amber-850 dark:text-amber-400">
+                  <span className="font-bold text-amber-800 dark:text-amber-400">
                     Mode Sandbox Activé (Sauvegarde Sécurisée Firestore)
                   </span>
-                  <span className="px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider bg-amber-500/15 text-amber-705 dark:text-amber-305 border border-amber-500/10 rounded">
+                  <span className="px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/10 rounded">
                     Fallback 100% Opérationnel
                   </span>
                 </div>
@@ -984,7 +966,7 @@ export default function Dashboard() {
                         <p>
                           <strong>La solution de secours automatique :</strong> Pour que vous puissiez tester sans contrainte, nous avons implémenté un système de découpage binaire automatique (<em>Chunks</em>) qui fragmente et sauvegarde vos fichiers volumineux directement dans Firestore. Tout est 100% fonctionnel et transparent pour vous !
                         </p>
-                        <p className="pt-1.5 border-t border-amber-500/5 text-[9px] text-slate-405">
+                        <p className="pt-1.5 border-t border-amber-500/5 text-[9px] text-slate-400">
                           ℹ️ Pour lier votre propre base de données réelle sans cette alerte, modifiez simplement vos clés d'API dans le fichier de configuration <code>firebase-applet-config.json</code> à gauche.
                         </p>
                       </div>
@@ -1021,8 +1003,8 @@ export default function Dashboard() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               className={`bg-white border-2 border-dashed ${themeConfig.textColor} hover:brightness-98 transition-all duration-300 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 cursor-pointer shadow-xs ${containerRounded} ${
-                isDragActive 
-                  ? 'border-indigo-500 bg-indigo-500/5 scale-101' 
+                isDragActive
+                  ? 'border-azur bg-azur/5 scale-101'
                   : 'border-slate-200 dark:border-slate-800'
               }`}
             >
@@ -1032,7 +1014,7 @@ export default function Dashboard() {
                 className="hidden" 
                 onChange={handleFileChange} 
               />
-              <div className={`w-12 h-12 ${theme === 'vintage' ? 'bg-[#FAF6EC] text-[#895932]' : 'bg-slate-100 text-[#001f3f]'} rounded-full flex items-center justify-center shadow-xs`}>
+              <div className="w-12 h-12 bg-azur-light text-deep rounded-full flex items-center justify-center shadow-xs">
                 <CloudUpload className="w-6 h-6 animate-bounce" />
               </div>
               <div className="text-center sm:text-left">
@@ -1049,14 +1031,14 @@ export default function Dashboard() {
               <div className={`mt-3 ${themeConfig.cardBg} ${borderStyle} p-4 ${containerRounded} animate-pulse`}>
                 <div className={`flex justify-between text-xs font-semibold mb-2 ${themeConfig.textColor}`}>
                   <span className="flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 animate-spin text-indigo-500" />
+                    <RefreshCw className="w-3 h-3 animate-spin text-azur" />
                     Transmission des fichiers en cours vers votre dossier sécurisé...
                   </span>
                   <span>{Math.round(uploadProgress)}%</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                  <div 
-                    className="bg-indigo-500 h-2 rounded-full transition-all duration-300"
+                  <div
+                    className="bg-azur h-2 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
@@ -1068,7 +1050,7 @@ export default function Dashboard() {
           <div className={`${themeConfig.cardBg} ${borderStyle} p-6 ${containerRounded} ${cardShadow} flex flex-col justify-center transition-all duration-300`}>
             <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2 font-sans">
               <span className={`flex items-center gap-1 ${themeConfig.textColor}`}>
-                <HardDrive className="w-3.5 h-3.5 text-indigo-500" /> Espace de Stockage Alloué
+                <HardDrive className="w-3.5 h-3.5 text-azur" /> Espace de Stockage Alloué
               </span>
               <span className={themeConfig.textMuted}>{Math.round(storagePercent)}% de 100 Mo</span>
             </div>
@@ -1076,11 +1058,9 @@ export default function Dashboard() {
             <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-2.5">
               <div 
                 className={`h-2.5 rounded-full transition-all duration-300 ${
-                  storagePercent > 90 
-                    ? 'bg-rose-500' 
-                    : theme === 'neo-dark' 
-                    ? 'bg-cyan-400' 
-                    : 'bg-[#001f3f]'
+                  storagePercent > 90
+                    ? 'bg-rose-500'
+                    : 'bg-azur'
                 }`}
                 style={{ width: `${storagePercent}%` }}
               ></div>
@@ -1099,7 +1079,7 @@ export default function Dashboard() {
               placeholder="Rechercher des documents..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 text-xs border ${themeConfig.cardBorder} rounded-xl bg-transparent focus:outline-none focus:ring-1 focus:ring-slate-400 ${themeConfig.textColor}`}
+              className="input-asf pl-10 text-xs"
             />
           </div>
 
@@ -1119,9 +1099,9 @@ export default function Dashboard() {
                   onClick={() => setFileTypeFilter(type.id)}
                   type="button"
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all cursor-pointer ${
-                    active 
-                      ? 'bg-indigo-600 text-white shadow-3xs' 
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-205 dark:hover:bg-slate-750'
+                    active
+                      ? 'bg-azur text-white shadow-3xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   {type.label}
@@ -1187,7 +1167,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setIsCreatingFolder(true)}
-                  className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-900/40 hover:border-indigo-300 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-3xs"
+                  className="flex items-center gap-1.5 text-xs font-semibold bg-azur-light text-azur hover:bg-azur/15 border border-azur/20 hover:border-azur/40 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-3xs"
                 >
                   <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
                 </button>
@@ -1221,20 +1201,20 @@ export default function Dashboard() {
                     {displayedFolders.map((folder) => (
                       <tr 
                         key={folder.id} 
-                        className={`transition-colors cursor-pointer group hover:bg-[#001f3f]/5`}
+                        className={`transition-colors cursor-pointer group hover:bg-deep/5`}
                         onClick={() => setCurrentFolderId(folder.id)}
                         onDragOver={handleDragOverFolder}
                         onDrop={(e) => handleDropOnFolder(e, folder.id)}
                       >
                         <td className="px-6 py-4 font-medium flex items-center gap-4">
-                          <div className={`w-9 h-9 ${theme === 'vintage' ? 'bg-[#9c6a3c]/10 text-[#895932]' : 'bg-indigo-500/10 text-indigo-500'} rounded-lg flex items-center justify-center shrink-0`}>
+                          <div className="w-9 h-9 bg-azur/10 text-azur rounded-lg flex items-center justify-center shrink-0">
                             <FolderIcon className="w-5 h-5 fill-current" />
                           </div>
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
                               <span className={`text-sm font-semibold truncate ${themeConfig.textColor}`}>{folder.name}</span>
                               {folder.createdBy === 'admin' ? (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-105 bg-amber-100 text-amber-800 border border-amber-200">
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 bg-amber-100 text-amber-800 border border-amber-200">
                                   Administrateur
                                 </span>
                               ) : (
@@ -1273,21 +1253,21 @@ export default function Dashboard() {
                         onClick={() => setPreviewingFile(file)}
                       >
                         <td className="px-6 py-4 flex items-center gap-4">
-                          <div className={`w-9 h-9 ${theme === 'vintage' ? 'bg-amber-100 text-[#895932]' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} rounded-lg flex items-center justify-center shrink-0`}>
+                          <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg flex items-center justify-center shrink-0">
                             <FileText className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
                             {renamingFile?.id === file.id ? (
                               <form onSubmit={handleRenameSubmit} className="flex items-center gap-1.5 max-w-xs" onClick={e => e.stopPropagation()}>
-                                <input 
-                                  type="text" 
+                                <input
+                                  type="text"
                                   value={renameInput}
                                   onChange={(e) => setRenameInput(e.target.value)}
-                                  className={`text-xs px-2 py-1 border rounded w-full bg-white text-slate-900`}
+                                  className="input-asf text-xs py-1"
                                   autoFocus
                                 />
-                                <button type="submit" className="text-[10px] bg-[#001f3f] text-white px-2 py-1 rounded cursor-pointer font-bold">Enregistrer</button>
-                                <button type="button" onClick={() => setRenamingFile(null)} className="text-[10px] bg-slate-200 text-slate-705 px-1.5 py-1 rounded cursor-pointer">X</button>
+                                <button type="submit" className="btn-asf text-[10px] px-2 py-1">Enregistrer</button>
+                                <button type="button" onClick={() => setRenamingFile(null)} className="btn-secondary text-[10px] px-1.5 py-1">X</button>
                               </form>
                             ) : (
                               <div className="flex flex-col min-w-0 font-sans">
@@ -1313,19 +1293,7 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center whitespace-nowrap">
-                          {(() => {
-                            const fileStatus = file.submissionStatus || 'Pending';
-                            const spec = statusConfig[fileStatus] || statusConfig['Pending'];
-                            const Icon = spec.icon;
-                            return (
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${spec.bgClass} border`}>
-                                <Icon className="w-3" />
-                                {fileStatus === 'Validated' ? 'Validé' :
-                                 fileStatus === 'Incomplete' ? 'Incomplet' :
-                                 fileStatus === 'Under review' ? "En cours d'analyse" : 'En attente'}
-                              </span>
-                            );
-                          })()}
+                          <StatusBadge status={file.submissionStatus || 'Pending'} />
                         </td>
                         <td className={`px-6 py-4 text-center font-mono text-xs font-semibold ${themeConfig.textMuted}`}>
                           {formatBytes(file.size)}
@@ -1337,7 +1305,7 @@ export default function Dashboard() {
                           <div className="flex justify-end items-center space-x-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}
-                              className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-405 transition-all text-slate-600 cursor-pointer`}
+                              className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-slate-600 cursor-pointer`}
                               title="Télécharger"
                             >
                               <Download className="w-3.5 h-3.5" />
@@ -1346,14 +1314,14 @@ export default function Dashboard() {
                               <>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setRenamingFile(file); setRenameInput(file.name); }}
-                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-405 transition-all text-blue-500 cursor-pointer`}
+                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-azur cursor-pointer`}
                                   title="Renommer"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setDeletingFile(file); }}
-                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-405 transition-all text-red-500 cursor-pointer`}
+                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-red-500 cursor-pointer`}
                                   title="Purger définitivement"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />

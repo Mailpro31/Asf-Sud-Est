@@ -25,6 +25,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
+import { StatusBadge } from './ui';
 
 interface AntenneDashboardModalProps {
   isOpen: boolean;
@@ -180,7 +181,7 @@ export default function AntenneDashboardModal({
   const getComplianceColor = (rate: number) => {
     if (rate >= 80) return "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/35";
     if (rate >= 50) return "text-amber-600 bg-amber-50 dark:bg-amber-950/35 border-amber-200 dark:border-amber-900/40";
-    return "text-rose-605 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/40";
+    return "text-rose-600 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/40";
   };
 
   return (
@@ -204,14 +205,14 @@ export default function AntenneDashboardModal({
           className="relative w-full max-w-4xl h-[90vh] max-h-[800px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl z-10 flex flex-col overflow-hidden text-left"
         >
           {/* Header Banner - Sky or local customized layout */}
-          <div className="relative bg-gradient-to-r from-sky-600 via-[#1b98c4] to-[#0a5270] p-6 text-white shrink-0">
+          <div className="relative bg-gradient-to-r from-deep via-azur to-deep-dark p-6 text-white shrink-0">
             {/* Ambient flight vectors */}
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
             
             <div className="flex justify-between items-start">
               <div className="space-y-1">
                 <span className="inline-flex items-center gap-1 bg-white/12 text-white/95 text-[9.5px] uppercase font-black px-2.5 py-1 rounded-full border border-white/20 select-none">
-                  <Sparkles className="w-3 h-3 text-sky-200" /> Antenne Régionale Déployée
+                  <Sparkles className="w-3 h-3 text-azur-pastel" /> Antenne Régionale Déployée
                 </span>
                 <h2 className="text-xl md:text-2xl font-black tracking-tight flex items-center gap-2 mt-2">
                   <MapPin className="w-6 h-6 text-orange-400 fill-orange-400/20" />
@@ -234,7 +235,7 @@ export default function AntenneDashboardModal({
             {/* Quick KPI Row attached to Banner */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/10 backdrop-blur-md rounded-2xl p-4 mt-6 border border-white/10">
               <div>
-                <span className="text-[10px] text-sky-100 font-extrabold uppercase tracking-wide">Taux de conformité</span>
+                <span className="text-[10px] text-azur-pastel font-extrabold uppercase tracking-wide">Taux de conformité</span>
                 <div className="text-lg font-black flex items-center gap-1.5 mt-0.5">
                   <TrendingUp className="w-4 h-4 text-emerald-400" />
                   <span>{complianceRate}%</span>
@@ -242,15 +243,15 @@ export default function AntenneDashboardModal({
               </div>
               
               <div>
-                <span className="text-[10px] text-sky-100 font-extrabold uppercase tracking-wide">Organismes actifs</span>
+                <span className="text-[10px] text-azur-pastel font-extrabold uppercase tracking-wide">Organismes actifs</span>
                 <div className="text-lg font-black mt-0.5 flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-sky-200" />
+                  <Building2 className="w-4 h-4 text-azur-pastel" />
                   <span>{localOrgs.length}</span>
                 </div>
               </div>
 
               <div>
-                <span className="text-[10px] text-sky-100 font-extrabold uppercase tracking-wide">Fichiers à valider</span>
+                <span className="text-[10px] text-azur-pastel font-extrabold uppercase tracking-wide">Fichiers à valider</span>
                 <div className="text-lg font-black mt-0.5 flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-amber-300" />
                   <span>{pendingFiles + underReviewFiles}</span>
@@ -258,9 +259,9 @@ export default function AntenneDashboardModal({
               </div>
 
               <div>
-                <span className="text-[10px] text-sky-100 font-extrabold uppercase tracking-wide">Vols Planifiés</span>
+                <span className="text-[10px] text-azur-pastel font-extrabold uppercase tracking-wide">Vols Planifiés</span>
                 <div className="text-lg font-black mt-0.5 flex items-center gap-1.5">
-                  <PlaneTakeoff className="w-4 h-4 text-sky-300" />
+                  <PlaneTakeoff className="w-4 h-4 text-azur-pastel" />
                   <span>{meta.activeMissions} missions</span>
                 </div>
               </div>
@@ -273,7 +274,7 @@ export default function AntenneDashboardModal({
               onClick={() => setActiveTab('stats')}
               className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                 activeTab === 'stats'
-                  ? 'border-[#1b98c4] text-[#1b98c4] dark:text-sky-400'
+                  ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -283,7 +284,7 @@ export default function AntenneDashboardModal({
               onClick={() => setActiveTab('orgs')}
               className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                 activeTab === 'orgs'
-                  ? 'border-[#1b98c4] text-[#1b98c4] dark:text-sky-400'
+                  ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -293,7 +294,7 @@ export default function AntenneDashboardModal({
               onClick={() => setActiveTab('documents')}
               className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                 activeTab === 'documents'
-                  ? 'border-[#1b98c4] text-[#1b98c4] dark:text-sky-400'
+                  ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -319,7 +320,7 @@ export default function AntenneDashboardModal({
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-3xs text-left">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-xs font-bold text-slate-500 uppercase">Indice de Conformité Réglementaire</span>
-                        <span className="text-xs font-mono font-bold text-[#1b98c4]">{validatedFiles}/{totalFiles} fichiers validés</span>
+                        <span className="text-xs font-mono font-bold text-azur">{validatedFiles}/{totalFiles} fichiers validés</span>
                       </div>
                       
                       {/* Simulated elegant progress gauge */}
@@ -328,7 +329,7 @@ export default function AntenneDashboardModal({
                           initial={{ width: 0 }}
                           animate={{ width: `${complianceRate}%` }}
                           transition={{ duration: 0.6 }}
-                          className="h-full bg-gradient-to-r from-sky-400 to-[#1b98c4]"
+                          className="h-full bg-gradient-to-r from-azur-pastel to-azur"
                         />
                       </div>
                       
@@ -343,8 +344,8 @@ export default function AntenneDashboardModal({
                     {/* Local Coordinator & Contact card */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-3xs text-left space-y-4">
                       <div className="flex items-center gap-2 border-b border-slate-50 dark:border-slate-800/60 pb-3">
-                        <Users className="w-5 h-5 text-[#1b98c4]" />
-                        <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-350 tracking-wider">Coordinateur Référent d'Antenne</h4>
+                        <Users className="w-5 h-5 text-azur" />
+                        <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">Coordinateur Référent d'Antenne</h4>
                       </div>
 
                       <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -352,20 +353,20 @@ export default function AntenneDashboardModal({
                           <p className="text-sm font-black text-slate-900 dark:text-slate-100">{meta.coordinator}</p>
                           <p className="text-xs text-slate-400 mt-1">Coordonnées de l'antenne locale d'Aviation Sans Frontières.</p>
                           
-                          <div className="mt-3.5 space-y-1.5 text-xs text-slate-500 dark:text-slate-450">
+                          <div className="mt-3.5 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                             <span className="flex items-center gap-2">
                               <Phone className="w-3.5 h-3.5 text-slate-400" />
                               <span>{meta.phone}</span>
                             </span>
                             <span className="flex items-center gap-2">
                               <Mail className="w-3.5 h-3.5 text-slate-400" />
-                              <span className="underline hover:text-sky-505">{meta.email}</span>
+                              <span className="underline hover:text-azur">{meta.email}</span>
                             </span>
                           </div>
                         </div>
 
                         {/* Map marker detail block */}
-                        <div className="p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-100 dark:border-slate-850/80 font-mono text-[10.5px] space-y-2 sm:max-w-[210px] sm:self-center">
+                        <div className="p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-100 dark:border-slate-800/80 font-mono text-[10.5px] space-y-2 sm:max-w-[210px] sm:self-center">
                           <p className="text-slate-400 uppercase font-bold tracking-wider">📍 Localisation</p>
                           <p className="text-slate-700 dark:text-slate-300 font-sans font-bold leading-normal">{meta.address}</p>
                         </div>
@@ -375,12 +376,12 @@ export default function AntenneDashboardModal({
                     {/* Simulated Flight plans / Operations Card */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-3xs text-left">
                       <div className="flex items-center gap-2 border-b border-slate-50 dark:border-slate-800/60 pb-3 mb-3">
-                        <PlaneTakeoff className="w-5 h-5 text-[#1b98c4]" />
-                        <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-350 tracking-wider">Missions & Vols Actifs "Ailes du Sourire"</h4>
+                        <PlaneTakeoff className="w-5 h-5 text-azur" />
+                        <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">Missions & Vols Actifs "Ailes du Sourire"</h4>
                       </div>
 
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-850">
+                        <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
                           <div className="space-y-1">
                             <strong className="text-xs text-slate-800 dark:text-slate-200">Vol Découverte "Ailes 44"</strong>
                             <p className="text-[10px] text-slate-400">Simulation d'intégration / Initiation de vol adaptée</p>
@@ -390,12 +391,12 @@ export default function AntenneDashboardModal({
                           </span>
                         </div>
 
-                        <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-850">
+                        <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
                           <div className="space-y-1">
                             <strong className="text-xs text-slate-800 dark:text-slate-200">Visite d'aérodrome locale</strong>
                             <p className="text-[10px] text-slate-400">Encadrement des enfants en situation de fragilité</p>
                           </div>
-                          <span className="bg-sky-50 text-[#1b98c4] text-[10px] font-bold px-2 py-1 rounded-md border border-sky-100">
+                          <span className="bg-azur-light text-azur text-[10px] font-bold px-2 py-1 rounded-md border border-azur/20">
                             VALIDÉ PAR COMM.
                           </span>
                         </div>
@@ -406,9 +407,9 @@ export default function AntenneDashboardModal({
                   {/* Right Action column */}
                   <div className="space-y-6">
                     {/* Workspace redirection */}
-                    <div className="bg-gradient-to-br from-indigo-50 to-sky-50 dark:from-slate-950/20 dark:to-slate-950/50 border border-indigo-100/40 dark:border-slate-800 p-4.5 rounded-2xl text-left space-y-3 text-xs font-medium">
-                      <Compass className="w-5 h-5 text-indigo-500" />
-                      <h4 className="font-extrabold text-[#1b98c4]">Accéder aux dossiers</h4>
+                    <div className="bg-azur-light dark:from-slate-950/20 dark:to-slate-950/50 dark:bg-none border border-azur/20 dark:border-slate-800 p-4.5 rounded-2xl text-left space-y-3 text-xs font-medium">
+                      <Compass className="w-5 h-5 text-azur" />
+                      <h4 className="font-extrabold text-azur">Accéder aux dossiers</h4>
                       <p className="text-slate-500 leading-normal">
                         Focaliser complètement l'espace de transit réglementaire de la direction principale d'ASF sur l'antenne locale de {antenne.name}.
                       </p>
@@ -418,7 +419,7 @@ export default function AntenneDashboardModal({
                           onFilterWorkspace(antenneId);
                           onClose();
                         }}
-                        className="w-full bg-[#1b98c4] hover:bg-sky-700 text-white font-black py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs mt-2 text-xs"
+                        className="btn-asf w-full py-2 px-3 mt-2 text-xs"
                       >
                         <span>Filtrer cet espace sur {antenne.name}</span>
                         <ChevronRight className="w-4 h-4 shrink-0 animate-pulse" />
@@ -430,7 +431,7 @@ export default function AntenneDashboardModal({
                       <h4 className="font-extrabold text-slate-700 dark:text-slate-300">Flotte d'aéronefs d'initiation</h4>
                       <div className="space-y-2">
                         {meta.planes.map((p, i) => (
-                          <div key={i} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-850 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+                          <div key={i} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
                             <span>✈️</span>
                             <span>{p}</span>
                           </div>
@@ -451,7 +452,7 @@ export default function AntenneDashboardModal({
                   className="space-y-4 text-left"
                 >
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">Organismes partenaires enregistrés</h3>
+                    <h3 className="text-sm font-display font-black text-deep dark:text-slate-200 uppercase">Organismes partenaires enregistrés</h3>
                     <span className="text-xs text-slate-400">{localOrgs.length} organismes rattachés</span>
                   </div>
 
@@ -467,16 +468,10 @@ export default function AntenneDashboardModal({
                           <div key={org.id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-3xs relative group flex flex-col justify-between">
                             <div>
                               <div className="flex justify-between items-start">
-                                <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-tight truncate max-w-[210px]" title={org.name}>
+                                <h4 className="text-xs font-extrabold text-deep dark:text-slate-200 uppercase tracking-tight truncate max-w-[210px]" title={org.name}>
                                   🏢 {org.name || "Partenaire non spécifié"}
                                 </h4>
-                                <span className={`text-[9.5px] px-2 py-0.5 rounded-full font-black uppercase ${
-                                  org.submissionStatus === 'Validated' 
-                                    ? 'bg-emerald-50 text-emerald-700' 
-                                    : 'bg-amber-50 text-amber-700'
-                                }`}>
-                                  {org.submissionStatus === 'Validated' ? 'Validé d\'office' : 'En examen'}
-                                </span>
+                                <StatusBadge status={org.submissionStatus} />
                               </div>
 
                               <p className="text-[11px] text-slate-400 mt-2 font-mono">ID : {org.id.substring(0, 10)}</p>
@@ -486,14 +481,14 @@ export default function AntenneDashboardModal({
                               </div>
                             </div>
 
-                            <div className="border-t border-slate-50 dark:border-slate-850 mt-4 pt-3 flex items-center justify-between">
+                            <div className="border-t border-slate-50 dark:border-slate-800 mt-4 pt-3 flex items-center justify-between">
                               <span className="text-[10.5px] text-slate-400">{orgFilesCount} document{orgFilesCount !== 1 ? 's' : ''} versé{orgFilesCount !== 1 ? 's' : ''}</span>
                               <button
                                 onClick={() => {
                                   onFilterWorkspace(antenneId);
                                   onClose();
                                 }}
-                                className="text-[10px] font-black text-[#1b98c4] hover:underline flex items-center gap-0.5"
+                                className="text-[10px] font-black text-azur hover:underline flex items-center gap-0.5"
                               >
                                 <span>Voir le cabinet</span>
                                 <ExternalLink className="w-3 h-3" />
@@ -517,26 +512,26 @@ export default function AntenneDashboardModal({
                   className="space-y-4 text-left"
                 >
                   <div className="flex items-center justify-between shrink-0">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">Documents transmis par l'antenne</h3>
+                    <h3 className="text-sm font-display font-black text-deep dark:text-slate-200 uppercase">Documents transmis par l'antenne</h3>
                     <span className="text-xs text-slate-400 font-mono">{localFiles.length} justificatif(s)</span>
                   </div>
 
                   {localFiles.length === 0 ? (
-                    <div className="p-8 text-center bg-white dark:bg-slate-900 border border-slate-200/40 rounded-2xl text-xs text-slate-450">
+                    <div className="p-8 text-center bg-white dark:bg-slate-900 border border-slate-200/40 rounded-2xl text-xs text-slate-400">
                       Aucun document réglementaire n'est présent dans les bases pour l'instant dans l'antenne locale de {antenne.name}.
                     </div>
                   ) : (
                     <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800 shadow-3xs bg-white dark:bg-slate-900">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-slate-50 dark:bg-slate-950 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider border-b border-slate-100 dark:border-slate-850">
+                          <tr className="bg-slate-50 dark:bg-slate-950 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                             <th className="px-4 py-2.5">Titre du fichier</th>
                             <th className="px-3 py-2.5">Organisme</th>
                             <th className="px-3 py-2.5">Statut Actuel</th>
                             <th className="px-4 py-2.5 text-right font-black">Actions de vérification</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-850 max-h-[300px] overflow-y-auto">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[300px] overflow-y-auto">
                           {localFiles.map((file) => {
                             const partner = orgProfiles.find(p => p.id === file.orgId);
                             const fileStatus = file.submissionStatus || 'Pending';
@@ -546,18 +541,18 @@ export default function AntenneDashboardModal({
                               <tr key={file.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/40 transition-colors">
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-2">
-                                    <FileText className="w-4 h-4 text-slate-405 shrink-0" />
+                                    <FileText className="w-4 h-4 text-slate-400 shrink-0" />
                                     <div className="flex flex-col min-w-[200px] max-w-[420px]">
-                                      <span className="text-xs font-bold text-slate-800 dark:text-slate-250 truncate block" title={file.name}>{file.name}</span>
+                                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block" title={file.name}>{file.name}</span>
                                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                         <span className="text-[9.5px] text-slate-400 font-mono">ID: {file.id.substring(0, 8)}</span>
-                                        <span className="text-[9px] text-slate-350">•</span>
+                                        <span className="text-[9px] text-slate-300">•</span>
                                         <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
                                           <span>Déposé par :</span>
                                           <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-tight ${
                                             file.uploadedBy === 'admin'
                                               ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50'
-                                              : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-150'
+                                              : 'bg-azur/10 text-azur dark:bg-azur/15 border border-azur/20'
                                           }`}>{uploaderName}</span>
                                         </span>
                                       </div>
@@ -565,23 +560,12 @@ export default function AntenneDashboardModal({
                                   </div>
                                 </td>
                                 
-                                <td className="px-3 py-3 text-xs text-[#1b98c4] font-bold">
+                                <td className="px-3 py-3 text-xs text-azur font-bold">
                                   {partner?.name || 'Inconnu'}
                                 </td>
 
                                 <td className="px-3 py-3">
-                                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase border leading-none ${
-                                    fileStatus === 'Validated' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                    fileStatus === 'Incomplete' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                                    fileStatus === 'Under review' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                    'bg-amber-50 text-amber-700 border-amber-200'
-                                  }`}>
-                                    <span>{
-                                      fileStatus === 'Validated' ? 'Validé' :
-                                      fileStatus === 'Incomplete' ? 'Non conforme' :
-                                      fileStatus === 'Under review' ? 'En étude' : 'En attente'
-                                    }</span>
-                                  </span>
+                                  <StatusBadge status={fileStatus} />
                                 </td>
 
                                 <td className="px-4 py-3 text-right">
@@ -590,7 +574,7 @@ export default function AntenneDashboardModal({
                                       <a
                                         href={file.fallbackDataUrl}
                                         download={file.name}
-                                        className="p-1 rounded-md border border-slate-200 dark:border-slate-800 text-slate-400 bg-white dark:bg-slate-905 hover:bg-slate-100 cursor-pointer transition-colors"
+                                        className="p-1 rounded-md border border-slate-200 dark:border-slate-800 text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-100 cursor-pointer transition-colors"
                                         title="Télécharger"
                                       >
                                         <Download className="w-3.5 h-3.5" />
@@ -625,7 +609,7 @@ export default function AntenneDashboardModal({
           </div>
 
           {/* Modal Footer Controls */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-150 dark:border-slate-850 flex items-center justify-between shrink-0 text-xs">
+          <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 text-xs">
             <span className="text-slate-400 font-medium">Visualisation d'antenne - {antenne.name}</span>
             <button
               onClick={onClose}
