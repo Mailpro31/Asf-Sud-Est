@@ -43,7 +43,7 @@ const themeConfig: ThemeContextType['themeConfig'] = {
   sidebarActive: 'bg-azur/15 text-azur border-l-4 border-azur font-semibold',
   cardBg: 'bg-white',
   cardBorder: 'border-slate-200/60',
-  textColor: 'text-slate-850',
+  textColor: 'text-slate-800',
   textMuted: 'text-slate-500',
   accent: 'blue',
   btnPrimary: 'bg-azur text-white hover:bg-azur-hover font-medium rounded-xl shadow-xs transition-all duration-200',

@@ -341,8 +341,8 @@ export default function OrgCabinetModal({
           <div className="space-y-1 text-left">
             <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
               org.delegation_id === 'ouest' ? 'bg-indigo-50 border-indigo-100 text-indigo-600 dark:bg-indigo-950/40 dark:border-indigo-900/40 dark:text-indigo-400' :
-              org.delegation_id === 'occitanie' ? 'bg-rose-50 border-rose-105 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900/40 dark:text-rose-400' :
-              org.delegation_id === 'sud-est' ? 'bg-blue-50 border-blue-105 text-blue-600 dark:bg-blue-950/40 dark:border-blue-900/40 dark:text-blue-400' :
+              org.delegation_id === 'occitanie' ? 'bg-rose-50 border-rose-100 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900/40 dark:text-rose-400' :
+              org.delegation_id === 'sud-est' ? 'bg-blue-50 border-blue-100 text-blue-600 dark:bg-blue-950/40 dark:border-blue-900/40 dark:text-blue-400' :
               'bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:border-emerald-900/40 dark:text-emerald-400'
             }`}>
               📍 {org.delegation_id?.toUpperCase()} - {org.antenne_id ? (ANTENNES_BY_DELEGATION[org.delegation_id || '']?.find((a: any) => a.id === org.antenne_id)?.name || org.antenne_id) : 'SANS VILLE'}
@@ -395,7 +395,7 @@ export default function OrgCabinetModal({
               </div>
 
               {/* File Uploader for this folder */}
-              <div className="bg-emerald-500/5 border border-emerald-250/30 rounded-2xl p-4 space-y-3 text-left">
+              <div className="bg-emerald-500/5 border border-emerald-200/30 rounded-2xl p-4 space-y-3 text-left">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div className="text-left">
                     <span className="text-xs font-black text-emerald-800 dark:text-emerald-400 block">📥 Téléverser un justificatif réglementaire</span>
@@ -450,7 +450,7 @@ export default function OrgCabinetModal({
                         <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-150 dark:divide-slate-800 text-[11.5px] text-slate-700 dark:text-slate-300">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[11.5px] text-slate-700 dark:text-slate-300">
                       {orgFiles.map(file => {
                         const isOriginalRenaming = renamingFile?.id === file.id;
                         return (
@@ -531,10 +531,10 @@ export default function OrgCabinetModal({
                                 value={file.submissionStatus || 'Pending'}
                                 onChange={(e) => handleUpdateOrgFileStatus(file.id, e.target.value as SubmissionStatus)}
                                 className={`text-[11px] font-extrabold p-1 rounded-lg border focus:outline-none ${
-                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-250' :
-                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 border-rose-250' :
-                                  (file.submissionStatus === 'Under review') ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 border-blue-250' :
-                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 border-amber-250'
+                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-200' :
+                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 border-rose-200' :
+                                  (file.submissionStatus === 'Under review') ? 'bg-azur-light dark:bg-azur/10 text-deep border-azur-pastel' :
+                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 border-amber-200'
                                 }`}
                               >
                                 <option value="Pending">⌛ En attente</option>
@@ -589,7 +589,7 @@ export default function OrgCabinetModal({
               {/* Sub-header inside Modal */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="text-left">
-                  <h4 className="text-sm font-display font-black text-deep dark:text-slate-550">📁 REPERTOIRES ASSOCIES ET JUSTIFICATIFS REGLEMENTAIRES</h4>
+                  <h4 className="text-sm font-display font-black text-deep dark:text-slate-500">📁 REPERTOIRES ASSOCIES ET JUSTIFICATIFS REGLEMENTAIRES</h4>
                   <p className="text-xs text-slate-400">Duffers de stockage virtuel contenant les récépissés de douane, assurances de bord et brevets de navigation.</p>
                 </div>
                 
@@ -656,7 +656,7 @@ export default function OrgCabinetModal({
                                 Admin
                               </span>
                             ) : (
-                              <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-slate-105 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
+                              <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
                                 Partenaire
                               </span>
                             )}
@@ -703,7 +703,7 @@ export default function OrgCabinetModal({
                           <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-150 dark:divide-slate-800 text-[11.5px] text-slate-700 dark:text-slate-300">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[11.5px] text-slate-700 dark:text-slate-300">
                         {files.filter(f => f.orgId === org.id && (!f.folderId || f.folderId === null)).map(file => (
                           <tr key={file.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                             <td className="px-4 py-3 text-left">
@@ -722,10 +722,10 @@ export default function OrgCabinetModal({
                                 value={file.submissionStatus || 'Pending'}
                                 onChange={(e) => handleUpdateOrgFileStatus(file.id, e.target.value as SubmissionStatus)}
                                 className={`text-[11px] font-extrabold p-1 rounded-lg border focus:outline-none ${
-                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-250' :
-                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 border-rose-250' :
-                                  (file.submissionStatus === 'Under review') ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 border-blue-250' :
-                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 border-amber-250'
+                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-200' :
+                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 border-rose-200' :
+                                  (file.submissionStatus === 'Under review') ? 'bg-azur-light dark:bg-azur/10 text-deep border-azur-pastel' :
+                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 border-amber-200'
                                 }`}
                               >
                                 <option value="Pending">⌛ En attente</option>

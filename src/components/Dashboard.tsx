@@ -761,7 +761,7 @@ export default function Dashboard() {
               <span className="text-xs font-black tracking-wide text-white uppercase block leading-tight">
                 AVIATION
               </span>
-              <span className="text-[10px] text-sky-300 font-medium block">
+              <span className="text-[10px] text-azur-pastel font-medium block">
                 Sans Frontières France
               </span>
             </div>
@@ -806,7 +806,7 @@ export default function Dashboard() {
               </div>
               <p className="text-[10px] text-slate-400 truncate font-sans font-semibold text-left">{organization.name}</p>
               {organization.delegation_id && (
-                <p className="text-[9px] text-[#1b98c4] truncate font-sans font-black mt-0.5 flex items-center gap-1 text-left">
+                <p className="text-[9px] text-azur truncate font-sans font-black mt-0.5 flex items-center gap-1 text-left">
                   <span>📍 {getDelegationName(organization.delegation_id)}</span>
                   {organization.antenne_id && (
                     <>
@@ -876,7 +876,7 @@ export default function Dashboard() {
                 </span>
               )}
               {organization.antenne_id && (
-                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-505 text-emerald-400 border border-emerald-555/20">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-500 text-emerald-400 border border-emerald-500/20">
                   🏢 {getAntenneName(organization.delegation_id, organization.antenne_id)}
                 </span>
               )}
@@ -918,13 +918,13 @@ export default function Dashboard() {
             </button>
 
             <div className="flex items-start gap-3 pr-8">
-              <AlertCircle className="w-5 h-5 text-amber-650 dark:text-amber-450 shrink-0 mt-0.5 animate-pulse" />
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 animate-pulse" />
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="font-bold text-amber-850 dark:text-amber-400">
+                  <span className="font-bold text-amber-800 dark:text-amber-400">
                     Mode Sandbox Activé (Sauvegarde Sécurisée Firestore)
                   </span>
-                  <span className="px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider bg-amber-500/15 text-amber-705 dark:text-amber-305 border border-amber-500/10 rounded">
+                  <span className="px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/10 rounded">
                     Fallback 100% Opérationnel
                   </span>
                 </div>
@@ -966,7 +966,7 @@ export default function Dashboard() {
                         <p>
                           <strong>La solution de secours automatique :</strong> Pour que vous puissiez tester sans contrainte, nous avons implémenté un système de découpage binaire automatique (<em>Chunks</em>) qui fragmente et sauvegarde vos fichiers volumineux directement dans Firestore. Tout est 100% fonctionnel et transparent pour vous !
                         </p>
-                        <p className="pt-1.5 border-t border-amber-500/5 text-[9px] text-slate-405">
+                        <p className="pt-1.5 border-t border-amber-500/5 text-[9px] text-slate-400">
                           ℹ️ Pour lier votre propre base de données réelle sans cette alerte, modifiez simplement vos clés d'API dans le fichier de configuration <code>firebase-applet-config.json</code> à gauche.
                         </p>
                       </div>
@@ -1101,7 +1101,7 @@ export default function Dashboard() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all cursor-pointer ${
                     active
                       ? 'bg-azur text-white shadow-3xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   {type.label}
@@ -1201,7 +1201,7 @@ export default function Dashboard() {
                     {displayedFolders.map((folder) => (
                       <tr 
                         key={folder.id} 
-                        className={`transition-colors cursor-pointer group hover:bg-[#001f3f]/5`}
+                        className={`transition-colors cursor-pointer group hover:bg-deep/5`}
                         onClick={() => setCurrentFolderId(folder.id)}
                         onDragOver={handleDragOverFolder}
                         onDrop={(e) => handleDropOnFolder(e, folder.id)}
@@ -1214,7 +1214,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2">
                               <span className={`text-sm font-semibold truncate ${themeConfig.textColor}`}>{folder.name}</span>
                               {folder.createdBy === 'admin' ? (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-105 bg-amber-100 text-amber-800 border border-amber-200">
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 bg-amber-100 text-amber-800 border border-amber-200">
                                   Administrateur
                                 </span>
                               ) : (
@@ -1305,7 +1305,7 @@ export default function Dashboard() {
                           <div className="flex justify-end items-center space-x-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}
-                              className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-405 transition-all text-slate-600 cursor-pointer`}
+                              className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-slate-600 cursor-pointer`}
                               title="Télécharger"
                             >
                               <Download className="w-3.5 h-3.5" />
@@ -1314,14 +1314,14 @@ export default function Dashboard() {
                               <>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setRenamingFile(file); setRenameInput(file.name); }}
-                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-405 transition-all text-azur cursor-pointer`}
+                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-azur cursor-pointer`}
                                   title="Renommer"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setDeletingFile(file); }}
-                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-405 transition-all text-red-500 cursor-pointer`}
+                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-red-500 cursor-pointer`}
                                   title="Purger définitivement"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />

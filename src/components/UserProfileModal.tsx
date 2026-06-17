@@ -523,7 +523,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                       className="space-y-6"
                     >
                       {/* Section 1: Change password */}
-                      <div className="bg-slate-50/50 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-100 dark:border-slate-850 space-y-4">
+                      <div className="bg-slate-50/50 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
                         <div className="flex items-start gap-3">
                           <div className="p-2 bg-azur/10 dark:bg-azur/15 text-azur rounded-xl">
                             <KeyRound className="w-4 h-4" />
@@ -583,7 +583,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                       </div>
 
                       {/* Section 2: Two-Factor auth (2FA) */}
-                      <div className="bg-slate-50/50 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-100 dark:border-slate-850 space-y-4">
+                      <div className="bg-slate-50/50 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-start gap-3">
                             <div className="p-2 bg-azur/10 dark:bg-azur/15 text-azur rounded-xl">
@@ -631,7 +631,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                                 <p className="font-bold text-slate-800 dark:text-slate-200">1. Scannez le QR Code ou copiez la clé d'installation</p>
                                 <p>Recherchez l'application Google Authenticator ou Authy sur votre appareil mobile.</p>
                                 
-                                <div className="flex items-center gap-2 mt-1 bg-slate-150 dark:bg-slate-950 p-2 rounded-lg border">
+                                <div className="flex items-center gap-2 mt-1 bg-slate-100 dark:bg-slate-950 p-2 rounded-lg border">
                                   <code className="text-azur dark:text-azur-pastel font-mono text-[10px] select-all font-semibold uppercase">
                                     AVIATION-B6F2-990E-401A-X9A2
                                   </code>
@@ -707,13 +707,13 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                       initial={{ opacity: 0, x: 5 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -5 }}
-                      className="space-y-6 text-xs text-slate-600 dark:text-slate-350"
+                      className="space-y-6 text-xs text-slate-600 dark:text-slate-300"
                     >
                       <h4 className="font-semibold text-slate-800 dark:text-slate-200">Appareils et Connexions Actuelles</h4>
                       <p className="text-[11px] text-slate-400">Ci-dessous la liste des sessions détectées sur votre compte. Déconnectez toute activité suspecte.</p>
 
                       <div className="space-y-3">
-                        <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850 flex items-start gap-4">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-start gap-4">
                           <div className="p-2 bg-azur/10 dark:bg-azur/15 text-azur rounded-xl">
                             <Laptop className="w-5 h-5" />
                           </div>
@@ -729,7 +729,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                           </div>
                         </div>
 
-                        <div className="p-4 bg-slate-50/50 dark:bg-slate-950/10 rounded-2xl border border-slate-100/60 dark:border-slate-850 flex items-start gap-4 opacity-70">
+                        <div className="p-4 bg-slate-50/50 dark:bg-slate-950/10 rounded-2xl border border-slate-100/60 dark:border-slate-800 flex items-start gap-4 opacity-70">
                           <div className="p-2 bg-slate-100 dark:bg-slate-900 text-slate-500 rounded-xl">
                             <Smartphone className="w-5 h-5" />
                           </div>

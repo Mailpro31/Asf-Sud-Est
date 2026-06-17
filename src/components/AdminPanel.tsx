@@ -73,13 +73,13 @@ const DELEGATION_THEMES: Record<string, {
 }> = {
   'ouest': {
     colorClass: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/30',
-    gradientClass: 'from-indigo-500/10 to-sky-500/5',
+    gradientClass: 'from-indigo-500/10 to-azur/5',
     badgeClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900',
     bgDecorative: 'bg-indigo-500/10',
     icon: '⛵',
     bannerBorder: 'border-indigo-100 dark:border-indigo-900/60',
     accentText: 'text-indigo-600 dark:text-indigo-400',
-    hoverAccent: 'hover:border-indigo-405 hover:bg-indigo-50/10 hover:shadow-indigo-500/5',
+    hoverAccent: 'hover:border-indigo-400 hover:bg-indigo-50/10 hover:shadow-indigo-500/5',
     ringColor: 'focus:ring-indigo-500'
   },
   'occitanie': {
@@ -122,7 +122,7 @@ const DELEGATION_THEMES: Record<string, {
     bgDecorative: 'bg-slate-500/5',
     icon: '📍',
     bannerBorder: 'border-slate-200 dark:border-slate-800/60',
-    accentText: 'text-slate-755 dark:text-slate-300',
+    accentText: 'text-slate-700 dark:text-slate-300',
     hoverAccent: 'hover:border-slate-400 hover:bg-slate-50/10',
     ringColor: 'focus:ring-slate-500'
   }
@@ -921,7 +921,7 @@ export default function AdminPanel() {
                     <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-azur transition-colors flex items-center gap-1.5">
                       <span>Programme Ailes du Sourire</span>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
                       Supervisez les antennes de vol, les justificatifs réglementaires de navigabilité et accédez aux dossiers d'organismes.
                     </p>
                   </div>
@@ -960,7 +960,7 @@ export default function AdminPanel() {
                     <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-orange-500 transition-colors flex items-center gap-1.5">
                       <span>Gestion des Utilisateurs</span>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
                       Gerez les habilitations, les permissions des structures affiliees, et attribuez les accreditations de coordinateurs.
                     </p>
                   </div>
@@ -979,24 +979,24 @@ export default function AdminPanel() {
                   setActiveTab('delegations');
                   setCurrentFolderId(null);
                 }}
-                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-amber-550 rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
+                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-amber-500 rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-36 h-36 bg-amber-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/10 transition-all"></div>
                 <div className="space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-550 flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
                     📍
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-amber-550 transition-colors flex items-center gap-1.5">
+                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-amber-500 transition-colors flex items-center gap-1.5">
                       <span>Gestion des Implantations</span>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-405 leading-relaxed font-semibold">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
                       Cartographiez les antennes nationales d'initiations sur la carte interactive de France et configurez de nouveaux relais.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-amber-550 uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
+                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-amber-500 uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
                   <span>Configurer l'implantation</span>
                   <ChevronRight className="w-4 h-4" />
                 </div>
@@ -1005,7 +1005,7 @@ export default function AdminPanel() {
             </div>
 
             {/* Quick overview metric line */}
-            <div className="bg-slate-50 dark:bg-slate-950/40 p-4 border border-slate-100 dark:border-slate-850 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold">
+            <div className="bg-slate-50 dark:bg-slate-950/40 p-4 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                 <span className="text-slate-500 dark:text-slate-400">Toutes les bases de données sont connectées et synchronisées en temps réel.</span>
@@ -1022,7 +1022,7 @@ export default function AdminPanel() {
           <div className="space-y-6">
             {/* National Supervisor Card */}
             <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="absolute top-0 right-0 w-96 h-96 bg-azur/10 rounded-full blur-3xl pointer-events-none"></div>
               <div className="space-y-2 relative z-10">
                 <span className="text-azur text-[10px] tracking-widest font-mono uppercase font-black">
                   DIRECTION PARIS SÉCURITÉ & LOGISTIQUE
@@ -1115,12 +1115,12 @@ export default function AdminPanel() {
                     setNavigationView('hub');
                     setCurrentFolderId(null);
                   }}
-                  className={`flex items-center gap-2 text-xs font-black px-4.5 py-2.5 rounded-2xl transition-all cursor-pointer border ${themeAttr.badgeClass} hover:bg-slate-150 dark:hover:bg-slate-800 shadow-xs`}
+                  className={`flex items-center gap-2 text-xs font-black px-4.5 py-2.5 rounded-2xl transition-all cursor-pointer border ${themeAttr.badgeClass} hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs`}
                 >
                   <ArrowLeft className="w-4 h-4 shrink-0" /> <span>← Retour au Hub Principal</span>
                 </button>
 
-                <div className="text-[10px] uppercase font-mono font-extrabold text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-slate-50 dark:bg-slate-905 border border-slate-200/80 dark:border-slate-800 px-3.5 py-2 rounded-2xl shadow-xs">
+                <div className="text-[10px] uppercase font-mono font-extrabold text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-3.5 py-2 rounded-2xl shadow-xs">
                   <span className="w-2.5 h-2.5 rounded-full bg-azur animate-pulse"></span>
                   <span>Portail Admin • {navigationView === 'ailes' ? 'Ailes du Sourire' : navigationView === 'users' ? 'Utilisateurs' : 'Implantations'}</span>
                 </div>
@@ -1140,7 +1140,7 @@ export default function AdminPanel() {
                         <span className={`text-[9.5px] tracking-widest font-black uppercase px-2.5 py-1 rounded-lg border leading-none ${themeAttr.badgeClass}`}>
                           Espace de travail régional
                         </span>
-                        <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-805 px-2 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
                           REG-ID : {delegationFilterId.toUpperCase()}
                         </span>
                       </div>
@@ -1220,8 +1220,8 @@ export default function AdminPanel() {
                             onClick={() => setActiveAntenneId(ant.id)}
                             className={`px-5 py-3 rounded-2xl text-xs font-bold tracking-tight transition-all duration-200 cursor-pointer flex items-center gap-2.5 border shadow-3xs ${
                               active 
-                                ? `bg-white dark:bg-slate-900 ${themeAttr.accentText} border-slate-350 dark:border-slate-700 shadow-xs font-black`
-                                : 'bg-white/40 dark:bg-slate-950/20 text-slate-550 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60'
+                                ? `bg-white dark:bg-slate-900 ${themeAttr.accentText} border-slate-300 dark:border-slate-700 shadow-xs font-black`
+                                : 'bg-white/40 dark:bg-slate-950/20 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60'
                             }`}
                           >
                             <span className="text-base leading-none">📍</span>
@@ -1257,7 +1257,7 @@ export default function AdminPanel() {
                             <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
                               Dossiers des Organismes Partenaires ({selectedAntennes?.name})
                             </h3>
-                            <p className="text-xs text-slate-455 mt-1 leading-relaxed">
+                            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                               Répertoires d'archivage réglementaires pour les compagnies et associations partenaires locales.
                             </p>
                           </div>
@@ -1289,10 +1289,10 @@ export default function AdminPanel() {
 
                         {filteredFolders.length === 0 ? (
                           <div className="border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-3xs">
-                            <FolderIcon className="w-12 h-12 text-slate-350 bg-slate-50 dark:bg-slate-855 p-3 rounded-full" />
+                            <FolderIcon className="w-12 h-12 text-slate-300 bg-slate-50 dark:bg-slate-800 p-3 rounded-full" />
                             <div>
                               <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Aucun Organisme créé</h4>
-                              <p className="text-xs text-slate-450 dark:text-slate-400 mt-1 max-w-md">
+                              <p className="text-xs text-slate-400 dark:text-slate-400 mt-1 max-w-md">
                                 Vous n'avez pas encore configuré de dossier d'organisme pour l'antenne locale de {selectedAntennes?.name}. Ajoutez-en un pour démarrer.
                               </p>
                             </div>
@@ -1328,7 +1328,7 @@ export default function AdminPanel() {
                                   </div>
 
                                   <div className="mt-4">
-                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-slate-850 dark:group-hover:text-slate-100 transition-colors truncate">
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-slate-800 dark:group-hover:text-slate-100 transition-colors truncate">
                                       {folder.name}
                                     </h4>
                                     <p className="text-[10.5px] text-slate-400 dark:text-slate-500 mt-1 font-mono flex items-center justify-between">
@@ -1369,11 +1369,11 @@ export default function AdminPanel() {
                         >
                           <CornerLeftUp className="w-3.5 h-3.5" /> Dossiers
                         </button>
-                        <ChevronRight className="w-4 h-4 text-slate-350" />
+                        <ChevronRight className="w-4 h-4 text-slate-300" />
                         <span className={`text-xs px-2.5 py-1 rounded-lg border font-black uppercase max-w-[140px] truncate ${themeAttr.badgeClass}`}>
                           📍 {selectedAntennes?.name}
                         </span>
-                        <ChevronRight className="w-4 h-4 text-slate-350" />
+                        <ChevronRight className="w-4 h-4 text-slate-300" />
                         <h4 className="text-sm font-black text-slate-900 dark:text-white border-l border-slate-200 dark:border-slate-800 pl-2">
                           📂 {currentFolder?.name}
                         </h4>
@@ -1422,7 +1422,7 @@ export default function AdminPanel() {
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               fileTypeFilter === 'all' 
                                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' 
-                                : 'text-slate-500 hover:text-slate-805'
+                                : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
                             Tous
@@ -1432,7 +1432,7 @@ export default function AdminPanel() {
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               fileTypeFilter === 'pdfs' 
                                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' 
-                                : 'text-slate-500 hover:text-slate-805'
+                                : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
                             PDF
@@ -1442,7 +1442,7 @@ export default function AdminPanel() {
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               fileTypeFilter === 'images' 
                                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' 
-                                : 'text-slate-500 hover:text-slate-805'
+                                : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
                             Images
@@ -1471,7 +1471,7 @@ export default function AdminPanel() {
                           </span>
                           <span className="font-mono">{uploadProgress}%</span>
                         </div>
-                        <div className="w-full bg-slate-205 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                           <div className={`h-full transition-all duration-300 ${
                             delegationFilterId === 'ouest' ? 'bg-indigo-600' :
                             delegationFilterId === 'occitanie' ? 'bg-rose-600' :
@@ -1484,7 +1484,7 @@ export default function AdminPanel() {
 
                     {/* Documents list table */}
                     {filteredFiles.length === 0 ? (
-                      <div className="py-12 text-center text-slate-450 border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/20 rounded-3xl flex flex-col items-center justify-center space-y-4">
+                      <div className="py-12 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/20 rounded-3xl flex flex-col items-center justify-center space-y-4">
                         <FileText className="w-12 h-12 text-slate-300" />
                         <div>
                           <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Dossier vide</p>
@@ -1542,9 +1542,9 @@ export default function AdminPanel() {
                                       <div className="max-w-[480px] min-w-[240px]" title={file.name}>
                                         <p className="truncate font-bold text-slate-900">{file.name}</p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                          <span className="text-[9.5px] text-slate-450 font-mono tracking-wider">ID : {file.id.substring(0, 8)}</span>
+                                          <span className="text-[9.5px] text-slate-400 font-mono tracking-wider">ID : {file.id.substring(0, 8)}</span>
                                           <span className="text-[9px] text-slate-300">•</span>
-                                          <span className="text-[10px] text-slate-550 font-medium flex items-center gap-1">
+                                          <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
                                             <span>Déposé par :</span>
                                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight ${
                                               file.uploadedBy === 'admin' 
@@ -1651,7 +1651,7 @@ export default function AdminPanel() {
                     <ShieldAlert className="w-5 h-5 text-azur" />
                     <span>Gestionnaire d'Accréditations de la Délégation</span>
                   </h3>
-                  <p className="text-xs text-slate-650 leading-relaxed font-semibold">
+                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">
                     Les compagnies et associations partenaires d'Aviation Sans Frontières s'enregistrent ici. En tant que coordinateur d'Aviation Sans Frontières pour la région <strong>{selectedDelegationData?.name}</strong>, vous devez affecter une antenne locale de rattachement à chaque organisme candidat et approuver officiellement sa connexion pour activer son droit de dépôt réglementaire.
                   </p>
                 </div>
@@ -1664,7 +1664,7 @@ export default function AdminPanel() {
                       <h4 className="text-sm font-black text-slate-900">
                         Comptes Partenaires enregistrés sous la délégation : {selectedDelegationData?.name}
                       </h4>
-                      <p className="text-xs text-slate-450 mt-1">
+                      <p className="text-xs text-slate-400 mt-1">
                         Utilisateurs ayant formulé leur inscription ou rattachés à votre section de vol régionale.
                       </p>
                     </div>
@@ -1677,7 +1677,7 @@ export default function AdminPanel() {
                       <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="text-[10px] font-black uppercase tracking-wider border-b bg-slate-50 text-slate-550">
+                            <tr className="text-[10px] font-black uppercase tracking-wider border-b bg-slate-50 text-slate-500">
                               <th className="px-5 py-3">Raison Sociale / Organisme</th>
                               <th className="px-5 py-3">Point de contact</th>
                               <th className="px-5 py-3 w-64">Attribution Régionale</th>
@@ -1705,7 +1705,7 @@ export default function AdminPanel() {
                                   </td>
 
                                   <td className="px-5 py-4">
-                                    <p className="font-bold text-slate-805">{org.contactName}</p>
+                                    <p className="font-bold text-slate-800">{org.contactName}</p>
                                     <p className="text-[11px] text-azur font-semibold">{org.email}</p>
                                     <p className="text-[11.5px] text-slate-500 font-mono">{org.phone}</p>
                                   </td>
@@ -1721,7 +1721,7 @@ export default function AdminPanel() {
                                               setEditDelegation(e.target.value);
                                               setEditAntenne('');
                                             }}
-                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-808"
+                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800"
                                           >
                                             <option value="">Sélectionner...</option>
                                             {DELEGATIONS.map(del => (
@@ -1736,7 +1736,7 @@ export default function AdminPanel() {
                                             value={editAntenne}
                                             onChange={(e) => setEditAntenne(e.target.value)}
                                             disabled={!editDelegation}
-                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-808 disabled:opacity-50"
+                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800 disabled:opacity-50"
                                           >
                                             <option value="">Sélectionner...</option>
                                             {(ANTENNES_BY_DELEGATION[editDelegation] || []).map(ant => (
@@ -1766,7 +1766,7 @@ export default function AdminPanel() {
                                         <p className="font-bold text-slate-900 capitalize text-[13px] flex items-center gap-1">
                                           <span>⛵ {DELEGATIONS.find(d => d.id === org.delegation_id)?.name || "Non défini"}</span>
                                         </p>
-                                        <p className="text-[11.5px] text-slate-450 font-semibold font-mono">
+                                        <p className="text-[11.5px] text-slate-400 font-semibold font-mono">
                                           📍 {org.antenne_id ? (ANTENNES_BY_DELEGATION[org.delegation_id || '']?.find(a => a.id === org.antenne_id)?.name || org.antenne_id) : "Non affecté"}
                                         </p>
                                         <button
@@ -1801,7 +1801,7 @@ export default function AdminPanel() {
                                       {org.submissionStatus === 'Validated' && (
                                         <button
                                           onClick={() => handleUpdateOrgStatus(org.id, 'Incomplete')}
-                                          className="bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold border border-rose-250 text-[11.5px] px-3.5 py-1.5 rounded-xl cursor-pointer transition-all"
+                                          className="bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold border border-rose-200 text-[11.5px] px-3.5 py-1.5 rounded-xl cursor-pointer transition-all"
                                         >
                                           ✗ Suspendre
                                         </button>
@@ -1810,7 +1810,7 @@ export default function AdminPanel() {
                                       {org.submissionStatus === 'Pending' && (
                                         <button
                                           onClick={() => handleUpdateOrgStatus(org.id, 'Under review')}
-                                          className="bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold border border-blue-200 text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all"
+                                          className="bg-azur-light hover:bg-azur/10 text-deep font-bold border border-azur-pastel text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all"
                                         >
                                           Mettre en examen
                                         </button>
@@ -1830,7 +1830,7 @@ export default function AdminPanel() {
                   {/* Category 2: Orphan Accounts waitlist */}
                   <div className="bg-amber-500/5 border border-amber-200/40 rounded-3xl p-6 shadow-xs space-y-4">
                     <div>
-                      <h4 className="text-sm font-black text-amber-955 flex items-center gap-1.5">
+                      <h4 className="text-sm font-black text-amber-900 flex items-center gap-1.5">
                         <AlertCircle className="w-5 h-5 text-amber-600 animate-pulse" />
                         <span>Candidatures Hors Délégation (Comptes orphelins à lier à une antenne)</span>
                       </h4>
@@ -1840,7 +1840,7 @@ export default function AdminPanel() {
                     </div>
 
                     {orgProfiles.filter(p => !p.delegation_id || p.delegation_id === '').length === 0 ? (
-                      <div className="py-8 text-center text-xs text-amber-705 font-semibold italic">
+                      <div className="py-8 text-center text-xs text-amber-700 font-semibold italic">
                         ✓ Aucune candidature orpheline nationale en suspens.
                       </div>
                     ) : (
@@ -1874,14 +1874,14 @@ export default function AdminPanel() {
                                     {editingOrgId === org.id ? (
                                       <div className="space-y-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                                         <div>
-                                          <label className="text-[9.5px] uppercase tracking-wider text-slate-450 font-black block">Délégation d'accueil</label>
+                                          <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Délégation d'accueil</label>
                                           <select
                                             value={editDelegation}
                                             onChange={(e) => {
                                               setEditDelegation(e.target.value);
                                               setEditAntenne('');
                                             }}
-                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-808"
+                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800"
                                           >
                                             <option value="">Sélectionner...</option>
                                             {DELEGATIONS.map(del => (
@@ -1891,12 +1891,12 @@ export default function AdminPanel() {
                                         </div>
 
                                         <div>
-                                          <label className="text-[9.5px] uppercase tracking-wider text-slate-450 font-black block">Antenne locale / Ville</label>
+                                          <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Antenne locale / Ville</label>
                                           <select
                                             value={editAntenne}
                                             onChange={(e) => setEditAntenne(e.target.value)}
                                             disabled={!editDelegation}
-                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-808 disabled:opacity-50"
+                                            className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800 disabled:opacity-50"
                                           >
                                             <option value="">Sélectionner...</option>
                                             {(ANTENNES_BY_DELEGATION[editDelegation] || []).map(ant => (
@@ -1923,7 +1923,7 @@ export default function AdminPanel() {
                                       </div>
                                     ) : (
                                       <div>
-                                        <span className="text-[10px] bg-amber-100 text-amber-805 font-extrabold px-2.5 py-1 rounded-full block text-center max-w-[140px]">
+                                        <span className="text-[10px] bg-amber-100 text-amber-800 font-extrabold px-2.5 py-1 rounded-full block text-center max-w-[140px]">
                                           ⚠️ Non affecté
                                         </span>
                                         <button
@@ -1980,12 +1980,12 @@ export default function AdminPanel() {
             {activeTab === 'delegations' && (
               <div className="space-y-6 text-left">
                 {/* Visual Sky Banner */}
-                <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/60 p-5 text-left space-y-2 rounded-2xl">
-                  <h3 className="text-sm font-extrabold text-sky-900 dark:text-sky-305 flex items-center gap-2">
-                    <Compass className="w-5 h-5 text-sky-600 dark:text-sky-400 animate-spin" />
+                <div className="bg-azur-light dark:bg-deep-dark/30 border border-azur-pastel dark:border-deep/60 p-5 text-left space-y-2 rounded-2xl">
+                  <h3 className="text-sm font-extrabold text-deep dark:text-azur-pastel flex items-center gap-2">
+                    <Compass className="w-5 h-5 text-azur-hover dark:text-azur animate-spin" />
                     <span>Réseau National Aviation Sans Frontières (Carte Interactive de France)</span>
                   </h3>
-                  <p className="text-xs text-sky-700 dark:text-sky-400 leading-relaxed font-medium">
+                  <p className="text-xs text-azur-dark dark:text-azur leading-relaxed font-medium">
                     Cartographiez en direct l'implantation de vos antennes. Cliquez sur la carte de France pour désigner/modifier précisément l'emplacement d'une antenne nationale, ou cliquez sur un repère existant pour modifier ses détails.
                   </p>
                 </div>
@@ -2025,7 +2025,7 @@ export default function AdminPanel() {
                     </div>
 
                     {/* SVG France Map Container */}
-                    <div className="w-full bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl border border-slate-150 dark:border-slate-800/80 p-4 flex items-center justify-center relative overflow-hidden group">
+                    <div className="w-full bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl border border-slate-100 dark:border-slate-800/80 p-4 flex items-center justify-center relative overflow-hidden group">
                       <svg
                         viewBox="0 0 600 600"
                         className="w-full max-w-[480px] h-auto cursor-crosshair select-none relative z-10 drop-shadow-sm filter dark:drop-shadow-[0_0_15px_rgba(30,41,59,0.5)]"
@@ -2043,7 +2043,7 @@ export default function AdminPanel() {
                         }}
                       >
                         {/* Sea/Ocean Accent Grid */}
-                        <g className="stroke-slate-150/40 dark:stroke-slate-800/20 stroke-[0.5]" pointerEvents="none">
+                        <g className="stroke-slate-100/40 dark:stroke-slate-800/20 stroke-[0.5]" pointerEvents="none">
                           <line x1="100" y1="0" x2="100" y2="600" />
                           <line x1="200" y1="0" x2="200" y2="600" />
                           <line x1="300" y1="0" x2="300" y2="600" />
@@ -2084,12 +2084,12 @@ export default function AdminPanel() {
                              C 180,90 200,105 220,100
                              C 240,95 260,80 275,65
                              C 290,50 315,25 330,20 Z"
-                          className="fill-sky-50 dark:fill-slate-800/20 stroke-sky-200 dark:stroke-slate-750 stroke-2 outline-none transition-colors duration-300"
+                          className="fill-azur-light dark:fill-slate-800/20 stroke-azur-pastel dark:stroke-slate-700 stroke-2 outline-none transition-colors duration-300"
                         />
 
                         {/* Captions representing oceanic borders */}
-                        <text x="140" y="80" className="fill-slate-405/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">La Manche</text>
-                        <text x="50" y="440" className="fill-slate-405/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Océan Atlantique</text>
+                        <text x="140" y="80" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">La Manche</text>
+                        <text x="50" y="440" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Océan Atlantique</text>
                         <text x="440" y="550" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Mer Méditerranée</text>
 
                         {/* Corsica Map Accent */}
@@ -2100,7 +2100,7 @@ export default function AdminPanel() {
                              C 510,525 505,530 500,525
                              C 495,520 497,490 505,480
                              Z"
-                          className="fill-sky-50 dark:fill-slate-800/20 stroke-sky-200 dark:stroke-slate-750 stroke-2 transition-all duration-350"
+                          className="fill-azur-light dark:fill-slate-800/20 stroke-azur-pastel dark:stroke-slate-700 stroke-2 transition-all duration-350"
                         />
 
                         {/* Permanent Active Antennas Beacons */}
@@ -2130,7 +2130,7 @@ export default function AdminPanel() {
                                 className={`${
                                   isCurrentlySelected 
                                     ? "fill-amber-400/30 stroke-amber-500 animate-pulse stroke-2" 
-                                    : "fill-sky-400/20 group-hover/pin:fill-sky-400/40 stroke-sky-400 stroke-[1.5]"
+                                    : "fill-azur/20 group-hover/pin:fill-azur/40 stroke-azur stroke-[1.5]"
                                 } transition-all duration-305 pointer-events-none`}
                               />
                               <circle
@@ -2140,7 +2140,7 @@ export default function AdminPanel() {
                                 className={`${
                                   isCurrentlySelected 
                                     ? "fill-amber-500 stroke-dark" 
-                                    : "fill-sky-500 stroke-white dark:stroke-slate-900 stroke-2"
+                                    : "fill-azur stroke-white dark:stroke-slate-900 stroke-2"
                                 } transition-transform duration-350 group-hover/pin:scale-125`}
                               />
                               
@@ -2225,7 +2225,7 @@ export default function AdminPanel() {
                                 setTempCoords({ x: city.x, y: city.y });
                               }
                             }}
-                            className="text-[10px] bg-sky-50 dark:bg-sky-950/40 border border-sky-100/80 dark:border-sky-900/40 hover:border-sky-300 hover:bg-sky-100 text-sky-700 dark:text-sky-300 px-2 py-1 rounded-lg font-bold transition-all cursor-pointer shadow-xs"
+                            className="text-[10px] bg-azur-light dark:bg-deep-dark/40 border border-azur-pastel/80 dark:border-deep/40 hover:border-azur-pastel hover:bg-azur-pastel text-azur-dark dark:text-azur-pastel px-2 py-1 rounded-lg font-bold transition-all cursor-pointer shadow-xs"
                           >
                             + {city.name}
                           </button>
@@ -2260,7 +2260,7 @@ export default function AdminPanel() {
                             <div>
                               <div className="flex justify-between text-[10px] font-extrabold text-slate-500 uppercase">
                                 <span>Position X (Est)</span>
-                                <span className="font-mono text-amber-600 dark:text-amber-455">{editingAntenne.x}%</span>
+                                <span className="font-mono text-amber-600 dark:text-amber-400">{editingAntenne.x}%</span>
                               </div>
                               <input
                                 type="range"
@@ -2276,7 +2276,7 @@ export default function AdminPanel() {
                             <div>
                               <div className="flex justify-between text-[10px] font-extrabold text-slate-500 uppercase">
                                 <span>Position Y (Sud)</span>
-                                <span className="font-mono text-amber-600 dark:text-amber-455">{editingAntenne.y}%</span>
+                                <span className="font-mono text-amber-600 dark:text-amber-400">{editingAntenne.y}%</span>
                               </div>
                               <input
                                 type="range"
@@ -2299,7 +2299,7 @@ export default function AdminPanel() {
                               required
                               value={editingAntenne.name}
                               onChange={(e) => setEditingAntenne(prev => prev ? { ...prev, name: e.target.value } : null)}
-                              className="w-full mt-1 px-3 py-2 border border-slate-250 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-amber-500/25 focus:border-amber-500 focus:outline-none font-bold"
+                              className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-amber-500/25 focus:border-amber-500 focus:outline-none font-bold"
                             />
                           </div>
 
@@ -2377,7 +2377,7 @@ export default function AdminPanel() {
                                 type="number"
                                 disabled
                                 value={tempCoords ? tempCoords.x : 50}
-                                className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-750 dark:text-slate-400 rounded-xl text-xs font-mono"
+                                className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-400 rounded-xl text-xs font-mono"
                               />
                             </div>
 
@@ -2389,7 +2389,7 @@ export default function AdminPanel() {
                                 type="number"
                                 disabled
                                 value={tempCoords ? tempCoords.y : 50}
-                                className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-750 dark:text-slate-400 rounded-xl text-xs font-mono"
+                                className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-400 rounded-xl text-xs font-mono"
                               />
                             </div>
                           </div>
@@ -2420,7 +2420,7 @@ export default function AdminPanel() {
                                   .replace(/^-|-$/g, '');
                                 setNewAntenneId(slugified);
                               }}
-                              className="w-full mt-1 px-3 py-2 border border-slate-250 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-sky-505/20 focus:border-sky-500 focus:outline-none font-bold"
+                              className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-azur/20 focus:border-azur focus:outline-none font-bold"
                             />
                           </div>
 
@@ -2504,8 +2504,8 @@ export default function AdminPanel() {
                           key={ant.id}
                           className={`flex justify-between items-center p-4 rounded-2xl border transition-all duration-200 ${
                             isCurrentlySel 
-                              ? "bg-amber-500/5 dark:bg-amber-505/2 border-amber-500/40 shadow-xs ring-1 ring-amber-500/10" 
-                              : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-150 dark:border-slate-800 hover:border-sky-500/40"
+                              ? "bg-amber-500/5 dark:bg-amber-500/2 border-amber-500/40 shadow-xs ring-1 ring-amber-500/10" 
+                              : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-100 dark:border-slate-800 hover:border-azur/40"
                           }`}
                         >
                           <div className="space-y-1 text-left">
@@ -2520,9 +2520,9 @@ export default function AdminPanel() {
                                 });
                                 setTempCoords(null);
                               }}
-                              className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 hover:text-sky-600 dark:hover:text-sky-400 transition-colors text-left"
+                              className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 hover:text-azur-hover dark:hover:text-azur transition-colors text-left"
                             >
-                              <span className={`w-2 h-2 rounded-full ${isCurrentlySel ? 'bg-amber-500 animate-ping' : 'bg-sky-500'}`}></span>
+                              <span className={`w-2 h-2 rounded-full ${isCurrentlySel ? 'bg-amber-500 animate-ping' : 'bg-azur'}`}></span>
                               <span>{ant.name}</span>
                             </button>
                             <p className="text-[10px] text-slate-400 font-mono">
@@ -2548,7 +2548,7 @@ export default function AdminPanel() {
                               className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                                 isCurrentlySel 
                                   ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400" 
-                                  : "hover:bg-sky-50 dark:hover:bg-sky-950/40 text-sky-600 border-transparent hover:border-sky-100 dark:hover:border-sky-900/40"
+                                  : "hover:bg-azur-light dark:hover:bg-deep-dark/40 text-azur-hover border-transparent hover:border-azur-pastel dark:hover:border-deep/40"
                               }`}
                               title="Modifier visuellement cette antenne"
                             >

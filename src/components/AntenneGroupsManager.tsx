@@ -139,7 +139,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
             type="color"
             value={newGroupColor}
             onChange={(e) => setNewGroupColor(e.target.value)}
-            className="h-[38px] w-12 p-1 border border-slate-250 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-xl cursor-pointer"
+            className="h-[38px] w-12 p-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-xl cursor-pointer"
             title="Couleur d'affichage du groupe"
           />
         </div>
@@ -166,7 +166,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
             return (
               <div
                 key={group.id}
-                className="border border-slate-150 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/50 dark:bg-slate-950/20 space-y-3"
+                className="border border-slate-100 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/50 dark:bg-slate-950/20 space-y-3"
               >
                 <div className="flex items-center justify-between gap-2">
                   {isEditing ? (
@@ -175,7 +175,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
                         type="color"
                         value={editColor}
                         onChange={(e) => setEditColor(e.target.value)}
-                        className="h-8 w-9 p-0.5 border border-slate-250 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg cursor-pointer shrink-0"
+                        className="h-8 w-9 p-0.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg cursor-pointer shrink-0"
                       />
                       <input
                         type="text"

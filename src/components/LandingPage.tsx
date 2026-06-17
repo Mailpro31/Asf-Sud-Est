@@ -77,7 +77,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
   ];
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-slate-50 text-slate-850 overflow-x-hidden antialiased font-sans">
+    <div className="min-h-screen relative flex flex-col bg-slate-50 text-slate-800 overflow-x-hidden antialiased font-sans">
       
       {/* Top Banner Header decoration */}
       <div className="bg-deep text-white py-2 px-4 text-center text-xs font-medium tracking-wide">
@@ -422,7 +422,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight font-display">
               Accédez au Portail Aviation Sans Frontières
             </h2>
-            <p className="text-sm text-sky-100 max-w-xl mx-auto leading-relaxed">
+            <p className="text-sm text-azur-pastel max-w-xl mx-auto leading-relaxed">
               Connectez-vous dès maintenant pour compléter votre fiche d'organisation, uploader vos récépissés réglementaires, et collaborer avec nos chefs de mission.
             </p>
 

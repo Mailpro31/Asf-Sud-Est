@@ -120,7 +120,7 @@ export default function CreateFolderModal({
               {/* Form Content */}
               <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                 <div>
-                  <label htmlFor="folderName" className="block text-xs font-bold text-slate-450 dark:text-slate-400 uppercase tracking-wider mb-2">
+                  <label htmlFor="folderName" className="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">
                     Nom du dossier
                   </label>
                   <input

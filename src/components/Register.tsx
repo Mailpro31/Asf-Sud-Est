@@ -242,7 +242,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             onClick={() => step > 1 && setStep(1)}
             className={`flex items-center gap-1 font-bold ${step === 1 ? 'text-azur' : 'text-slate-400 dark:text-slate-500'} transition-all`}
           >
-            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${step === 1 ? 'bg-azur text-white' : step > 1 ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-850'}`}>
+            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${step === 1 ? 'bg-azur text-white' : step > 1 ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}`}>
               {step > 1 ? <Check className="w-3 h-3" /> : '1'}
             </span>
             <span className="hidden sm:inline">1. Organisme</span>
@@ -255,7 +255,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             onClick={() => step > 2 && setStep(2)}
             className={`flex items-center gap-1 font-bold ${step === 2 ? 'text-azur' : 'text-slate-400 dark:text-slate-500'} transition-all`}
           >
-            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${step === 2 ? 'bg-azur text-white' : step > 2 ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-850'}`}>
+            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${step === 2 ? 'bg-azur text-white' : step > 2 ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}`}>
               {step > 2 ? <Check className="w-3 h-3" /> : '2'}
             </span>
             <span className="hidden sm:inline">2. Implantation</span>
@@ -264,7 +264,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
           <div className="flex-1 h-0.5 mx-2 bg-slate-200 dark:bg-slate-800"></div>
 
           <div className={`flex items-center gap-1 font-bold ${step === 3 ? 'text-azur' : 'text-slate-400 dark:text-slate-500'}`}>
-            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${step === 3 ? 'bg-azur text-white' : 'bg-slate-200 dark:bg-slate-850'}`}>
+            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${step === 3 ? 'bg-azur text-white' : 'bg-slate-200 dark:bg-slate-800'}`}>
               3
             </span>
             <span className="hidden sm:inline">3. Sécurité</span>
@@ -279,23 +279,23 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             <Sparkles className="w-2.5 h-2.5" /> Étape {step}/3
           </div>
 
-          <div className="mb-6 border-b pb-4 border-slate-150/60 dark:border-slate-800/80">
+          <div className="mb-6 border-b pb-4 border-slate-100/60 dark:border-slate-800/80">
             {step === 1 && (
               <>
                 <h2 className="text-lg font-black text-deep dark:text-white font-display uppercase tracking-tight">🏢 Qui êtes-vous ?</h2>
-                <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">Identifiez la structure ou l'association sollicitant l'accès au réseau.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Identifiez la structure ou l'association sollicitant l'accès au réseau.</p>
               </>
             )}
             {step === 2 && (
               <>
                 <h2 className="text-lg font-black text-deep dark:text-white font-display uppercase tracking-tight">📍 Antenne de Rattachement</h2>
-                <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">Sélectionnez la section régionale chargée d'auditer vos licences indispensables.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sélectionnez la section régionale chargée d'auditer vos licences indispensables.</p>
               </>
             )}
             {step === 3 && (
               <>
                 <h2 className="text-lg font-black text-deep dark:text-white font-display uppercase tracking-tight">🔐 Vos Identifiants Sécurisés</h2>
-                <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">Définissez vos clés d'accès chiffrées réglementaires.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Définissez vos clés d'accès chiffrées réglementaires.</p>
               </>
             )}
           </div>
@@ -311,7 +311,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             {step === 1 && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-350 mb-1.5 uppercase tracking-wider">Nom complet de l'organisme / Institution</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Nom complet de l'organisme / Institution</label>
                   <div className="relative">
                     <Building2 className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
                     <input
@@ -327,7 +327,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-350 mb-1.5 uppercase tracking-wider">Téléphone d'urgence opérationnelle</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Téléphone d'urgence opérationnelle</label>
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
                     <input
@@ -348,7 +348,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             {step === 2 && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-350 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-azur" />
                     <span>Sélectionner votre Section Régionale de vol</span>
                   </label>
@@ -385,7 +385,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             {step === 3 && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-350 mb-1.5 uppercase tracking-wider">Coordinateur référent (Nom / Prénom)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Coordinateur référent (Nom / Prénom)</label>
                   <div className="relative">
                     <User className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
                     <input
@@ -401,7 +401,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-350 mb-1.5 uppercase tracking-wider">Email réglementaire de connexion</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Email réglementaire de connexion</label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
                     <input
@@ -417,7 +417,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-350 mb-1.5 uppercase tracking-wider">Mot de passe de chiffrement</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Mot de passe de chiffrement</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
                     <input
@@ -483,7 +483,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             <div className="mt-6 flex flex-col items-center">
               <div className="w-full flex items-center mb-5">
                 <div className="flex-1 border-t border-slate-200/60 dark:border-slate-800"></div>
-                <span className="px-3 text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-550 font-black">ou s'enregistrer avec</span>
+                <span className="px-3 text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-black">ou s'enregistrer avec</span>
                 <div className="flex-1 border-t border-slate-200/60 dark:border-slate-800"></div>
               </div>
               

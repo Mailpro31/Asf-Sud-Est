@@ -496,7 +496,7 @@ export default function FilePreviewModal({
   const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogv)$/i.test(file.name);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-955/80 bg-slate-955/70 dark:bg-slate-950/80 backdrop-blur-md transition-opacity">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/80 bg-slate-900/70 dark:bg-slate-950/80 backdrop-blur-md transition-opacity">
       <div 
         className="relative w-full max-w-[95vw] h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -512,7 +512,7 @@ export default function FilePreviewModal({
               <h3 className="text-base font-black font-display text-deep dark:text-slate-100 truncate pr-5" title={file.name}>
                 {file.name}
               </h3>
-              <p className="text-[10px] text-slate-450 uppercase font-mono tracking-wider">
+              <p className="text-[10px] text-slate-400 uppercase font-mono tracking-wider">
                 Type : {file.type.split('/').pop()?.toUpperCase()}
               </p>
             </div>
@@ -540,7 +540,7 @@ export default function FilePreviewModal({
               </div>
             ) : !dataUrl ? (
               <div className="text-center p-6 flex flex-col items-center gap-2 text-slate-400">
-                <Info className="w-10 h-10 text-slate-550" />
+                <Info className="w-10 h-10 text-slate-500" />
                 <p className="text-xs font-semibold">Aucun aperçu direct n'est disponible pour ce fichier.</p>
                 <p className="text-[11px] text-slate-500">Veuillez télécharger le document original pour consulter son contenu.</p>
               </div>
@@ -559,7 +559,7 @@ export default function FilePreviewModal({
                             setImageZoom(1.0);
                             setImageRotation(0);
                           }}
-                          className="px-2.5 py-1.5 bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-750 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                          className="px-2.5 py-1.5 bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                         >
                           Réinitialiser
                         </button>
@@ -571,7 +571,7 @@ export default function FilePreviewModal({
                       <button
                         type="button"
                         onClick={() => setImageRotation(r => (r + 90) % 360)}
-                        className="px-3 py-1.5 bg-slate-800 text-azur-pastel border border-slate-700 hover:bg-slate-755 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95 shadow-sm"
+                        className="px-3 py-1.5 bg-slate-800 text-azur-pastel border border-slate-700 hover:bg-slate-700 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95 shadow-sm"
                         title="Faire pivoter de 90°"
                       >
                         <RotateCw className="w-3.5 h-3.5" />
@@ -862,15 +862,15 @@ export default function FilePreviewModal({
           </div>
 
           {/* Sidebar Metrics Sheet (Right 30%) */}
-          <div className="w-full lg:w-80 shrink-0 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-150 dark:border-slate-800 pt-6 lg:pt-0 lg:pl-6 basis-80 overflow-y-auto">
+          <div className="w-full lg:w-80 shrink-0 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 pt-6 lg:pt-0 lg:pl-6 basis-80 overflow-y-auto">
             <div className="flex flex-col gap-5 text-left">
               
               {/* ADMIN ACTION PANEL - VALIDER LE DOSSIER */}
               {isAdmin && (
-                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-850 space-y-3">
+                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
                   <div className="text-left">
                     <span className="text-[10px] font-black uppercase tracking-wider text-azur dark:text-azur-pastel">👩‍✈️ Décision Conforme / Vol</span>
-                    <span className="text-[11px] text-slate-455 dark:text-slate-505 block mt-0.5">Changez le statut réglementaire :</span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 block mt-0.5">Changez le statut réglementaire :</span>
                   </div>
 
                   <div className="space-y-1.5">
@@ -897,45 +897,45 @@ export default function FilePreviewModal({
               )}
 
               <div className="space-y-4">
-                <span className="text-[10px] font-black tracking-widest text-[#94a3b8] dark:text-slate-400 uppercase flex items-center gap-1.5 mb-2 text-left">
+                <span className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-400 uppercase flex items-center gap-1.5 mb-2 text-left">
                   <Info className="w-3.5 h-3.5 text-azur" /> Informations du Vol
                 </span>
 
                 {/* Status Card */}
-                <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center justify-between gap-3 text-left">
-                  <p className="text-[9px] text-slate-450 font-bold uppercase">Statut</p>
+                <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 text-left">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase">Statut</p>
                   <StatusBadge status={localStatus as any} />
                 </div>
 
                 {/* Size Card */}
-                <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center gap-3 text-left">
+                <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
                   <HardDrive className="w-4 h-4 text-azur shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[9px] text-slate-450 font-bold uppercase">Taille</p>
-                    <p className="text-xs font-black text-slate-800 dark:text-slate-101 dark:text-slate-100">{formatBytes(file.size)}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">Taille</p>
+                    <p className="text-xs font-black text-slate-800 dark:text-slate-100 dark:text-slate-100">{formatBytes(file.size)}</p>
                   </div>
                 </div>
 
                 {/* Uploader Card */}
-                <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center gap-3 text-left">
+                <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
                   <User className="w-4 h-4 text-azur shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[9px] text-slate-455 font-bold uppercase font-sans">Auteur de l'envoi</p>
-                    <p className="text-xs font-black text-slate-800 dark:text-slate-101 dark:text-slate-100 truncate pr-2">
+                    <p className="text-[9px] text-slate-400 font-bold uppercase font-sans">Auteur de l'envoi</p>
+                    <p className="text-xs font-black text-slate-800 dark:text-slate-100 dark:text-slate-100 truncate pr-2">
                       {file.uploadedBy === 'admin' ? "Administrateur" : orgName}
                     </p>
                   </div>
                 </div>
 
                 {/* Upload Date Card */}
-                <div className="bg-slate-50 dark:bg-slate-955 p-3 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center gap-3 text-left">
+                <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
                   <Calendar className="w-4 h-4 text-azur shrink-0" />
                   <div className="min-w-0 text-left">
-                    <p className="text-[9px] text-[#94a3b8] dark:text-slate-450 font-bold uppercase">Importé le</p>
-                    <p className="text-xs font-black text-slate-800 dark:text-slate-101 dark:text-slate-100">
+                    <p className="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase">Importé le</p>
+                    <p className="text-xs font-black text-slate-800 dark:text-slate-100 dark:text-slate-100">
                       {new Date(file.uploadDate).toLocaleDateString()}
                     </p>
-                    <span className="text-[9px] text-slate-450 font-mono font-bold block mt-0.5">
+                    <span className="text-[9px] text-slate-400 font-mono font-bold block mt-0.5">
                       {new Date(file.uploadDate).toLocaleTimeString()}
                     </span>
                   </div>
