@@ -880,15 +880,37 @@ export default function AdminPanel() {
 
         {/* --- PORTAL HUB VIEW --- */}
         {navigationView === 'hub' && (
-          <div className="max-w-4xl mx-auto space-y-8 py-8">
-            {/* Elegant Welcome Info Banner */}
-            <div className="text-center space-y-2.5">
-              <h2 className="text-2xl font-black font-display text-deep dark:text-white tracking-tight">
-                Cabinet de Pilotage National
+          <div className="max-w-5xl mx-auto space-y-8 py-6">
+            {/* Welcome header */}
+            <div className="space-y-1.5">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-azur font-bold">Cabinet de pilotage national</p>
+              <h2 className="text-2xl sm:text-3xl font-black font-display text-deep dark:text-white tracking-tight">
+                Bonjour {organization?.contactName?.split(' ')[0] || 'Administrateur'} 👋
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-lg mx-auto font-semibold">
-                Bienvenue sur l'outil de coordination et de contrôle de conformité aéronautique d'Aviation Sans Frontières.
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl font-medium">
+                Coordination et contrôle de conformité aéronautique d'Aviation Sans Frontières.
               </p>
+            </div>
+
+            {/* KPI strip */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: 'Documents en attente', value: pendingFilesCount, tone: 'text-amber-600 bg-amber-50', accent: pendingFilesCount > 0 },
+                { label: 'Organismes en attente', value: pendingOrgsCount, tone: 'text-orange-600 bg-orange-50', accent: pendingOrgsCount > 0 },
+                { label: 'Justificatifs', value: files.length, tone: 'text-azur bg-azur/10', accent: false },
+                { label: 'Organismes rattachés', value: folders.length, tone: 'text-deep bg-azur-light', accent: false },
+              ].map((k) => (
+                <div key={k.label} className={`card-asf p-4 ${k.accent ? 'ring-1 ring-amber-200' : ''}`}>
+                  <p className="font-display text-3xl font-extrabold text-deep dark:text-white">{k.value}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">{k.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Section title */}
+            <div className="flex items-center gap-2 pt-1">
+              <h3 className="font-display text-deep dark:text-white font-bold tracking-tight">Espaces de travail</h3>
+              <span className="flex-1 h-px bg-slate-200/70 dark:bg-slate-800" />
             </div>
 
             {/* Hub Cards Grid */}
