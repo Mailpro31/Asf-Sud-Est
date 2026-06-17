@@ -49,7 +49,7 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
 
   // Invitations sans compte gestionnaire encore actif (en attente de 1ère connexion)
   const pendingInvites = useMemo(() => {
-    const adminEmails = new Set(currentAdmins.map((o) => (o.email || '').toLowerCase()));
+    const adminEmails = new Set(currentAdmins.map((o) => inviteKey(o.email || '')));
     return invites.filter((i) => !adminEmails.has(i.id));
   }, [invites, currentAdmins]);
 
@@ -64,7 +64,7 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
     try {
       await upsertInvite(cleanEmail, delegationId, antenneId);
       // Si un compte existe déjà avec cet e-mail, on l'attribue tout de suite.
-      const existing = orgProfiles.find((o) => (o.email || '').toLowerCase() === cleanEmail);
+      const existing = orgProfiles.find((o) => inviteKey(o.email || '') === cleanEmail);
       const antName = antenneName(delegationId, antenneId);
       const delName = delegationName(delegationId);
       const origin = typeof window !== 'undefined' ? window.location.origin : '';

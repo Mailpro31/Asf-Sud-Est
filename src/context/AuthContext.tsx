@@ -7,6 +7,13 @@ import { localDb } from '../lib/localDb';
 import { getMyInvite } from '../lib/antenneAdmins';
 
 /**
+ * Comptes (par uid) dont l'invitation d'antenne a déjà été résolue dans cette
+ * session : évite de relire `antenne_invites` à chaque snapshot du doc org pour
+ * les comptes qui n'ont pas d'invitation (cas courant des partenaires).
+ */
+const invitesResolved = new Set<string>();
+
+/**
  * Auto-attribution : si l'e-mail du compte possède une invitation d'antenne
  * (créée par le super admin) et que le compte n'est pas déjà correctement
  * provisionné, on l'élève au rôle `admin_antenne` sur la bonne antenne.
@@ -18,19 +25,21 @@ async function provisionFromInvite(
   data: any,
 ): Promise<any> {
   try {
-    const emailLower = (email || '').toLowerCase();
+    const emailLower = (email || '').trim().toLowerCase();
     if (!emailLower) return data;
-    // Ne jamais rétrograder un (super) admin existant.
-    if (data?.role === 'super_admin' || data?.role === 'admin') return data;
+    // Ne jamais rétrograder un (super) admin, ni re-vérifier un gestionnaire
+    // déjà provisionné (sa réaffectation passe par le super admin).
+    const role = data?.role;
+    if (role === 'super_admin' || role === 'admin' || role === 'admin_antenne') return data;
+    // Une invitation est une opération unique : on ne la relit pas à chaque
+    // snapshot une fois résolue (absente).
+    if (invitesResolved.has(uid)) return data;
 
     const invite = await getMyInvite(emailLower);
-    if (!invite || !invite.antenne_id) return data;
-
-    const already =
-      data?.role === 'admin_antenne' &&
-      data?.antenne_id === invite.antenne_id &&
-      data?.delegation_id === invite.delegation_id;
-    if (already) return data;
+    if (!invite || !invite.antenne_id) {
+      invitesResolved.add(uid);
+      return data;
+    }
 
     const { id: _ignore, ...rest } = data || {};
     const updated = {
@@ -48,7 +57,14 @@ async function provisionFromInvite(
     }
     return updated;
   } catch (e) {
-    console.warn('provisionFromInvite failed:', e);
+    // Échec d'auto-attribution (souvent une règle Firestore refusée) : le compte
+    // reste « organization ». On journalise explicitement pour faciliter le
+    // diagnostic (cause #1 : règles non déployées ; #2 : doc org incomplet).
+    console.error(
+      `provisionFromInvite: échec de l'attribution admin_antenne pour ${uid} (${email}). ` +
+      `Vérifiez le déploiement des règles Firestore et la validité du document org.`,
+      e,
+    );
     return data;
   }
 }
