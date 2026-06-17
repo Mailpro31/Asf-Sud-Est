@@ -4,6 +4,54 @@ import { doc, getDoc, setDoc, collection, onSnapshot } from 'firebase/firestore'
 import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { AntenneGroup, Organization } from '../types';
 import { localDb } from '../lib/localDb';
+import { getMyInvite } from '../lib/antenneAdmins';
+
+/**
+ * Auto-attribution : si l'e-mail du compte possède une invitation d'antenne
+ * (créée par le super admin) et que le compte n'est pas déjà correctement
+ * provisionné, on l'élève au rôle `admin_antenne` sur la bonne antenne.
+ * Renvoie les données d'organisation (sans `id`) éventuellement mises à jour.
+ */
+async function provisionFromInvite(
+  uid: string,
+  email: string | null | undefined,
+  data: any,
+): Promise<any> {
+  try {
+    const emailLower = (email || '').toLowerCase();
+    if (!emailLower) return data;
+    // Ne jamais rétrograder un (super) admin existant.
+    if (data?.role === 'super_admin' || data?.role === 'admin') return data;
+
+    const invite = await getMyInvite(emailLower);
+    if (!invite || !invite.antenne_id) return data;
+
+    const already =
+      data?.role === 'admin_antenne' &&
+      data?.antenne_id === invite.antenne_id &&
+      data?.delegation_id === invite.delegation_id;
+    if (already) return data;
+
+    const { id: _ignore, ...rest } = data || {};
+    const updated = {
+      ...rest,
+      role: 'admin_antenne',
+      delegation_id: invite.delegation_id,
+      antenne_id: invite.antenne_id,
+      updatedAt: Date.now(),
+    };
+
+    if (localDb.isSandboxActive()) {
+      localDb.saveOrganization({ id: uid, ...updated } as Organization);
+    } else {
+      await setDoc(doc(db, 'organizations', uid), updated);
+    }
+    return updated;
+  } catch (e) {
+    console.warn('provisionFromInvite failed:', e);
+    return data;
+  }
+}
 
 export const DEFAULT_DELEGATIONS = [
   { id: 'france', name: 'Aviation Sans Frontières France' }
@@ -104,7 +152,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         found.updatedAt = Date.now();
         localDb.saveOrganization(found);
       }
-      setOrganization(found);
+      const effSandbox = await provisionFromInvite(uid, email, found);
+      setOrganization({ ...effSandbox, id: uid });
       return;
     }
 
@@ -132,7 +181,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await setDoc(docRef, updated);
           setOrganization({ id: docSnap.id, ...updated } as Organization);
         } else {
-          setOrganization({ id: docSnap.id, ...data } as Organization);
+          const eff = await provisionFromInvite(docSnap.id, email, data);
+          setOrganization({ ...eff, id: docSnap.id } as Organization);
         }
       } else {
         const newOrgData = {
@@ -149,7 +199,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         try {
           await setDoc(docRef, newOrgData);
-          setOrganization({ id: uid, ...newOrgData } as Organization);
+          const effNew = await provisionFromInvite(uid, email, newOrgData);
+          setOrganization({ ...effNew, id: uid } as Organization);
         } catch (err: any) {
           console.error('Failed to auto-create profile:', err);
           const errMsg = err?.message || String(err);
@@ -227,7 +278,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   await setDoc(docRef, updated);
                   setOrganization({ id: docSnap.id, ...updated } as Organization);
                 } else {
-                  setOrganization({ id: docSnap.id, ...data } as Organization);
+                  const effRt = await provisionFromInvite(docSnap.id, currentUser.email, data);
+                  setOrganization({ ...effRt, id: docSnap.id } as Organization);
                 }
               } else {
                 await fetchOrg(currentUser.uid, currentUser.email, currentUser.displayName);

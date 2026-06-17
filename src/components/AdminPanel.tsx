@@ -54,6 +54,7 @@ import OrgCabinetModal from './OrgCabinetModal';
 import { LogoASF } from './LandingPage';
 import AilesDuSourireDashboard from './AilesDuSourireDashboard';
 import AntenneGroupsManager from './AntenneGroupsManager';
+import AntenneAdminsManager from './AntenneAdminsManager';
 import { localDb } from '../lib/localDb';
 import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
@@ -2651,6 +2652,14 @@ export default function AdminPanel() {
 
                 {isSuperAdminMode && (
                   <AntenneGroupsManager groups={antenneGroups} antennes={allAntennesFlat} />
+                )}
+
+                {isSuperAdminMode && (
+                  <AntenneAdminsManager
+                    orgProfiles={orgProfiles}
+                    delegations={DELEGATIONS}
+                    antennes={ANTENNES_BY_DELEGATION}
+                  />
                 )}
               </div>
             )}

@@ -63,6 +63,19 @@ service cloud.firestore {
              getUser().get('delegation_id', '') == delegationId;
     }
 
+    // True when the signed-in user's e-mail has a matching antenne invitation
+    // for the antenne/delegation carried by `data` (used for self-provisioning
+    // into the admin_antenne role on first login).
+    function hasMatchingInvite(data) {
+      return isSignedIn() &&
+             request.auth.token != null &&
+             'email' in request.auth.token &&
+             request.auth.token.email != null &&
+             exists(/databases/$(database)/documents/antenne_invites/$(request.auth.token.email.lower())) &&
+             get(/databases/$(database)/documents/antenne_invites/$(request.auth.token.email.lower())).data.get('antenne_id', '') == data.get('antenne_id', '') &&
+             get(/databases/$(database)/documents/antenne_invites/$(request.auth.token.email.lower())).data.get('delegation_id', '') == data.get('delegation_id', '');
+    }
+
     function isOwner(uid) {
       return isSignedIn() && request.auth.uid == uid;
     }
@@ -121,6 +134,13 @@ service cloud.firestore {
              (!('updatedAt' in data) || data.updatedAt is number);
     }
 
+    function isValidInvite(data) {
+      return data.get('email', '') is string && data.get('email', '').size() > 0 && data.get('email', '').size() <= 150 &&
+             data.get('delegation_id', '') is string && data.get('delegation_id', '').size() > 0 && data.get('delegation_id', '').size() <= 128 &&
+             data.get('antenne_id', '') is string && data.get('antenne_id', '').size() > 0 && data.get('antenne_id', '').size() <= 128 &&
+             (!('createdAt' in data) || data.createdAt is number);
+    }
+
     function isValidFolder(data) {
       return data.keys().hasAll(['orgId', 'name', 'createdAt', 'createdBy']) &&
              data.get('orgId', '') is string && data.get('orgId', '').size() <= 128 &&
@@ -154,6 +174,17 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // 2c. Antenne admin invitations (email -> antenne). Super admin manages
+    // them; a signed-in user may read only the invitation for their own email.
+    match /antenne_invites/{inviteId} {
+      allow get: if isSuperAdmin() ||
+                    (isSignedIn() && request.auth.token != null && 'email' in request.auth.token &&
+                     request.auth.token.email != null && request.auth.token.email.lower() == inviteId);
+      allow list: if isSuperAdmin();
+      allow create, update: if isSuperAdmin() && isValidInvite(incoming());
+      allow delete: if isSuperAdmin();
+    }
+
     // 3. Organizations (Users / Partners Profiles)
     match /organizations/{orgId} {
       allow get: if isOwner(orgId) || isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) || isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', ''));
@@ -163,7 +194,9 @@ service cloud.firestore {
                     isValidId(orgId) &&
                     isOwner(orgId) &&
                     isValidOrganization(incoming()) &&
-                    (incoming().get('role', '') == 'organization' || isSuperAdmin());
+                    (incoming().get('role', '') == 'organization' ||
+                     isSuperAdmin() ||
+                     (incoming().get('role', '') == 'admin_antenne' && hasMatchingInvite(incoming())));
       
       allow update: if isSignedIn() && isValidId(orgId) && isValidOrganization(incoming()) && (
                     isSuperAdmin() || 
@@ -174,6 +207,7 @@ service cloud.firestore {
                       (getUser().get('delegation_id', '') == incoming().get('delegation_id', '') && (!('delegation_id' in existing()) || existing().get('delegation_id', '') == null || existing().get('delegation_id', '') == ''))
                     )) || 
                     (isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) && incoming().diff(existing()).affectedKeys().hasOnly(['submissionStatus', 'updatedAt'])) ||
+                    (isOwner(orgId) && incoming().get('role', '') == 'admin_antenne' && hasMatchingInvite(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'delegation_id', 'antenne_id', 'updatedAt'])) ||
                     (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt']))
                   );
     }

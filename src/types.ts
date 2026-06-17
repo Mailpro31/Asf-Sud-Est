@@ -41,6 +41,17 @@ export interface Folder {
   antenne_id?: string;
 }
 
+// Invitation/attribution d'un gestionnaire d'antenne par e-mail. Créée par le
+// super admin ; appliquée automatiquement à la connexion du compte
+// correspondant (le compte est alors promu rôle `admin_antenne`).
+export interface AntenneInvite {
+  id: string;          // = e-mail en minuscules (clé du document)
+  email: string;       // e-mail en minuscules
+  delegation_id: string;
+  antenne_id: string;
+  createdAt: number;
+}
+
 // Groupe thématique d'antennes (relation many-to-many : une antenne peut
 // appartenir à plusieurs groupes, ou à aucun). Géré par le super admin.
 export interface AntenneGroup {
