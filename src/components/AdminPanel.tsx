@@ -1132,17 +1132,23 @@ export default function AdminPanel() {
               
               {/* Back breadcrumb navigation to Admin Hub */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
-                <button
-                  onClick={() => {
-                    setNavigationView('hub');
-                    setCurrentFolderId(null);
-                  }}
-                  className={`flex items-center gap-2 text-xs font-black px-4.5 py-2.5 rounded-2xl transition-all cursor-pointer border ${themeAttr.badgeClass} hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs`}
-                >
-                  <ArrowLeft className="w-4 h-4 shrink-0" /> <span>← Retour au Hub Principal</span>
-                </button>
+                <nav className="flex items-center gap-2.5 flex-wrap" aria-label="Fil d'ariane">
+                  <button
+                    onClick={() => {
+                      setNavigationView('hub');
+                      setCurrentFolderId(null);
+                    }}
+                    className={`flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer border ${themeAttr.badgeClass} hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs`}
+                  >
+                    <ArrowLeft className="w-4 h-4 shrink-0" /> <span>Retour au Hub</span>
+                  </button>
+                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
+                  <span className="text-xs font-bold text-deep dark:text-white font-display tracking-tight">
+                    {navigationView === 'ailes' ? 'Ailes du Sourire' : navigationView === 'users' ? 'Membres' : 'Implantations'}
+                  </span>
+                </nav>
 
-                <div className="text-[10px] uppercase font-mono font-extrabold text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-3.5 py-2 rounded-2xl shadow-xs">
+                <div className="text-[10px] uppercase font-mono font-extrabold text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-3.5 py-2 rounded-xl shadow-xs">
                   <span className="w-2.5 h-2.5 rounded-full bg-azur animate-pulse"></span>
                   <span>Portail Admin • {navigationView === 'ailes' ? 'Ailes du Sourire' : navigationView === 'users' ? 'Utilisateurs' : 'Implantations'}</span>
                 </div>
@@ -1220,9 +1226,9 @@ export default function AdminPanel() {
 
                 {/* 4. CHOOSE TOWN (Onglets de Villes / Antennes locaux) */}
                 <div className="space-y-3">
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-500 font-bold uppercase tracking-wider">
                     <Building2 className="w-4 h-4 text-slate-400" />
-                    <span>Sélectionner l'Antenne Régionale (Villes actives) :</span>
+                    <span>Sélectionner l'antenne régionale (villes actives)</span>
                   </div>
               
                   <div className="flex flex-wrap gap-2.5 pt-1">
@@ -1275,13 +1281,18 @@ export default function AdminPanel() {
                     {!currentFolderId ? (
                       <div className="space-y-4">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                          <div>
-                            <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                              Dossiers des Organismes Partenaires ({selectedAntennes?.name})
-                            </h3>
-                            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                              Répertoires d'archivage réglementaires pour les compagnies et associations partenaires locales.
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-xl ${themeAttr.colorClass} flex items-center justify-center shrink-0 border border-current/10 shadow-3xs`}>
+                              <FolderIcon className="w-5 h-5 fill-current" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-display font-bold tracking-tight text-deep dark:text-white leading-tight">
+                                Dossiers des organismes partenaires <span className="text-slate-400 font-semibold">· {selectedAntennes?.name}</span>
+                              </h3>
+                              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                                Répertoires d'archivage réglementaires pour les compagnies et associations partenaires locales.
+                              </p>
+                            </div>
                           </div>
 
                           <button
@@ -1299,13 +1310,13 @@ export default function AdminPanel() {
 
                         {/* Search bar inside Town tab */}
                         <div className="relative max-w-sm">
-                          <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
                           <input
                             type="text"
                             placeholder="Rechercher un dossier d'organisme..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className={`w-full pl-10 pr-4 py-2.5 text-xs border rounded-2xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-1 ${themeAttr.ringColor}`}
+                            className="input-asf pl-10 text-xs"
                           />
                         </div>
 
@@ -1516,10 +1527,10 @@ export default function AdminPanel() {
                         </div>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto border rounded-2xl bg-white">
+                      <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="text-[10px] font-bold uppercase tracking-wider border-b bg-slate-50 text-slate-500">
+                            <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50/80 text-slate-500">
                               <th className="px-5 py-3">Document de vol</th>
                               <th className="px-5 py-3 w-40">Taille & Format</th>
                               <th className="px-5 py-3 w-44">Date de dépôt</th>
@@ -1527,13 +1538,13 @@ export default function AdminPanel() {
                               <th className="px-5 py-3 text-right w-24">Actions</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y text-slate-700 text-xs">
+                          <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                             {filteredFiles.map((file) => {
                               const activeStatus = file.submissionStatus || 'Pending';
                               const uploaderPartner = orgProfiles.find(p => p.id === file.orgId);
                               const uploaderName = file.uploadedBy === 'admin' ? 'admin' : (uploaderPartner?.name || 'Organisme');
                               return (
-                                <tr key={file.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setPreviewingFile(file)}>
+                                <tr key={file.id} className="hover:bg-slate-50/70 transition-colors cursor-pointer" onClick={() => setPreviewingFile(file)}>
                                   
                                   <td className="px-5 py-3.5 flex items-center gap-3 font-semibold text-slate-800" onClick={(e) => renamingFile?.id === file.id && e.stopPropagation()}>
                                     <FileText className="w-4 h-4 text-slate-400 shrink-0" />
@@ -1669,9 +1680,9 @@ export default function AdminPanel() {
                 
                 {/* Explain Banner */}
                 <div className="bg-azur/5 border border-azur/15 rounded-2xl p-5 text-left space-y-2">
-                  <h3 className="text-sm font-black text-deep flex items-center gap-2">
+                  <h3 className="text-base font-display font-bold tracking-tight text-deep flex items-center gap-2">
                     <ShieldAlert className="w-5 h-5 text-azur" />
-                    <span>Gestionnaire d'Accréditations de la Délégation</span>
+                    <span>Gestionnaire d'accréditations de la délégation</span>
                   </h3>
                   <p className="text-xs text-slate-600 leading-relaxed font-semibold">
                     Les compagnies et associations partenaires d'Aviation Sans Frontières s'enregistrent ici. En tant que coordinateur d'Aviation Sans Frontières pour la région <strong>{selectedDelegationData?.name}</strong>, vous devez affecter une antenne locale de rattachement à chaque organisme candidat et approuver officiellement sa connexion pour activer son droit de dépôt réglementaire.
@@ -1681,14 +1692,19 @@ export default function AdminPanel() {
                 <div className="space-y-6">
                   
                   {/* Category 1: Regional Members */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900">
-                        Comptes Partenaires enregistrés sous la délégation : {selectedDelegationData?.name}
-                      </h4>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Utilisateurs ayant formulé leur inscription ou rattachés à votre section de vol régionale.
-                      </p>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-azur-light text-azur flex items-center justify-center shrink-0 border border-azur/15">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-display font-bold tracking-tight text-deep dark:text-white">
+                          Comptes partenaires <span className="text-slate-400 font-semibold">· {selectedDelegationData?.name}</span>
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Utilisateurs ayant formulé leur inscription ou rattachés à votre section de vol régionale.
+                        </p>
+                      </div>
                     </div>
 
                     {orgProfiles.filter(p => p.delegation_id === delegationFilterId).length === 0 ? (
@@ -1699,19 +1715,19 @@ export default function AdminPanel() {
                       <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="text-[10px] font-black uppercase tracking-wider border-b bg-slate-50 text-slate-500">
-                              <th className="px-5 py-3">Raison Sociale / Organisme</th>
+                            <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50/80 text-slate-500">
+                              <th className="px-5 py-3">Raison sociale / Organisme</th>
                               <th className="px-5 py-3">Point de contact</th>
-                              <th className="px-5 py-3 w-64">Attribution Régionale</th>
-                              <th className="px-5 py-3 w-40">Statut d'Accès</th>
-                              <th className="px-5 py-3 text-right">Décision d'Accréditation</th>
+                              <th className="px-5 py-3 w-64">Attribution régionale</th>
+                              <th className="px-5 py-3 w-40">Statut d'accès</th>
+                              <th className="px-5 py-3 text-right">Décision d'accréditation</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y text-slate-700 text-xs">
+                          <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                             {orgProfiles.filter(p => p.delegation_id === delegationFilterId).map((org) => {
                               const st = org.submissionStatus || 'Pending';
                               return (
-                                <tr key={org.id} className="hover:bg-slate-50/50 transition-colors">
+                                <tr key={org.id} className="hover:bg-slate-50/70 transition-colors">
                                   
                                   <td className="px-5 py-4 font-bold text-slate-900">
                                     <p className="font-extrabold text-slate-900">{org.name || "Néant"}</p>
@@ -1869,11 +1885,11 @@ export default function AdminPanel() {
                   </div>
 
                   {/* Category 2: Orphan Accounts waitlist */}
-                  <div className="bg-amber-500/5 border border-amber-200/40 rounded-3xl p-6 shadow-xs space-y-4">
+                  <div className="bg-amber-500/5 border border-amber-200/40 rounded-2xl p-6 shadow-xs space-y-4">
                     <div>
-                      <h4 className="text-sm font-black text-amber-900 flex items-center gap-1.5">
+                      <h4 className="text-base font-display font-bold tracking-tight text-amber-900 flex items-center gap-2">
                         <AlertCircle className="w-5 h-5 text-amber-600 animate-pulse" />
-                        <span>Candidatures Hors Délégation (Comptes orphelins à lier à une antenne)</span>
+                        <span>Candidatures hors délégation (comptes orphelins à lier à une antenne)</span>
                       </h4>
                       <p className="text-xs text-amber-900 font-semibold leading-relaxed">
                         Ces candidats se sont enregistrés en ligne mais leur profil n'est affecté à aucun bureau. En tant que coordinateur, vous pouvez adopter leur compte dans votre délégation, leur attribuer une ville et leur donner un accès direct.
@@ -1888,17 +1904,17 @@ export default function AdminPanel() {
                       <div className="overflow-x-auto border border-amber-200 rounded-2xl bg-white">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="text-[10px] font-bold uppercase tracking-wider border-b bg-amber-50 text-amber-800">
+                            <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-amber-200 bg-amber-50 text-amber-800">
                               <th className="px-5 py-3">Adresse de connexion</th>
                               <th className="px-5 py-3">Profil renseigné</th>
-                              <th className="px-5 py-3 w-64">Attribution Interne</th>
-                              <th className="px-5 py-3 text-right font-black">Action d'Accréditation d'urgence</th>
+                              <th className="px-5 py-3 w-64">Attribution interne</th>
+                              <th className="px-5 py-3 text-right">Action d'accréditation d'urgence</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y text-slate-700 text-xs">
+                          <tbody className="divide-y divide-amber-100/70 text-slate-700 text-xs">
                             {orgProfiles.filter(p => !p.delegation_id || p.delegation_id === '').map((org) => {
                               return (
-                                <tr key={org.id} className="hover:bg-amber-50/10 transition-all">
+                                <tr key={org.id} className="hover:bg-amber-50/40 transition-colors">
                                   
                                   <td className="px-5 py-4 font-black text-slate-900">
                                     <p className="text-amber-900 font-mono font-black text-[13px]">{org.email}</p>
@@ -2022,9 +2038,9 @@ export default function AdminPanel() {
               <div className="space-y-6 text-left">
                 {/* Visual Sky Banner */}
                 <div className="bg-azur-light dark:bg-deep-dark/30 border border-azur-pastel dark:border-deep/60 p-5 text-left space-y-2 rounded-2xl">
-                  <h3 className="text-sm font-extrabold text-deep dark:text-azur-pastel flex items-center gap-2">
+                  <h3 className="text-base font-display font-bold tracking-tight text-deep dark:text-azur-pastel flex items-center gap-2">
                     <Compass className="w-5 h-5 text-azur-hover dark:text-azur animate-spin" />
-                    <span>Réseau National Aviation Sans Frontières (Carte Interactive de France)</span>
+                    <span>Réseau national Aviation Sans Frontières — carte interactive de France</span>
                   </h3>
                   <p className="text-xs text-azur-dark dark:text-azur leading-relaxed font-medium">
                     Cartographiez en direct l'implantation de vos antennes. Cliquez sur la carte de France pour désigner/modifier précisément l'emplacement d'une antenne nationale, ou cliquez sur un repère existant pour modifier ses détails.
@@ -2340,7 +2356,7 @@ export default function AdminPanel() {
                               required
                               value={editingAntenne.name}
                               onChange={(e) => setEditingAntenne(prev => prev ? { ...prev, name: e.target.value } : null)}
-                              className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-amber-500/25 focus:border-amber-500 focus:outline-none font-bold"
+                              className="input-asf mt-1 text-xs font-bold focus:ring-amber-500/25 focus:border-amber-500"
                             />
                           </div>
 
@@ -2389,7 +2405,7 @@ export default function AdminPanel() {
                             <button
                               type="button"
                               onClick={() => setEditingAntenne(null)}
-                              className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-medium rounded-xl text-xs transition duration-150 cursor-pointer"
+                              className="btn-secondary text-xs cursor-pointer"
                             >
                               Annuler
                             </button>
@@ -2461,7 +2477,7 @@ export default function AdminPanel() {
                                   .replace(/^-|-$/g, '');
                                 setNewAntenneId(slugified);
                               }}
-                              className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-azur/20 focus:border-azur focus:outline-none font-bold"
+                              className="input-asf mt-1 text-xs font-bold"
                             />
                           </div>
 
@@ -2512,7 +2528,7 @@ export default function AdminPanel() {
                           <button
                             type="submit"
                             disabled={actionLoading || !newAntenneName.trim() || !newAntenneId.trim()}
-                            className="w-full py-2.5 px-4 bg-azur hover:bg-azur-hover text-white font-black rounded-xl text-xs transition duration-150 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                            className="btn-asf w-full text-xs cursor-pointer"
                           >
                             <Plus className="w-4 h-4" />
                             <span>Confirmer l'ajout</span>
@@ -2526,13 +2542,18 @@ export default function AdminPanel() {
 
                 {/* LISTE RÉCAPITULATIVE INTERACTIVE */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-xs space-y-4">
-                  <div>
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                      Gestion des Antennes Actives ({ (ANTENNES_BY_DELEGATION['france'] || []).length })
-                    </h4>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Consultez la liste des antennes locales rattachées à l'infrastructure nationale d'Aviation Sans Frontières.
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-azur-light text-azur flex items-center justify-center shrink-0 border border-azur/15">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-display font-bold tracking-tight text-deep dark:text-white">
+                        Gestion des antennes actives <span className="text-slate-400 font-semibold">· {(ANTENNES_BY_DELEGATION['france'] || []).length}</span>
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Consultez la liste des antennes locales rattachées à l'infrastructure nationale d'Aviation Sans Frontières.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
