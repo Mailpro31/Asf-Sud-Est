@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { UserCog, Mail, Trash2, Plus, Clock, MapPin, ShieldCheck } from 'lucide-react';
+import { UserCog, Mail, Trash2, Plus, Clock, MapPin, ShieldCheck, Copy } from 'lucide-react';
 import { useFeedback } from '../hooks/useFeedback';
 import { AntenneInvite, Organization } from '../types';
 import {
@@ -91,6 +91,31 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
     }
   };
 
+  const buildInviteMessage = (email: string, delId: string, antId: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return (
+      `Bonjour,\n\n` +
+      `Vous êtes invité(e) à devenir gestionnaire de l'antenne « ${antenneName(delId, antId)} » ` +
+      `(${delegationName(delId)}) sur le portail ASF Dossiers.\n\n` +
+      `Pour activer votre accès :\n` +
+      `1. Rendez-vous sur ${origin}\n` +
+      `2. Créez votre compte en utilisant exactement cette adresse e-mail : ${email}\n\n` +
+      `Vous accéderez alors automatiquement au tableau de bord de votre antenne.\n\n` +
+      `À bientôt,\nAviation Sans Frontières`
+    );
+  };
+
+  const handleCopyInvite = async (invite: AntenneInvite) => {
+    const message = buildInviteMessage(invite.email, invite.delegation_id, invite.antenne_id);
+    try {
+      await navigator.clipboard.writeText(message);
+      toast("Message d'invitation copié — collez-le dans votre e-mail.", 'success');
+    } catch {
+      // Repli si l'API clipboard est indisponible
+      window.prompt('Copiez ce message d\'invitation :', message);
+    }
+  };
+
   const handleDeleteInvite = async (invite: AntenneInvite) => {
     if (!(await confirm(`Annuler l'invitation de ${invite.email} ?`))) return;
     try {
@@ -110,7 +135,7 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
         <div>
           <h3 className="font-display text-deep font-bold tracking-tight">Gestionnaires d'antennes</h3>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Attribuez une antenne à un e-mail. Le compte obtiendra automatiquement son tableau de bord d'antenne.
+            Attribuez une antenne à un e-mail. Si le compte existe, l'accès est immédiat ; sinon, copiez l'invitation (bouton <span className="inline-flex align-middle"><Copy className="w-3 h-3" /></span>) et envoyez-la — l'accès s'activera à sa première connexion.
           </p>
         </div>
       </div>
@@ -218,6 +243,13 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
                     {antenneName(inv.delegation_id, inv.antenne_id)} · {delegationName(inv.delegation_id)} — en attente de connexion
                   </p>
                 </div>
+                <button
+                  onClick={() => handleCopyInvite(inv)}
+                  className="btn-ghost p-2 text-amber-800 hover:bg-amber-100 shrink-0"
+                  title="Copier le message d'invitation à envoyer"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
                 <button
                   onClick={() => handleDeleteInvite(inv)}
                   className="btn-ghost p-2 text-amber-700 hover:bg-amber-100 shrink-0"
