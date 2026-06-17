@@ -83,17 +83,17 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
 
             if (t.type === 'success') {
               bgClass = 'bg-emerald-50 dark:bg-emerald-950/90';
-              borderClass = 'border-emerald-250 dark:border-emerald-900/60';
+              borderClass = 'border-emerald-200 dark:border-emerald-900/60';
               textClass = 'text-emerald-800 dark:text-emerald-300';
               Icon = CheckCircle2;
             } else if (t.type === 'warning') {
               bgClass = 'bg-amber-50 dark:bg-amber-950/90';
-              borderClass = 'border-amber-250 dark:border-amber-900/60';
+              borderClass = 'border-amber-200 dark:border-amber-900/60';
               textClass = 'text-amber-800 dark:text-amber-300';
               Icon = AlertTriangle;
             } else {
               bgClass = 'bg-rose-50 dark:bg-rose-950/90';
-              borderClass = 'border-rose-250 dark:border-rose-900/60';
+              borderClass = 'border-rose-200 dark:border-rose-900/60';
               textClass = 'text-rose-800 dark:text-rose-300';
               Icon = AlertCircle;
             }
@@ -144,18 +144,18 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
               className="relative w-full max-w-md overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl z-10"
             >
               {/* Premium gradient header stripe */}
-              <div className="h-1.5 w-full bg-gradient-to-r from-[#1b98c4] to-indigo-505" />
+              <div className="h-1.5 w-full bg-gradient-to-r from-deep to-azur" />
 
               <div className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-sky-50 dark:bg-sky-500/10 text-[#1b98c4] dark:text-sky-400">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-azur-light dark:bg-azur/10 text-azur dark:text-azur-pastel">
                     <HelpCircle className="h-6 w-6" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-lg font-bold text-slate-950 dark:text-slate-50 font-sans tracking-tight">
+                    <h3 className="text-lg font-bold text-deep dark:text-slate-50 font-display tracking-tight">
                       Confirmation de l'action
                     </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-450 leading-relaxed font-medium mt-1">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium mt-1">
                       {confirmState.message}
                     </p>
                   </div>
@@ -173,7 +173,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
                   <button
                     type="button"
                     onClick={() => handleConfirmClose(true)}
-                    className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#1b98c4] hover:bg-[#15789c] text-white shadow-md shadow-sky-500/10 transition-all cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-azur hover:bg-azur-hover text-white shadow-md shadow-azur/15 transition-all cursor-pointer"
                   >
                     Confirmer
                   </button>
