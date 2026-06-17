@@ -1885,17 +1885,21 @@ export default function AdminPanel() {
                                           <div>
                                             <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Rôle du compte</label>
                                             <select
-                                              value={org.role || 'organization'}
+                                              value={org.role === 'admin_antenne' ? 'admin_antenne' : (org.role || 'organization')}
                                               onChange={(e) => handleUpdateOrgRole(org.id, e.target.value)}
                                               className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800"
                                               title="Définir le rôle du compte"
                                             >
                                               <option value="organization">Partenaire / Organisme</option>
-                                              <option value="admin_antenne">Gestionnaire d'antenne</option>
                                               <option value="admin_delegation">Coordinateur de délégation</option>
+                                              {/* admin_antenne se gère via le panneau « Gestionnaires d'antennes »
+                                                  (invitation + e-mail). On l'affiche en lecture seule si déjà défini. */}
+                                              {org.role === 'admin_antenne' && (
+                                                <option value="admin_antenne">Gestionnaire d'antenne</option>
+                                              )}
                                             </select>
                                             <p className="text-[9.5px] text-slate-400 font-semibold mt-1 leading-snug">
-                                              « Gestionnaire d'antenne » donne accès au dashboard de l'antenne sélectionnée ci-dessus.
+                                              Pour désigner un <strong>gestionnaire d'antenne</strong>, utilisez le panneau « Gestionnaires d'antennes » (section Implantations) — attribution par e-mail.
                                             </p>
                                           </div>
                                         )}
