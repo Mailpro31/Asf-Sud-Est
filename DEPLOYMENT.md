@@ -188,6 +188,33 @@ instructions DNS. Pensez ensuite à ajouter ce domaine dans
 
 ---
 
+## 12. E-mails d'invitation des gestionnaires d'antennes
+
+L'attribution d'une antenne à un e-mail (panneau super admin) peut **envoyer
+automatiquement un e-mail** d'invitation. L'application écrit le message dans la
+collection Firestore **`mail`** ; l'envoi est assuré par l'extension Firebase
+**« Trigger Email from Firestore »**.
+
+**Installation (une fois) :**
+
+1. Console Firebase → **Extensions** → installer **« Trigger Email from
+   Firestore »** (`firebase/firestore-send-email`).
+2. Paramètres de l'extension :
+   - **Email documents collection** : `mail`
+   - **SMTP connection URI** : l'URI de votre fournisseur, par ex.
+     - SendGrid : `smtps://apikey:VOTRE_CLE_API@smtp.sendgrid.net:465`
+     - Gmail (app password) : `smtps://votre.adresse@gmail.com:MOT_DE_PASSE_APP@smtp.gmail.com:465`
+   - **Default FROM address** : l'adresse expéditrice (ex. `no-reply@votre-domaine.org`).
+3. Déployer les règles : `firebase deploy --only firestore:rules` (la collection
+   `mail` n'est inscriptible que par le super admin).
+
+> Tant que l'extension n'est pas installée, les invitations sont quand même
+> enregistrées et le bouton **« Copier l'invitation »** permet de l'envoyer
+> manuellement. L'accès s'active à la première connexion de la personne avec
+> l'e-mail invité.
+
+---
+
 ## 11. Dépannage — `auth/unauthorized-domain`
 
 **Symptôme :** à la connexion (surtout via **« Connexion Google Workspace »**),
