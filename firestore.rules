@@ -141,6 +141,14 @@ service cloud.firestore {
              (!('createdAt' in data) || data.createdAt is number);
     }
 
+    function isValidMail(data) {
+      return data.get('to', []) is list && data.get('to', []).size() > 0 && data.get('to', []).size() <= 50 &&
+             data.get('message', {}) is map &&
+             data.message.get('subject', '') is string && data.message.get('subject', '').size() <= 300 &&
+             data.message.get('text', '') is string && data.message.get('text', '').size() <= 20000 &&
+             (!('html' in data.message) || (data.message.html is string && data.message.html.size() <= 50000));
+    }
+
     function isValidFolder(data) {
       return data.keys().hasAll(['orgId', 'name', 'createdAt', 'createdBy']) &&
              data.get('orgId', '') is string && data.get('orgId', '').size() <= 128 &&
@@ -190,14 +198,14 @@ service cloud.firestore {
     // côté serveur (admin SDK, hors règles).
     match /mail/{mailId} {
       allow get, list: if isSuperAdmin();
-      allow create: if isSuperAdmin();
+      allow create: if isSuperAdmin() && isValidMail(incoming());
       allow update, delete: if false;
     }
 
     // 3. Organizations (Users / Partners Profiles)
     match /organizations/{orgId} {
       allow get: if isOwner(orgId) || isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) || isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', ''));
-      allow list: if isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')) || (isSignedIn() && hasUserDoc() && getUser().get('role', '') == 'admin_antenne' && getUser().get('antenne_id', '') != '' && resource.data.get('antenne_id', '') == getUser().get('antenne_id', ''));
+      allow list: if isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')) || isAdminAntenneOf(resource.data.get('delegation_id', ''), resource.data.get('antenne_id', ''));
       
       allow create: if isSignedIn() &&
                     isValidId(orgId) &&

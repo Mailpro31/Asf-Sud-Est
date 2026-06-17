@@ -112,7 +112,11 @@ export default function AntenneAdminDashboard() {
       where('delegation_id', '==', delegationId),
       where('antenne_id', '==', antenneId),
     );
-    const orgsQ = query(collection(db, 'organizations'), where('antenne_id', '==', antenneId));
+    const orgsQ = query(
+      collection(db, 'organizations'),
+      where('delegation_id', '==', delegationId),
+      where('antenne_id', '==', antenneId),
+    );
 
     const unsubFiles = onSnapshot(
       filesQ,

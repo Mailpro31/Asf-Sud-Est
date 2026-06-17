@@ -226,6 +226,10 @@ export default function AdminPanel() {
   const handleAddAntenne = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAntenneName.trim() || !newAntenneId.trim()) return;
+    if (localDb.isSandboxActive()) {
+      toast("La gestion des antennes est indisponible en mode hors-ligne (sandbox).", 'warning');
+      return;
+    }
     setActionLoading(true);
     try {
       const cleanId = newAntenneId.toLowerCase().trim();
@@ -261,6 +265,10 @@ export default function AdminPanel() {
 
   const handleDeleteAntenne = async (antId: string) => {
     if (!await confirm(`Voulez-vous vraiment supprimer l'antenne "${antId}" ?`)) return;
+    if (localDb.isSandboxActive()) {
+      toast("La gestion des antennes est indisponible en mode hors-ligne (sandbox).", 'warning');
+      return;
+    }
     setActionLoading(true);
     try {
       // Retrouver l'antenne (et sa délégation) pour écrire un document valide
@@ -305,6 +313,10 @@ export default function AdminPanel() {
   const handleUpdateAntenneDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingAntenne || !editingAntenne.name.trim()) return;
+    if (localDb.isSandboxActive()) {
+      toast("La gestion des antennes est indisponible en mode hors-ligne (sandbox).", 'warning');
+      return;
+    }
     setActionLoading(true);
     try {
       await setDoc(doc(db, 'antennes', editingAntenne.id), {
