@@ -205,6 +205,7 @@ export default function AdminPanel() {
   const [selectedDelegationForAntenne, setSelectedDelegationForAntenne] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [recalibrating, setRecalibrating] = useState(false);
 
   // Géocodage automatique : place le marqueur sur les vraies coordonnées de la
   // ville tapée (répertoire local + API adresse.data.gouv.fr), en mode création.
@@ -355,6 +356,57 @@ export default function AdminPanel() {
       toast("Erreur lors de la modification de l'antenne : " + err.message, 'error');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // Recale toutes les antennes existantes sur les vraies coordonnées de leur
+  // ville (géocodage par nom) et persiste les positions corrigées en base.
+  const handleRecalibrateAllAntennes = async () => {
+    if (localDb.isSandboxActive()) {
+      toast("Le recalage des antennes est indisponible en mode hors-ligne (sandbox).", 'warning');
+      return;
+    }
+    setRecalibrating(true);
+    let updated = 0;
+    let notFound = 0;
+    let already = 0;
+    const missing: string[] = [];
+    try {
+      const entries = Object.entries(ANTENNES_BY_DELEGATION) as [string, { id: string; name: string; x?: number; y?: number }[]][];
+      for (const [delId, list] of entries) {
+        for (const ant of list) {
+          const coords = await geocodeCity(ant.name);
+          if (!coords) {
+            notFound++;
+            missing.push(ant.name);
+            continue;
+          }
+          const { x, y } = lonLatToXY(coords[0], coords[1]);
+          // Déjà bien placée (tolérance 0,2 %) : on ne réécrit pas.
+          if (ant.x !== undefined && ant.y !== undefined &&
+              Math.abs(ant.x - x) < 0.2 && Math.abs(ant.y - y) < 0.2) {
+            already++;
+            continue;
+          }
+          await setDoc(doc(db, 'antennes', ant.id), {
+            name: ant.name,
+            delegation_id: delId,
+            x,
+            y,
+            updatedAt: Date.now(),
+          }, { merge: true });
+          updated++;
+        }
+      }
+      const parts = [`${updated} antenne(s) replacée(s)`];
+      if (already) parts.push(`${already} déjà correcte(s)`);
+      if (notFound) parts.push(`${notFound} ville(s) introuvable(s)${missing.length ? ' : ' + missing.join(', ') : ''}`);
+      toast(parts.join(' · '), notFound ? 'warning' : 'success');
+    } catch (err: any) {
+      console.error("Error recalibrating antennes:", err);
+      toast("Erreur lors du recalage des antennes : " + err.message, 'error');
+    } finally {
+      setRecalibrating(false);
     }
   };
 
@@ -2351,6 +2403,21 @@ export default function AdminPanel() {
                         )}
                       </svg>
                     </div>
+
+                    {/* Recaler toutes les antennes existantes sur leur ville */}
+                    <button
+                      type="button"
+                      onClick={handleRecalibrateAllAntennes}
+                      disabled={recalibrating}
+                      className="w-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 px-3 py-2.5 rounded-xl transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      title="Géocode chaque antenne par son nom de ville et corrige sa position sur la carte"
+                    >
+                      {recalibrating ? (
+                        <>⏳ Recalage en cours…</>
+                      ) : (
+                        <>🧭 Recaler toutes les antennes sur leur ville</>
+                      )}
+                    </button>
 
                     {/* Pre-set Quick Buttons for towns */}
                     <div className="w-full bg-slate-50 dark:bg-slate-950/20 p-4 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
