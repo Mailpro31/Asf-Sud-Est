@@ -1745,6 +1745,25 @@ export default function AdminPanel() {
                                           </select>
                                         </div>
 
+                                        {isSuperAdminMode && (
+                                          <div>
+                                            <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Rôle du compte</label>
+                                            <select
+                                              value={org.role || 'organization'}
+                                              onChange={(e) => handleUpdateOrgRole(org.id, e.target.value)}
+                                              className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800"
+                                              title="Définir le rôle du compte"
+                                            >
+                                              <option value="organization">Partenaire / Organisme</option>
+                                              <option value="admin_antenne">Gestionnaire d'antenne</option>
+                                              <option value="admin_delegation">Coordinateur de délégation</option>
+                                            </select>
+                                            <p className="text-[9.5px] text-slate-400 font-semibold mt-1 leading-snug">
+                                              « Gestionnaire d'antenne » donne accès au dashboard de l'antenne sélectionnée ci-dessus.
+                                            </p>
+                                          </div>
+                                        )}
+
                                         <div className="flex gap-2 pt-1">
                                           <button
                                             onClick={() => handleSaveOrgDelegationAntenne(org.id)}

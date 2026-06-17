@@ -11,6 +11,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
+import AntenneAdminDashboard from './components/AntenneAdminDashboard';
 import LandingPage from './components/LandingPage';
 
 function MainApp() {
@@ -91,6 +92,9 @@ function MainApp() {
     }
     if (organization.role === 'super_admin' || organization.role === 'admin' || organization.role === 'admin_delegation') {
       return <AdminPanel />;
+    }
+    if (organization.role === 'admin_antenne') {
+      return <AntenneAdminDashboard />;
     }
     return <Dashboard />;
   }
