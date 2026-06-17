@@ -60,6 +60,7 @@ import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
 import { StatusBadge } from './ui';
 import { STATUS_META } from '../lib/status';
+import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
 
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
@@ -203,6 +204,29 @@ export default function AdminPanel() {
   const [newAntenneGroupIds, setNewAntenneGroupIds] = useState<string[]>([]);
   const [selectedDelegationForAntenne, setSelectedDelegationForAntenne] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+
+  // Géocodage automatique : place le marqueur sur les vraies coordonnées de la
+  // ville tapée (répertoire local + API adresse.data.gouv.fr), en mode création.
+  useEffect(() => {
+    if (editingAntenne) return;
+    const name = newAntenneName.trim();
+    if (name.length < 2) return;
+    let cancelled = false;
+    setGeocoding(true);
+    const timer = setTimeout(async () => {
+      const coords = await geocodeCity(name);
+      if (!cancelled) {
+        if (coords) setTempCoords(lonLatToXY(coords[0], coords[1]));
+        setGeocoding(false);
+      }
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      setGeocoding(false);
+    };
+  }, [newAntenneName, editingAntenne]);
 
   const handleAddDelegation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2215,51 +2239,25 @@ export default function AdminPanel() {
                           <line x1="0" y1="500" x2="600" y2="500" />
                         </g>
 
-                        {/* Beautiful stylized silhouette of France */}
-                        <path
-                          d="M 330,20 
-                             C 345,15 365,10 380,25
-                             C 400,45 420,50 440,65
-                             C 460,80 480,95 500,105
-                             C 520,115 540,115 550,140
-                             C 560,165 545,190 535,215
-                             C 525,240 515,265 510,290
-                             C 505,315 520,340 540,365
-                             C 560,390 550,410 535,430
-                             C 520,450 510,470 490,490
-                             C 470,510 445,530 425,545
-                             C 405,560 380,575 355,580
-                             C 330,585 305,570 280,560
-                             C 255,550 230,540 205,535
-                             C 180,530 150,545 125,540
-                             C 100,535 85,515 80,490
-                             C 75,465 70,445 60,420
-                             C 50,395 30,370 20,345
-                             C 10,320 25,295 40,270
-                             C 55,245 45,220 30,195
-                             C 15,170 30,150 45,135
-                             C 60,120 80,130 100,125
-                             C 120,120 140,100 160,95
-                             C 180,90 200,105 220,100
-                             C 240,95 260,80 275,65
-                             C 290,50 315,25 330,20 Z"
+                        {/* Real metropolitan France outline (geographic projection) */}
+                        <polygon
+                          points={toSvgPoints(FRANCE_MAINLAND, 6)}
                           className="fill-azur-light dark:fill-slate-800/20 stroke-azur-pastel dark:stroke-slate-700 stroke-2 outline-none transition-colors duration-300"
+                          strokeLinejoin="round"
+                          pointerEvents="none"
                         />
 
                         {/* Captions representing oceanic borders */}
-                        <text x="140" y="80" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">La Manche</text>
-                        <text x="50" y="440" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Océan Atlantique</text>
-                        <text x="440" y="550" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Mer Méditerranée</text>
+                        <text x="120" y="70" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">La Manche</text>
+                        <text x="40" y="380" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Océan Atlantique</text>
+                        <text x="350" y="540" className="fill-slate-400/60 dark:fill-slate-600/40 text-[10px] font-bold tracking-widest pointer-events-none uppercase font-sans">Mer Méditerranée</text>
 
-                        {/* Corsica Map Accent */}
-                        <path
-                          d="M 505,480
-                             C 510,475 515,480 520,485
-                             C 525,490 520,505 515,515
-                             C 510,525 505,530 500,525
-                             C 495,520 497,490 505,480
-                             Z"
+                        {/* Corsica */}
+                        <polygon
+                          points={toSvgPoints(FRANCE_CORSICA, 6)}
                           className="fill-azur-light dark:fill-slate-800/20 stroke-azur-pastel dark:stroke-slate-700 stroke-2 transition-all duration-350"
+                          strokeLinejoin="round"
+                          pointerEvents="none"
                         />
 
                         {/* Permanent Active Antennas Beacons */}
@@ -2361,27 +2359,28 @@ export default function AdminPanel() {
                       </p>
                       <div className="flex flex-wrap gap-1.5 justify-start">
                         {[
-                          { name: "Paris", x: 50.8, y: 22.5 },
-                          { name: "Lille", x: 53.5, y: 5.5 },
-                          { name: "Lyon", x: 63.2, y: 51.5 },
-                          { name: "Marseille", x: 65.5, y: 81.0 },
-                          { name: "Toulouse", x: 39.5, y: 81.5 },
-                          { name: "Nantes", x: 23.0, y: 38.0 },
-                          { name: "Strasbourg", x: 82.5, y: 23.0 },
-                          { name: "Bordeaux", x: 28.0, y: 64.0 },
-                          { name: "Brest", x: 4.0, y: 22.0 }
+                          { name: "Paris", lon: 2.3522, lat: 48.8566 },
+                          { name: "Lille", lon: 3.0573, lat: 50.6292 },
+                          { name: "Lyon", lon: 4.8357, lat: 45.764 },
+                          { name: "Marseille", lon: 5.3698, lat: 43.2965 },
+                          { name: "Toulouse", lon: 1.4442, lat: 43.6047 },
+                          { name: "Nantes", lon: -1.5536, lat: 47.2184 },
+                          { name: "Strasbourg", lon: 7.7521, lat: 48.5734 },
+                          { name: "Bordeaux", lon: -0.5792, lat: 44.8378 },
+                          { name: "Brest", lon: -4.4861, lat: 48.3904 }
                         ].map((city) => (
                           <button
                             key={city.name}
                             type="button"
                             onClick={() => {
+                              const c = lonLatToXY(city.lon, city.lat);
                               if (editingAntenne) {
-                                setEditingAntenne(prev => prev ? { ...prev, name: city.name, x: city.x, y: city.y } : null);
+                                setEditingAntenne(prev => prev ? { ...prev, name: city.name, x: c.x, y: c.y } : null);
                               } else {
                                 setNewAntenneName(city.name);
                                 const slug = city.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
                                 setNewAntenneId(slug);
-                                setTempCoords({ x: city.x, y: city.y });
+                                setTempCoords({ x: c.x, y: c.y });
                               }
                             }}
                             className="text-[10px] bg-azur-light dark:bg-deep-dark/40 border border-azur-pastel/80 dark:border-deep/40 hover:border-azur-pastel hover:bg-azur-pastel text-azur-dark dark:text-azur-pastel px-2 py-1 rounded-lg font-bold transition-all cursor-pointer shadow-xs"
@@ -2448,6 +2447,24 @@ export default function AdminPanel() {
                               />
                             </div>
                           </div>
+
+                          <button
+                            type="button"
+                            disabled={geocoding || !editingAntenne.name.trim()}
+                            onClick={async () => {
+                              const coords = await geocodeCity(editingAntenne.name);
+                              if (coords) {
+                                const c = lonLatToXY(coords[0], coords[1]);
+                                setEditingAntenne(prev => prev ? { ...prev, x: c.x, y: c.y } : null);
+                                toast(`Antenne positionnée sur ${editingAntenne.name}.`, 'success');
+                              } else {
+                                toast("Ville introuvable — positionnez manuellement sur la carte.", 'warning');
+                              }
+                            }}
+                            className="w-full text-[11px] bg-azur-light text-azur-dark dark:text-azur-pastel border border-azur-pastel/80 hover:bg-azur-pastel/40 font-bold px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          >
+                            📍 Placer automatiquement sur la ville « {editingAntenne.name || '…'} »
+                          </button>
 
                           <div>
                             <label className="block text-[10px] font-extrabold text-slate-500 uppercase">
@@ -2581,6 +2598,13 @@ export default function AdminPanel() {
                               }}
                               className="input-asf mt-1 text-xs font-bold"
                             />
+                            <p className="text-[10px] mt-1 font-semibold flex items-center gap-1 text-slate-400">
+                              {geocoding
+                                ? <span className="text-azur">📍 Localisation automatique…</span>
+                                : tempCoords
+                                  ? <span className="text-emerald-600 dark:text-emerald-400">✓ Position placée automatiquement sur la carte</span>
+                                  : <span>Tapez une ville française : sa position se place toute seule.</span>}
+                            </p>
                           </div>
 
                           <div>
