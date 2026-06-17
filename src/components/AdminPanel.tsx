@@ -262,7 +262,25 @@ export default function AdminPanel() {
     if (!await confirm(`Voulez-vous vraiment supprimer l'antenne "${antId}" ?`)) return;
     setActionLoading(true);
     try {
+      // Retrouver l'antenne (et sa délégation) pour écrire un document valide
+      // même lorsqu'elle n'existe pas encore dans Firestore (antennes par
+      // défaut) : un setDoc/merge agit alors comme une création et la règle
+      // isValidAntenne exige name + delegation_id.
+      let antDelegationId = delegationFilterId || 'france';
+      let antData: { id: string; name: string; x?: number; y?: number } | undefined;
+      for (const [delId, list] of Object.entries(ANTENNES_BY_DELEGATION) as [string, { id: string; name: string; x?: number; y?: number }[]][]) {
+        const found = (list || []).find(a => a.id === antId);
+        if (found) {
+          antDelegationId = delId;
+          antData = found;
+          break;
+        }
+      }
       await setDoc(doc(db, 'antennes', antId), {
+        name: antData?.name || antId,
+        delegation_id: antDelegationId,
+        x: antData?.x ?? null,
+        y: antData?.y ?? null,
         deleted: true,
         updatedAt: Date.now()
       }, { merge: true });
