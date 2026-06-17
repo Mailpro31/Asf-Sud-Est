@@ -2418,45 +2418,6 @@ export default function AdminPanel() {
                         <>🧭 Recaler toutes les antennes sur leur ville</>
                       )}
                     </button>
-
-                    {/* Pre-set Quick Buttons for towns */}
-                    <div className="w-full bg-slate-50 dark:bg-slate-950/20 p-4 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left flex items-center gap-1">
-                        <span>📍 Villes de Présélection Express :</span>
-                      </p>
-                      <div className="flex flex-wrap gap-1.5 justify-start">
-                        {[
-                          { name: "Paris", lon: 2.3522, lat: 48.8566 },
-                          { name: "Lille", lon: 3.0573, lat: 50.6292 },
-                          { name: "Lyon", lon: 4.8357, lat: 45.764 },
-                          { name: "Marseille", lon: 5.3698, lat: 43.2965 },
-                          { name: "Toulouse", lon: 1.4442, lat: 43.6047 },
-                          { name: "Nantes", lon: -1.5536, lat: 47.2184 },
-                          { name: "Strasbourg", lon: 7.7521, lat: 48.5734 },
-                          { name: "Bordeaux", lon: -0.5792, lat: 44.8378 },
-                          { name: "Brest", lon: -4.4861, lat: 48.3904 }
-                        ].map((city) => (
-                          <button
-                            key={city.name}
-                            type="button"
-                            onClick={() => {
-                              const c = lonLatToXY(city.lon, city.lat);
-                              if (editingAntenne) {
-                                setEditingAntenne(prev => prev ? { ...prev, name: city.name, x: c.x, y: c.y } : null);
-                              } else {
-                                setNewAntenneName(city.name);
-                                const slug = city.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                                setNewAntenneId(slug);
-                                setTempCoords({ x: c.x, y: c.y });
-                              }
-                            }}
-                            className="text-[10px] bg-azur-light dark:bg-deep-dark/40 border border-azur-pastel/80 dark:border-deep/40 hover:border-azur-pastel hover:bg-azur-pastel text-azur-dark dark:text-azur-pastel px-2 py-1 rounded-lg font-bold transition-all cursor-pointer shadow-xs"
-                          >
-                            + {city.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </div>
 
                   {/* RIGHT COLUMN: CONFIGURATION FORM OR DETAILED VISUAL EDIT PANEL */}
