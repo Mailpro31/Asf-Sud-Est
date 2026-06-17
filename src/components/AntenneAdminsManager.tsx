@@ -9,6 +9,7 @@ import {
   inviteKey,
   assignOrgAsAntenneAdmin,
   revokeOrgAntenneAdmin,
+  queueEmail,
 } from '../lib/antenneAdmins';
 
 interface Props {
@@ -64,11 +65,42 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
       await upsertInvite(cleanEmail, delegationId, antenneId);
       // Si un compte existe déjà avec cet e-mail, on l'attribue tout de suite.
       const existing = orgProfiles.find((o) => (o.email || '').toLowerCase() === cleanEmail);
+      const antName = antenneName(delegationId, antenneId);
+      const delName = delegationName(delegationId);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
       if (existing) {
         await assignOrgAsAntenneAdmin(existing, delegationId, antenneId);
-        toast(`${cleanEmail} est désormais gestionnaire de l'antenne ${antenneName(delegationId, antenneId)}.`, 'success');
+      }
+
+      // Envoi automatique de l'e-mail (extension Firebase « Trigger Email »).
+      const subject = `Gestion de l'antenne ${antName} — ASF Dossiers`;
+      const text = buildInviteMessage(cleanEmail, delegationId, antenneId);
+      const html =
+        `<div style="font-family:Inter,Arial,sans-serif;color:#0f172a;line-height:1.6">` +
+        `<h2 style="color:#0e5e76;margin:0 0 12px">Vous gérez désormais l'antenne ${antName}</h2>` +
+        `<p>Bonjour,</p>` +
+        `<p>Vous avez été désigné(e) gestionnaire de l'antenne <strong>${antName}</strong> (${delName}) sur le portail <strong>ASF Dossiers</strong>.</p>` +
+        (existing
+          ? `<p>Votre compte est déjà actif : connectez-vous pour accéder au tableau de bord de votre antenne.</p>`
+          : `<p>Pour activer votre accès, créez votre compte en utilisant exactement cette adresse e-mail : <strong>${cleanEmail}</strong>. Vous accéderez alors automatiquement au tableau de bord de votre antenne.</p>`) +
+        `<p style="margin:20px 0"><a href="${origin}" style="background:#1b98c4;color:#fff;text-decoration:none;padding:10px 20px;border-radius:10px;font-weight:600">Accéder au portail</a></p>` +
+        `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
+        `</div>`;
+      const sent = await queueEmail(cleanEmail, subject, text, html);
+
+      if (existing) {
+        toast(
+          `${cleanEmail} est gestionnaire de l'antenne ${antName}.` + (sent ? ' E-mail envoyé.' : ''),
+          'success',
+        );
       } else {
-        toast(`Invitation envoyée à ${cleanEmail}. Elle sera appliquée à sa première connexion.`, 'success');
+        toast(
+          sent
+            ? `Invitation envoyée par e-mail à ${cleanEmail}.`
+            : `Invitation créée pour ${cleanEmail}. (E-mail non envoyé : extension absente — utilisez « Copier ».)`,
+          sent ? 'success' : 'warning',
+        );
       }
       setEmail('');
       setAntenneId('');

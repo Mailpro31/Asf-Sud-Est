@@ -185,6 +185,15 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // 2d. Mail queue (extension Firebase "Trigger Email from Firestore").
+    // Le super admin peut déposer un e-mail à envoyer ; l'extension le traite
+    // côté serveur (admin SDK, hors règles).
+    match /mail/{mailId} {
+      allow get, list: if isSuperAdmin();
+      allow create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+
     // 3. Organizations (Users / Partners Profiles)
     match /organizations/{orgId} {
       allow get: if isOwner(orgId) || isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) || isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', ''));

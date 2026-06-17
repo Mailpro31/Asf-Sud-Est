@@ -6,6 +6,7 @@ import {
   deleteDoc,
   updateDoc,
   onSnapshot,
+  addDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { localDb } from './localDb';
@@ -135,6 +136,33 @@ export function subscribeInvites(cb: (list: AntenneInvite[]) => void): () => voi
     localDb.setSandboxActive(true);
     cb(readLocalInvites());
     return () => {};
+  }
+}
+
+// --- Envoi d'e-mail (extension Firebase "Trigger Email from Firestore") ---
+
+/**
+ * Met un e-mail en file d'envoi en écrivant un document dans la collection
+ * `mail`, traitée par l'extension Firebase « Trigger Email ». Sans extension
+ * installée, le document reste simplement non traité (échec silencieux). En
+ * mode sandbox, on ne fait rien (pas de backend).
+ */
+export async function queueEmail(
+  to: string,
+  subject: string,
+  text: string,
+  html: string,
+): Promise<boolean> {
+  if (localDb.isSandboxActive()) return false;
+  try {
+    await addDoc(collection(db, 'mail'), {
+      to: [to],
+      message: { subject, text, html },
+    });
+    return true;
+  } catch (err) {
+    console.warn('queueEmail failed (extension Trigger Email non installée ?):', err);
+    return false;
   }
 }
 
