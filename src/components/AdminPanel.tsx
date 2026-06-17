@@ -322,6 +322,73 @@ export default function AdminPanel() {
     }
   };
 
+  // Rendu d'une carte d'antenne (liste récapitulative), réutilisé pour chaque
+  // groupe d'antennes.
+  const renderAntenneCard = (ant: { id: string; name: string; x?: number; y?: number }) => {
+    const countFolders = folders.filter(fol => fol.antenne_id === ant.id).length;
+    const hasCoordinators = orgProfiles.filter(p => p.antenne_id === ant.id).length;
+    const isCurrentlySel = editingAntenne?.id === ant.id;
+    const startEdit = () => {
+      setEditingAntenne({
+        id: ant.id,
+        name: ant.name,
+        x: ant.x !== undefined ? ant.x : 50,
+        y: ant.y !== undefined ? ant.y : 50,
+      });
+      setTempCoords(null);
+    };
+    return (
+      <div
+        key={ant.id}
+        className={`flex justify-between items-center p-4 rounded-2xl border transition-all duration-200 ${
+          isCurrentlySel
+            ? "bg-amber-500/5 dark:bg-amber-500/2 border-amber-500/40 shadow-xs ring-1 ring-amber-500/10"
+            : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-100 dark:border-slate-800 hover:border-azur/40"
+        }`}
+      >
+        <div className="space-y-1 text-left">
+          <button
+            type="button"
+            onClick={startEdit}
+            className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 hover:text-azur-hover dark:hover:text-azur transition-colors text-left"
+          >
+            <span className={`w-2 h-2 rounded-full ${isCurrentlySel ? 'bg-amber-500 animate-ping' : 'bg-azur'}`}></span>
+            <span>{ant.name}</span>
+          </button>
+          <p className="text-[10px] text-slate-400 font-mono">
+            ID: {ant.id} • {ant.x !== undefined ? `${ant.x}%` : '50%'} X, {ant.y !== undefined ? `${ant.y}%` : '50%'} Y
+          </p>
+          <div className="flex gap-2 text-[9.5px] text-slate-500">
+            <span>📂 {countFolders} dossiers</span>
+            <span>🏢 {hasCoordinators} partenaires</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={startEdit}
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+              isCurrentlySel
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                : "hover:bg-azur-light dark:hover:bg-deep-dark/40 text-azur-hover border-transparent hover:border-azur-pastel dark:hover:border-deep/40"
+            }`}
+            title="Modifier visuellement cette antenne"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => handleDeleteAntenne(ant.id)}
+            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-500 rounded-lg hover:text-rose-600 border border-transparent hover:border-rose-100 dark:hover:border-rose-900/40 transition-all cursor-pointer"
+            title="Supprimer cette antenne de la carte"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const handleExportComplianceReport = () => {
     const dataRows = [
       ["Antenne", "Nombre d'Organismes (Dossiers)", "Fichiers Total", "En Attente", "Valides", "Non Conformes (Incomplets)"]
@@ -2575,79 +2642,63 @@ export default function AdminPanel() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {(ANTENNES_BY_DELEGATION['france'] || []).map((ant) => {
-                      const countFolders = folders.filter(fol => fol.antenne_id === ant.id).length;
-                      const hasCoordinators = orgProfiles.filter(p => p.antenne_id === ant.id).length;
-                      const isCurrentlySel = editingAntenne?.id === ant.id;
+                  {(() => {
+                    const antList = ANTENNES_BY_DELEGATION['france'] || [];
+                    const groupedSections = antenneGroups
+                      .map((g) => ({ group: g, items: antList.filter((a) => g.antenneIds?.includes(a.id)) }))
+                      .filter((s) => s.items.length > 0)
+                      .sort((a, b) => a.group.name.localeCompare(b.group.name));
+                    const ungrouped = antList.filter(
+                      (a) => !antenneGroups.some((g) => g.antenneIds?.includes(a.id)),
+                    );
+
+                    if (antList.length === 0) {
                       return (
-                        <div
-                          key={ant.id}
-                          className={`flex justify-between items-center p-4 rounded-2xl border transition-all duration-200 ${
-                            isCurrentlySel 
-                              ? "bg-amber-500/5 dark:bg-amber-500/2 border-amber-500/40 shadow-xs ring-1 ring-amber-500/10" 
-                              : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-100 dark:border-slate-800 hover:border-azur/40"
-                          }`}
-                        >
-                          <div className="space-y-1 text-left">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingAntenne({
-                                  id: ant.id,
-                                  name: ant.name,
-                                  x: ant.x !== undefined ? ant.x : 50,
-                                  y: ant.y !== undefined ? ant.y : 50
-                                });
-                                setTempCoords(null);
-                              }}
-                              className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 hover:text-azur-hover dark:hover:text-azur transition-colors text-left"
-                            >
-                              <span className={`w-2 h-2 rounded-full ${isCurrentlySel ? 'bg-amber-500 animate-ping' : 'bg-azur'}`}></span>
-                              <span>{ant.name}</span>
-                            </button>
-                            <p className="text-[10px] text-slate-400 font-mono">
-                              ID: {ant.id} • {ant.x !== undefined ? `${ant.x}%` : '50%'} X, {ant.y !== undefined ? `${ant.y}%` : '50%'} Y
-                            </p>
-                            <div className="flex gap-2 text-[9.5px] text-slate-500">
-                              <span>📂 {countFolders} dossiers</span>
-                              <span>🏢 {hasCoordinators} partenaires</span>
+                        <p className="text-xs text-slate-400 italic py-4 text-center">
+                          Aucune antenne active pour le moment.
+                        </p>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-6">
+                        {groupedSections.map(({ group, items }) => (
+                          <div key={group.id} className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10"
+                                style={{ backgroundColor: group.color || '#1b98c4' }}
+                              />
+                              <h5 className="text-xs font-display font-bold tracking-tight text-deep dark:text-white uppercase">
+                                {group.name}
+                              </h5>
+                              <span className="text-[11px] text-slate-400 font-semibold">· {items.length}</span>
+                              <span className="flex-1 h-px bg-slate-200/70 dark:bg-slate-800" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              {items.map((ant) => renderAntenneCard(ant))}
                             </div>
                           </div>
+                        ))}
 
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                setEditingAntenne({
-                                  id: ant.id,
-                                  name: ant.name,
-                                  x: ant.x !== undefined ? ant.x : 50,
-                                  y: ant.y !== undefined ? ant.y : 50
-                                });
-                                setTempCoords(null);
-                              }}
-                              className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                                isCurrentlySel 
-                                  ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400" 
-                                  : "hover:bg-azur-light dark:hover:bg-deep-dark/40 text-azur-hover border-transparent hover:border-azur-pastel dark:hover:border-deep/40"
-                              }`}
-                              title="Modifier visuellement cette antenne"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              onClick={() => handleDeleteAntenne(ant.id)}
-                              className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-500 rounded-lg hover:text-rose-600 border border-transparent hover:border-rose-100 dark:hover:border-rose-900/40 transition-all cursor-pointer"
-                              title="Supprimer cette antenne de la carte"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                        {ungrouped.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-300 border border-black/10" />
+                              <h5 className="text-xs font-display font-bold tracking-tight text-slate-500 uppercase">
+                                Sans groupe
+                              </h5>
+                              <span className="text-[11px] text-slate-400 font-semibold">· {ungrouped.length}</span>
+                              <span className="flex-1 h-px bg-slate-200/70 dark:bg-slate-800" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              {ungrouped.map((ant) => renderAntenneCard(ant))}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {isSuperAdminMode && (
