@@ -74,15 +74,16 @@ export const DEFAULT_DELEGATIONS = [
 ];
 
 export const DEFAULT_ANTENNES: Record<string, { id: string; name: string; x?: number; y?: number }[]> = {
+  // Coordonnées x/y en % projetées géographiquement (cf. src/lib/franceGeo.ts).
   'france': [
-    { id: 'nantes', name: 'Nantes', x: 26, y: 28 },
-    { id: 'paris', name: 'Paris - Île de France', x: 49, y: 15 },
-    { id: 'toulouse', name: 'Toulouse', x: 42, y: 72 },
-    { id: 'marseille', name: 'Marseille', x: 69, y: 74 },
-    { id: 'lyon', name: 'Lyon', x: 63, y: 44 },
-    { id: 'bordeaux', name: 'Bordeaux', x: 29, y: 55 },
-    { id: 'lille', name: 'Lille', x: 54, y: 3 },
-    { id: 'strasbourg', name: 'Strasbourg', x: 86, y: 16 },
+    { id: 'nantes', name: 'Nantes', x: 24.5, y: 39.7 },
+    { id: 'paris', name: 'Paris - Île de France', x: 51.0, y: 22.9 },
+    { id: 'toulouse', name: 'Toulouse', x: 44.8, y: 76.7 },
+    { id: 'marseille', name: 'Marseille', x: 71.5, y: 79.9 },
+    { id: 'lyon', name: 'Lyon', x: 67.9, y: 54.6 },
+    { id: 'bordeaux', name: 'Bordeaux', x: 31.1, y: 64.1 },
+    { id: 'lille', name: 'Lille', x: 55.8, y: 4.7 },
+    { id: 'strasbourg', name: 'Strasbourg', x: 87.7, y: 25.8 },
   ],
 };
 
