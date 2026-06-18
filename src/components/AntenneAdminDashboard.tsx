@@ -249,6 +249,28 @@ export default function AntenneAdminDashboard() {
     { label: 'Validés', value: stats.validated, icon: CheckCircle2, tone: 'text-emerald-600 bg-emerald-50' },
   ];
 
+  // Un coordinateur d'antenne sans antenne affectée ne peut rien gérer : on
+  // l'informe clairement au lieu d'afficher un tableau de bord vide.
+  if (!antenneId) {
+    return (
+      <div className="min-h-screen bg-slate-50/60 text-slate-800 font-sans flex flex-col items-center justify-center px-6 text-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+          <MapPin className="w-7 h-7 text-amber-500" />
+        </div>
+        <h1 className="font-display text-xl font-bold text-deep">Aucune antenne affectée</h1>
+        <p className="text-sm text-slate-500 max-w-md leading-relaxed">
+          Votre compte de coordinateur n'est rattaché à aucune antenne pour le moment.
+          Demandez au super administrateur de vous affecter une antenne de rattachement
+          pour accéder à votre espace de gestion.
+        </p>
+        <button onClick={() => signOut()} className="btn-secondary text-sm mt-2">
+          <LogOut className="w-4 h-4" />
+          <span>Déconnexion</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/60 text-slate-800 font-sans">
       {/* Header */}
