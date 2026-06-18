@@ -57,6 +57,7 @@ import AilesDuSourireDashboard from './AilesDuSourireDashboard';
 import AntenneGroupsManager from './AntenneGroupsManager';
 import AntenneAdminsManager from './AntenneAdminsManager';
 import { localDb } from '../lib/localDb';
+import { logAction } from '../lib/auditLog';
 import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
 import { StatusBadge } from './ui';
@@ -206,7 +207,7 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<'workspaces' | 'members' | 'delegations'>('workspaces');
 
   // Simple Admin Navigation Hub State
-  const [navigationView, setNavigationView] = useState<'hub' | 'ailes' | 'users' | 'implantations'>('hub');
+  const [navigationView, setNavigationView] = useState<'hub' | 'ailes' | 'users' | 'implantations' | 'logs'>('hub');
 
   // Account editing states
   const [editingOrgId, setEditingOrgId] = useState<string | null>(null);
@@ -548,6 +549,15 @@ export default function AdminPanel() {
 
   // User management / Permissions helpers
   const handleUpdateOrgStatus = async (orgId: string, status: SubmissionStatus) => {
+    const known = orgProfiles.find(o => o.id === orgId);
+    const logIt = () => logAction('org_status_change', {
+      targetType: 'organization',
+      targetId: orgId,
+      targetName: known?.name || orgId,
+      antenne_id: known?.antenne_id,
+      delegation_id: known?.delegation_id,
+      details: status === 'Incomplete' ? 'Compte suspendu (dépôt bloqué)' : `Statut du compte : ${status}`,
+    });
     if (localDb.isSandboxActive()) {
       const orgs = localDb.getOrganizations();
       const target = orgs.find(o => o.id === orgId);
@@ -557,6 +567,7 @@ export default function AdminPanel() {
         localDb.saveOrganization(target);
       }
       setOrgProfiles(localDb.getOrganizations());
+      logIt();
       return;
     }
     try {
@@ -564,12 +575,22 @@ export default function AdminPanel() {
         submissionStatus: status,
         updatedAt: Date.now()
       });
+      logIt();
     } catch (err) {
       console.error("Error updating organization space state:", err);
     }
   };
 
   const handleUpdateOrgRole = async (orgId: string, newRole: string) => {
+    const known = orgProfiles.find(o => o.id === orgId);
+    const logIt = () => logAction('org_role_change', {
+      targetType: 'organization',
+      targetId: orgId,
+      targetName: known?.name || orgId,
+      antenne_id: known?.antenne_id,
+      delegation_id: known?.delegation_id,
+      details: `Rôle modifié : ${known?.role || '?'} → ${newRole}`,
+    });
     if (localDb.isSandboxActive()) {
       const orgs = localDb.getOrganizations();
       const target = orgs.find(o => o.id === orgId);
@@ -579,6 +600,7 @@ export default function AdminPanel() {
         localDb.saveOrganization(target);
       }
       setOrgProfiles(localDb.getOrganizations());
+      logIt();
       return;
     }
     try {
@@ -586,6 +608,7 @@ export default function AdminPanel() {
         role: newRole,
         updatedAt: Date.now()
       });
+      logIt();
     } catch (err) {
       console.error("Error updating user role:", err);
     }
@@ -597,14 +620,24 @@ export default function AdminPanel() {
       `Supprimer définitivement le compte « ${label} » ?\n\nCette action est irréversible. Le profil partenaire sera retiré ; ses fichiers déjà déposés ne seront pas effacés.`,
     );
     if (!ok) return;
+    const logIt = () => logAction('org_delete', {
+      targetType: 'organization',
+      targetId: org.id,
+      targetName: label,
+      antenne_id: org.antenne_id,
+      delegation_id: org.delegation_id,
+      details: `Compte « ${label} » supprimé`,
+    });
     if (localDb.isSandboxActive()) {
       localDb.deleteOrganization(org.id);
       setOrgProfiles(localDb.getOrganizations());
+      logIt();
       toast(`Compte « ${label} » supprimé.`, 'success');
       return;
     }
     try {
       await deleteDoc(doc(db, 'organizations', org.id));
+      logIt();
       toast(`Compte « ${label} » supprimé.`, 'success');
     } catch (err: any) {
       console.error("Error deleting organization:", err);
@@ -614,6 +647,16 @@ export default function AdminPanel() {
 
   const handleSaveOrgDelegationAntenne = async (orgId: string) => {
     if (!editDelegation || !editAntenne) return;
+    const known = orgProfiles.find(o => o.id === orgId);
+    const antName = (ANTENNES_BY_DELEGATION[editDelegation] || []).find(a => a.id === editAntenne)?.name || editAntenne;
+    const logIt = () => logAction('org_assign_antenne', {
+      targetType: 'organization',
+      targetId: orgId,
+      targetName: known?.name || orgId,
+      antenne_id: editAntenne,
+      delegation_id: editDelegation,
+      details: `Antenne de rattachement : ${antName}`,
+    });
     if (localDb.isSandboxActive()) {
       const orgs = localDb.getOrganizations();
       const target = orgs.find(o => o.id === orgId);
@@ -624,6 +667,7 @@ export default function AdminPanel() {
         localDb.saveOrganization(target);
       }
       setOrgProfiles(localDb.getOrganizations());
+      logIt();
       setEditingOrgId(null);
       return;
     }
@@ -633,6 +677,7 @@ export default function AdminPanel() {
         antenne_id: editAntenne,
         updatedAt: Date.now()
       });
+      logIt();
       setEditingOrgId(null);
     } catch (err) {
       console.error("Error saving delegation assignment:", err);
@@ -857,6 +902,16 @@ export default function AdminPanel() {
         }
       }
     }
+    // Journal d'activité : un dépôt par fichier (rattaché à l'antenne ciblée).
+    for (const f of selectedFiles) {
+      logAction('file_upload', {
+        targetType: 'file',
+        targetName: f.name,
+        antenne_id: activeAntenneId || undefined,
+        delegation_id: delegationFilterId || undefined,
+        details: 'Dépôt par un coordinateur',
+      });
+    }
     if (localDb.isSandboxActive()) {
       setFiles(localDb.getFiles());
     }
@@ -886,6 +941,7 @@ export default function AdminPanel() {
       };
       localDb.saveFolder(mockFolder);
       setFolders(localDb.getFolders());
+      logAction('folder_create', { targetType: 'folder', targetName: name.trim(), antenne_id: activeAntenneId, delegation_id: delegationFilterId });
       return;
     }
     try {
@@ -897,6 +953,7 @@ export default function AdminPanel() {
         createdAt: Date.now(),
         createdBy: 'admin'
       });
+      logAction('folder_create', { targetType: 'folder', targetName: name.trim(), antenne_id: activeAntenneId, delegation_id: delegationFilterId });
     } catch (err) {
       console.error("Error creating folder:", err);
     }
@@ -904,6 +961,15 @@ export default function AdminPanel() {
 
   // File and Folder modifications
   const handleUpdateStatus = async (fileId: string, newStatus: SubmissionStatus) => {
+    const known = files.find(f => f.id === fileId);
+    const logIt = () => logAction('file_status_change', {
+      targetType: 'file',
+      targetId: fileId,
+      targetName: known?.name || fileId,
+      antenne_id: known?.antenne_id,
+      delegation_id: known?.delegation_id,
+      details: `Statut du document : ${newStatus}`,
+    });
     if (localDb.isSandboxActive()) {
       const filesList = localDb.getFiles();
       const target = filesList.find(f => f.id === fileId);
@@ -912,12 +978,14 @@ export default function AdminPanel() {
         localDb.saveFile(target);
       }
       setFiles(localDb.getFiles());
+      logIt();
       return;
     }
     try {
       await updateDoc(doc(db, 'files', fileId), {
         submissionStatus: newStatus
       });
+      logIt();
     } catch (err) {
       console.error("Error updating status:", err);
     }
@@ -951,9 +1019,17 @@ export default function AdminPanel() {
 
   const confirmDeleteFile = async () => {
     if (!fileToDelete) return;
+    const logIt = () => logAction('file_delete', {
+      targetType: 'file',
+      targetId: fileToDelete.id,
+      targetName: fileToDelete.name,
+      antenne_id: fileToDelete.antenne_id,
+      delegation_id: fileToDelete.delegation_id,
+    });
     if (localDb.isSandboxActive()) {
       localDb.deleteFile(fileToDelete.id);
       setFiles(localDb.getFiles());
+      logIt();
       setFileToDelete(null);
       return;
     }
@@ -974,6 +1050,7 @@ export default function AdminPanel() {
         }
       }
       await deleteDoc(doc(db, 'files', fileToDelete.id));
+      logIt();
       toast('Fichier supprimé.', 'success');
       setFileToDelete(null);
     } catch (err: any) {
@@ -1286,6 +1363,35 @@ export default function AdminPanel() {
               </button>
               )}
 
+              {/* Card 4: Journal d'activité (super admin : tous les logs) */}
+              <button
+                onClick={() => {
+                  setNavigationView('logs');
+                  setCurrentFolderId(null);
+                }}
+                className="group bg-white dark:bg-slate-900 border border-slate-200/85 hover:border-azur rounded-3xl p-6 text-left shadow-xs hover:shadow-lg transition-all flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-36 h-36 bg-azur/5 rounded-full blur-2xl pointer-events-none group-hover:bg-azur/10 transition-all"></div>
+                <div className="space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-azur/10 text-azur flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
+                    📜
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-base font-black text-deep dark:text-white tracking-tight group-hover:text-azur transition-colors flex items-center gap-1.5">
+                      <span>Journal d'activité</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
+                      Consultez l'historique horodaté de toutes les actions : connexions, dépôts et suppressions de fichiers, changements de statut, de rôle et de comptes.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-azur uppercase tracking-wider group-hover:translate-x-1 transition-transform mt-4">
+                  <span>Consulter les logs</span>
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </button>
+
             </div>
 
             {/* Quick overview metric line */}
@@ -1298,6 +1404,23 @@ export default function AdminPanel() {
                 {files.length} Justificatifs • {folders.length} Organismes rattachés
               </div>
             </div>
+          </div>
+        )}
+
+        {/* --- JOURNAL D'ACTIVITÉ (super admin : tous les logs) --- */}
+        {navigationView === 'logs' && (
+          <div className="space-y-5">
+            <button
+              onClick={() => setNavigationView('hub')}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-azur transition-colors"
+            >
+              <CornerLeftUp className="w-4 h-4" />
+              <span>Retour au tableau de bord</span>
+            </button>
+            <AuditLogPanel
+              title="Journal d'activité — Vue nationale"
+              subtitle="Toutes les actions de tous les comptes (super admin, coordinateurs, partenaires)."
+            />
           </div>
         )}
 

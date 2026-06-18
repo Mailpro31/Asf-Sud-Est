@@ -147,6 +147,20 @@ service cloud.firestore {
              (!('updatedAt' in data) || data.updatedAt is number);
     }
 
+    function isValidAuditLog(data) {
+      return data.get('actorUid', '') is string && data.get('actorUid', '').size() <= 128 &&
+             data.get('timestamp', 0) is number &&
+             data.get('action', '') is string && data.get('action', '').size() > 0 && data.get('action', '').size() <= 50 &&
+             data.get('actorName', '') is string && data.get('actorName', '').size() <= 250 &&
+             data.get('actorRole', '') is string && data.get('actorRole', '').size() <= 40 &&
+             (data.get('antenne_id', null) == null || (data.get('antenne_id', '') is string && data.get('antenne_id', '').size() <= 128)) &&
+             (data.get('delegation_id', null) == null || (data.get('delegation_id', '') is string && data.get('delegation_id', '').size() <= 128)) &&
+             (data.get('targetType', null) == null || (data.get('targetType', '') is string && data.get('targetType', '').size() <= 50)) &&
+             (data.get('targetId', null) == null || (data.get('targetId', '') is string && data.get('targetId', '').size() <= 128)) &&
+             (data.get('targetName', null) == null || (data.get('targetName', '') is string && data.get('targetName', '').size() <= 1000)) &&
+             (data.get('details', null) == null || (data.get('details', '') is string && data.get('details', '').size() <= 2000));
+    }
+
     function isValidMail(data) {
       return data.get('to', []) is list && data.get('to', []).size() > 0 && data.get('to', []).size() <= 50 &&
              data.get('message', {}) is map &&
@@ -220,6 +234,25 @@ service cloud.firestore {
     match /mail/{mailId} {
       allow get, list: if isSuperAdmin();
       allow create: if isSuperAdmin() && isValidMail(incoming());
+      allow update, delete: if false;
+    }
+
+    // 2e. Journal d'activité (audit logs).
+    //  - création : tout compte connecté peut journaliser SES PROPRES actions
+    //    (actorUid doit être l'utilisateur courant).
+    //  - lecture : le super admin voit tout ; un gestionnaire / coordinateur
+    //    d'antenne ne voit que les logs de SON antenne.
+    //  - logs immuables : ni modification ni suppression.
+    match /audit_logs/{logId} {
+      allow create: if isSignedIn() && isValidAuditLog(incoming()) &&
+                       incoming().get('actorUid', '') == request.auth.uid;
+
+      allow get, list: if isSuperAdmin() ||
+                          (isSignedIn() && hasUserDoc() &&
+                           (getUser().get('role', '') == 'admin_antenne' || getUser().get('role', '') == 'admin_delegation') &&
+                           getUser().get('antenne_id', '') != '' &&
+                           resource.data.get('antenne_id', '') == getUser().get('antenne_id', ''));
+
       allow update, delete: if false;
     }
 

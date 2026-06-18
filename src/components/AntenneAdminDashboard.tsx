@@ -24,6 +24,7 @@ import {
 import { Bell } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
+import { logAction } from '../lib/auditLog';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
@@ -34,6 +35,7 @@ import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
 import UserProfileModal from './UserProfileModal';
+import AuditLogPanel from './AuditLogPanel';
 
 /**
  * Dashboard personnalisé d'un gestionnaire d'antenne (rôle `admin_antenne`).
@@ -220,18 +222,28 @@ export default function AntenneAdminDashboard() {
     (orgId === 'admin_created' || orgId === 'public' ? 'Document interne' : 'Organisme');
 
   const handleUpdateStatus = async (file: DossierFile, newStatus: SubmissionStatus) => {
+    const logIt = () => logAction('file_status_change', {
+      targetType: 'file',
+      targetId: file.id,
+      targetName: file.name,
+      antenne_id: file.antenne_id || antenneId,
+      delegation_id: file.delegation_id || delegationId,
+      details: `Statut du document : ${newStatus}`,
+    });
     if (localDb.isSandboxActive()) {
       const target = localDb.getFiles().find((f) => f.id === file.id);
       if (target) {
         target.submissionStatus = newStatus;
         localDb.saveFile(target);
       }
+      logIt();
       return;
     }
     try {
       await updateDoc(doc(db, 'files', file.id), {
         submissionStatus: newStatus,
       });
+      logIt();
       toast(`Statut mis à jour : ${getStatusMeta(newStatus).label}`, 'success');
     } catch (err) {
       console.error('Update status failed:', err);
@@ -496,6 +508,15 @@ export default function AntenneAdminDashboard() {
               </div>
             )}
           </div>
+        </section>
+
+        {/* Journal d'activité de l'antenne */}
+        <section className="mt-8">
+          <AuditLogPanel
+            antenneId={antenneId}
+            title="Journal d'activité de l'antenne"
+            subtitle={`Toutes les actions des comptes rattachés à l'antenne ${antenneName}.`}
+          />
         </section>
       </main>
 

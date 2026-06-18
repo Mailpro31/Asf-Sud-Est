@@ -1,4 +1,5 @@
 import { AntenneGroup, DossierFile, Folder, Organization, SubmissionStatus } from '../types';
+import type { AuditLog } from './auditLog';
 
 // Let's create an excellent Local Storage backup & fallback database for when Firestore Quota is exceeded
 const STORAGE_KEYS = {
@@ -8,6 +9,7 @@ const STORAGE_KEYS = {
   ANTENNES: 'asf_local_antennes',
   DELEGATIONS: 'asf_local_delegations',
   ANTENNE_GROUPS: 'asf_local_antenne_groups',
+  AUDIT_LOGS: 'asf_local_audit_logs',
   SANDBOX_MODE: 'asf_quota_exceeded'
 };
 
@@ -399,6 +401,24 @@ export const localDb = {
       localStorage.setItem(STORAGE_KEYS.ANTENNE_GROUPS, JSON.stringify(updated));
       this.triggerUpdate();
     }
+  },
+
+  // Journal d'activité (repli local). On conserve au plus 1000 entrées.
+  getAuditLogs(): AuditLog[] {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS) || '[]');
+    } catch {
+      return [];
+    }
+  },
+
+  saveAuditLog(log: AuditLog) {
+    const list = this.getAuditLogs();
+    list.push(log);
+    // Garde les 1000 plus récents pour ne pas saturer le localStorage.
+    const trimmed = list.slice(-1000);
+    localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify(trimmed));
+    this.triggerUpdate();
   },
 
   updateAntenneCoordinates(delegationId: string, antenneId: string, x: number, y: number) {
