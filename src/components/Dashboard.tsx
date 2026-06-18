@@ -188,9 +188,26 @@ export default function Dashboard() {
     };
 
     const handleSandboxCrash = (err: any) => {
-      console.warn("Firestore subscription or query error in Dashboard. Fallback to Local Storage Sandbox:", err);
-      localDb.setSandboxActive(true);
-      refreshLocalState();
+      // On ne bascule en mode local QUE si Firestore est réellement injoignable
+      // (perte de connexion). Une erreur de permission ne doit PAS faire basculer
+      // toute l'app en local (sinon le bandeau orange apparaît à tort) : on la
+      // journalise simplement.
+      const code = err?.code || '';
+      const msg = (err?.message || String(err)).toLowerCase();
+      const isConnectivity =
+        code === 'unavailable' ||
+        code === 'deadline-exceeded' ||
+        msg.includes('offline') ||
+        msg.includes('network') ||
+        msg.includes('quota') ||
+        msg.includes('limit exceeded');
+      if (isConnectivity) {
+        console.warn("Firestore injoignable dans Dashboard. Bascule en sauvegarde locale :", err);
+        localDb.setSandboxActive(true);
+        refreshLocalState();
+      } else {
+        console.warn("Erreur Firestore (non bloquante) dans Dashboard, pas de bascule locale :", err);
+      }
     };
 
     if (localDb.isSandboxActive()) {
@@ -340,10 +357,7 @@ export default function Dashboard() {
       setUploading(false);
       refreshLocalState();
       if (count > 0) {
-        setStorageWarning(
-          `Mode Bac à Sable Actif : ${count} fichier(s) ont été enregistrés localement avec succès.`
-        );
-        setIsWarningDismissed(false);
+        toast(`${count} fichier(s) enregistré(s) ✓`, 'success');
       }
       return;
     }
@@ -466,15 +480,11 @@ export default function Dashboard() {
     
     if (hasStorageError) {
       if (fallbackCount > 0) {
-        setStorageWarning(
-          `Firebase Storage a des permissions restreintes. ${fallbackCount} fichier(s) ont été envoyés avec succès directement dans la base de données Firestore sécurisée bac à sable.`
-        );
-        setIsWarningDismissed(false);
+        // Le dépôt direct (Storage) a échoué mais l'enregistrement a réussi :
+        // simple confirmation discrète, pas d'alerte anxiogène.
+        toast(`${fallbackCount} fichier(s) enregistré(s) ✓`, 'success');
       } else {
-        setStorageWarning(
-          "Firebase Storage non configuré. L'envoi du fichier a échoué."
-        );
-        setIsWarningDismissed(false);
+        toast("L'envoi du fichier a échoué. Réessayez ou vérifiez votre connexion.", 'error');
       }
     }
   }, [user, currentFolderId, organization, refreshLocalState]);

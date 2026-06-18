@@ -656,6 +656,28 @@ export default function AdminPanel() {
       setOrgProfiles(localDb.getOrganizations());
     };
 
+    // Ne bascule en sauvegarde locale QUE si Firestore est réellement injoignable
+    // (connexion perdue / quota). Une simple erreur de permission ne doit pas
+    // faire basculer toute l'admin en local (évite le bandeau orange à tort).
+    const maybeFallback = (err: any) => {
+      const code = err?.code || '';
+      const msg = (err?.message || String(err)).toLowerCase();
+      const isConnectivity =
+        code === 'unavailable' ||
+        code === 'deadline-exceeded' ||
+        msg.includes('offline') ||
+        msg.includes('network') ||
+        msg.includes('quota') ||
+        msg.includes('limit exceeded');
+      if (isConnectivity) {
+        console.warn('Firestore injoignable (AdminPanel). Bascule en sauvegarde locale :', err);
+        localDb.setSandboxActive(true);
+        loadLocalData();
+      } else {
+        console.warn('Erreur Firestore (non bloquante) dans AdminPanel, pas de bascule locale :', err);
+      }
+    };
+
     if (localDb.isSandboxActive()) {
       loadLocalData();
       
@@ -676,15 +698,9 @@ export default function AdminPanel() {
             filesData.push({ id: doc.id, ...doc.data() } as DossierFile);
           });
           setFiles(filesData);
-        }, (err) => {
-          console.warn("Firestore files snapshot error. Switching to Local Storage Sandbox fallback:", err);
-          localDb.setSandboxActive(true);
-          loadLocalData();
-        });
+        }, maybeFallback);
       } catch (err) {
-        console.warn("Firestore files connect failed. Fallback:", err);
-        localDb.setSandboxActive(true);
-        loadLocalData();
+        maybeFallback(err);
       }
 
       try {
@@ -695,14 +711,9 @@ export default function AdminPanel() {
             foldersData.push({ id: doc.id, ...doc.data() } as Folder);
           });
           setFolders(foldersData);
-        }, (err) => {
-          console.warn("Firestore folders snapshot error:", err);
-          localDb.setSandboxActive(true);
-          loadLocalData();
-        });
+        }, maybeFallback);
       } catch (err) {
-        localDb.setSandboxActive(true);
-        loadLocalData();
+        maybeFallback(err);
       }
 
       try {
@@ -713,14 +724,9 @@ export default function AdminPanel() {
             orgsData.push({ id: doc.id, ...doc.data() } as Organization);
           });
           setOrgProfiles(orgsData);
-        }, (err) => {
-          console.warn("Firestore user profiles snapshot error:", err);
-          localDb.setSandboxActive(true);
-          loadLocalData();
-        });
+        }, maybeFallback);
       } catch (err) {
-        localDb.setSandboxActive(true);
-        loadLocalData();
+        maybeFallback(err);
       }
     }
 
