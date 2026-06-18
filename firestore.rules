@@ -287,7 +287,11 @@ service cloud.firestore {
     // 3. Organizations (Users / Partners Profiles)
     match /organizations/{orgId} {
       allow get: if isOwner(orgId) || isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && getUser().get('delegation_id', '') == existing().get('delegation_id', '')) || isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', ''));
-      allow list: if isSuperAdmin() || (isSignedIn() && hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')) || isAdminAntenneOf(resource.data.get('delegation_id', ''), resource.data.get('antenne_id', ''));
+      allow list: if isSuperAdmin() ||
+                    // Un coordinateur ne peut lister que les comptes de SA délégation
+                    // (sinon il accéderait aux données de toutes les délégations).
+                    (isSignedIn() && hasUserDoc() && getUser().get('role', '') == 'admin_delegation' && getUser().get('delegation_id', '') == resource.data.get('delegation_id', '')) ||
+                    isAdminAntenneOf(resource.data.get('delegation_id', ''), resource.data.get('antenne_id', ''));
       
       allow create: if isSignedIn() &&
                     isValidId(orgId) &&
@@ -299,12 +303,13 @@ service cloud.firestore {
       
       allow update: if isSignedIn() && isValidId(orgId) && isValidOrganization(incoming()) && (
                     isSuperAdmin() ||
-                    // Coordinateur de délégation : gère les comptes de sa délégation,
-                    // mais jamais les comptes du personnel (super admin / admin) et ne
-                    // peut promouvoir personne à ces rôles (anti-escalade).
+                    // Coordinateur de délégation : gère les comptes PARTENAIRES de sa
+                    // délégation, mais jamais les comptes d'encadrement (super admin,
+                    // admin, autres coordinateurs) et ne peut promouvoir personne à ces
+                    // rôles (anti-escalade : il ne peut pas créer de coordinateurs).
                     (hasUserDoc() && getUser().get('role', '') == 'admin_delegation' &&
-                      existing().get('role', '') != 'super_admin' && existing().get('role', '') != 'admin' &&
-                      incoming().get('role', '') != 'super_admin' && incoming().get('role', '') != 'admin' && (
+                      existing().get('role', '') != 'super_admin' && existing().get('role', '') != 'admin' && existing().get('role', '') != 'admin_delegation' &&
+                      incoming().get('role', '') != 'super_admin' && incoming().get('role', '') != 'admin' && incoming().get('role', '') != 'admin_delegation' && (
                       // Either they manage the existing delegation
                       getUser().get('delegation_id', '') == existing().get('delegation_id', '') ||
                       // Or they are adopting an orphan account into their own delegation
@@ -320,7 +325,7 @@ service cloud.firestore {
       allow delete: if isSuperAdmin() ||
                     (isSignedIn() && hasUserDoc() && getUser().get('role', '') == 'admin_delegation' &&
                      getUser().get('delegation_id', '') == existing().get('delegation_id', '') &&
-                     existing().get('role', '') != 'super_admin' && existing().get('role', '') != 'admin');
+                     existing().get('role', '') != 'super_admin' && existing().get('role', '') != 'admin' && existing().get('role', '') != 'admin_delegation');
     }
 
     // 4. Folders
