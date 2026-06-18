@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   collection,
   query,
@@ -6,7 +6,16 @@ import {
   onSnapshot,
   doc,
   updateDoc,
+  addDoc,
+  deleteDoc,
+  getDocs,
 } from 'firebase/firestore';
+import {
+  ref as storageRef,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject,
+} from 'firebase/storage';
 import {
   MapPin,
   LogOut,
@@ -20,9 +29,13 @@ import {
   Search,
   Eye,
   ChevronDown,
+  Upload,
+  Trash2,
+  Download,
+  Pencil,
 } from 'lucide-react';
 import { Bell } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { useAuth } from '../context/AuthContext';
@@ -70,6 +83,15 @@ export default function AntenneAdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<'all' | SubmissionStatus>('all');
   const [previewFile, setPreviewFile] = useState<DossierFile | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // Gestion des fichiers (dépôt, renommage, suppression, partage).
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [renamingFile, setRenamingFile] = useState<DossierFile | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const fileInputRef = useRef<any>(null);
 
   // Réglages de notification e-mail de l'antenne.
   const [notifyEnabled, setNotifyEnabled] = useState(false);
@@ -249,6 +271,237 @@ export default function AntenneAdminDashboard() {
       console.error('Update status failed:', err);
       toast("Impossible de mettre à jour le statut.", 'error');
     }
+  };
+
+  // --- Dépôt de fichiers dans l'antenne (par le gestionnaire) ---
+  const handleUploadFiles = async (selected: File[]) => {
+    if (!selected.length || !antenneId) return;
+    setUploading(true);
+    setUploadProgress(0);
+    let ok = 0;
+    for (const f of selected) {
+      const meta = {
+        orgId: 'admin_created',
+        folderId: null as string | null,
+        delegation_id: delegationId,
+        antenne_id: antenneId,
+        name: f.name,
+        size: f.size,
+        type: f.type || 'application/octet-stream',
+        uploadDate: Date.now(),
+        uploadedBy: 'admin' as const,
+        submissionStatus: 'Pending' as SubmissionStatus,
+        sharedWithPartner: true,
+      };
+
+      if (localDb.isSandboxActive()) {
+        const dataUrl = await new Promise<string>((res) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result as string);
+          r.readAsDataURL(f);
+        });
+        localDb.saveFile({
+          id: `mock_file_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          ...meta,
+          storagePath: 'sandbox',
+          fallbackDataUrl: dataUrl,
+        } as DossierFile);
+        ok++;
+        continue;
+      }
+
+      const path = `delegations/${delegationId}/${antenneId}/${Date.now()}_${f.name}`;
+      try {
+        const task = uploadBytesResumable(storageRef(storage, path), f);
+        await new Promise<void>((resolve, reject) => {
+          task.on(
+            'state_changed',
+            (s) => setUploadProgress(Math.round((s.bytesTransferred / s.totalBytes) * 100)),
+            reject,
+            async () => {
+              try {
+                const url = await getDownloadURL(task.snapshot.ref);
+                await addDoc(collection(db, 'files'), { ...meta, storagePath: path, fallbackDataUrl: url });
+                resolve();
+              } catch (e) {
+                reject(e);
+              }
+            },
+          );
+        });
+        ok++;
+      } catch (err) {
+        // Repli base64 si le Storage est indisponible.
+        try {
+          const dataUrl = await new Promise<string>((res) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result as string);
+            r.readAsDataURL(f);
+          });
+          await addDoc(collection(db, 'files'), { ...meta, storagePath: 'firestore_fallback', fallbackDataUrl: dataUrl });
+          ok++;
+        } catch (e) {
+          console.error('Upload échec:', e);
+        }
+      }
+      logAction('file_upload', {
+        targetType: 'file',
+        targetName: f.name,
+        antenne_id: antenneId,
+        delegation_id: delegationId,
+        details: "Dépôt par le gestionnaire d'antenne",
+      });
+    }
+    setUploading(false);
+    setUploadProgress(0);
+    if (ok > 0) toast(`${ok} document(s) déposé(s) ✓`, 'success');
+    if (localDb.isSandboxActive()) loadLocalNow();
+  };
+
+  // Recharge immédiate des fichiers en mode sandbox.
+  const loadLocalNow = () => {
+    if (!antenneId) return;
+    const all = localDb.getFiles().filter(
+      (f) => f.antenne_id === antenneId && (!delegationId || f.delegation_id === delegationId),
+    );
+    all.sort((a, b) => b.uploadDate - a.uploadDate);
+    setFiles(all);
+  };
+
+  // --- Téléchargement ---
+  const handleDownload = async (file: DossierFile) => {
+    try {
+      let url = file.fallbackDataUrl || '';
+      if ((!url || url === '#') && file.storagePath && file.storagePath !== 'firestore_fallback' && file.storagePath !== 'sandbox') {
+        url = await getDownloadURL(storageRef(storage, file.storagePath));
+      }
+      if (!url || url === '#') {
+        toast('Téléchargement indisponible pour ce fichier.', 'warning');
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Download failed:', err);
+      toast('Échec du téléchargement.', 'error');
+    }
+  };
+
+  // --- Renommage ---
+  const openRename = (file: DossierFile) => {
+    setRenamingFile(file);
+    setRenameValue(file.name);
+  };
+  const confirmRename = async () => {
+    if (!renamingFile) return;
+    const name = renameValue.trim();
+    if (!name || name === renamingFile.name) {
+      setRenamingFile(null);
+      return;
+    }
+    const logIt = () => logAction('file_rename', {
+      targetType: 'file',
+      targetId: renamingFile.id,
+      targetName: name,
+      antenne_id: renamingFile.antenne_id || antenneId,
+      delegation_id: renamingFile.delegation_id || delegationId,
+      details: `Renommé : « ${renamingFile.name} » → « ${name} »`,
+    });
+    if (localDb.isSandboxActive()) {
+      const t = localDb.getFiles().find((f) => f.id === renamingFile.id);
+      if (t) { t.name = name; localDb.saveFile(t); }
+      logIt();
+      loadLocalNow();
+      setRenamingFile(null);
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'files', renamingFile.id), { name });
+      logIt();
+      toast('Fichier renommé.', 'success');
+    } catch (err) {
+      console.error('Rename failed:', err);
+      toast('Échec du renommage.', 'error');
+    }
+    setRenamingFile(null);
+  };
+
+  // --- Partage avec le partenaire (fichiers déposés par un coordinateur) ---
+  const handleToggleShare = async (file: DossierFile) => {
+    const next = file.sharedWithPartner === false; // on bascule vers « partagé »
+    const logIt = () => logAction('file_share_toggle', {
+      targetType: 'file',
+      targetId: file.id,
+      targetName: file.name,
+      antenne_id: file.antenne_id || antenneId,
+      delegation_id: file.delegation_id || delegationId,
+      details: next ? 'Fichier partagé avec le partenaire' : 'Fichier rendu privé (coordinateur)',
+    });
+    if (localDb.isSandboxActive()) {
+      const t = localDb.getFiles().find((f) => f.id === file.id);
+      if (t) { t.sharedWithPartner = next; localDb.saveFile(t); }
+      logIt();
+      loadLocalNow();
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'files', file.id), { sharedWithPartner: next });
+      logIt();
+    } catch (err) {
+      console.error('Toggle share failed:', err);
+      toast('Échec de la modification du partage.', 'error');
+    }
+  };
+
+  // --- Suppression ---
+  const confirmDelete = async () => {
+    if (!deletingFile) return;
+    setDeleting(true);
+    const file = deletingFile;
+    const logIt = () => logAction('file_delete', {
+      targetType: 'file',
+      targetId: file.id,
+      targetName: file.name,
+      antenne_id: file.antenne_id || antenneId,
+      delegation_id: file.delegation_id || delegationId,
+    });
+    if (localDb.isSandboxActive()) {
+      localDb.deleteFile(file.id);
+      logIt();
+      loadLocalNow();
+      setDeleting(false);
+      setDeletingFile(null);
+      setPreviewFile(null);
+      return;
+    }
+    try {
+      if (file.storagePath === 'firestore_fallback_chunked') {
+        try {
+          const chunks = await getDocs(collection(db, 'files', file.id, 'chunks'));
+          await Promise.all(chunks.docs.map((d) => deleteDoc(d.ref)));
+        } catch (e) { console.error('chunks delete', e); }
+      } else if (file.storagePath && file.storagePath !== 'firestore_fallback' && file.storagePath !== 'sandbox') {
+        try {
+          await deleteObject(storageRef(storage, file.storagePath));
+        } catch (e: any) {
+          if (e?.code !== 'storage/object-not-found') console.error('storage delete', e);
+        }
+      }
+      await deleteDoc(doc(db, 'files', file.id));
+      logIt();
+      toast('Fichier supprimé.', 'success');
+    } catch (err: any) {
+      console.error('Delete failed:', err);
+      toast('Échec de la suppression : ' + (err?.message || 'erreur'), 'error');
+    }
+    setDeleting(false);
+    setDeletingFile(null);
+    setPreviewFile(null);
   };
 
   if (!organization) return null;
@@ -454,6 +707,26 @@ export default function AntenneAdminDashboard() {
                   <option key={s} value={s}>{getStatusMeta(s).label}</option>
                 ))}
               </select>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const fs = e.target.files ? Array.from(e.target.files) : [];
+                  if (fs.length) handleUploadFiles(fs as File[]);
+                  if (e.target) (e.target as any).value = '';
+                }}
+              />
+              <button
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                disabled={uploading}
+                className="btn-asf text-sm shrink-0 disabled:opacity-60"
+                title="Déposer des documents dans l'antenne"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{uploading ? `Envoi… ${uploadProgress}%` : 'Déposer'}</span>
+              </button>
             </div>
           </div>
 
@@ -496,12 +769,36 @@ export default function AntenneAdminDashboard() {
                       <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
-                    <button
-                      onClick={() => setPreviewFile(file)}
-                      className="btn-ghost p-2 shrink-0"
-                      title="Aperçu"
-                    >
+                    {/* Partage avec le partenaire (uniquement pour les dépôts coordinateur) */}
+                    {file.uploadedBy === 'admin' && (
+                      <button
+                        onClick={() => handleToggleShare(file)}
+                        className={`text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 transition-colors ${
+                          file.sharedWithPartner !== false
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}
+                        title={file.sharedWithPartner !== false ? 'Partagé avec le partenaire (cliquer pour rendre privé)' : 'Privé coordinateur (cliquer pour partager)'}
+                      >
+                        {file.sharedWithPartner !== false ? '🔓 Partagé' : '🔒 Privé'}
+                      </button>
+                    )}
+
+                    <button onClick={() => setPreviewFile(file)} className="btn-ghost p-2 shrink-0" title="Aperçu">
                       <Eye className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDownload(file)} className="btn-ghost p-2 shrink-0" title="Télécharger">
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => openRename(file)} className="btn-ghost p-2 shrink-0" title="Renommer">
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeletingFile(file)}
+                      className="btn-ghost p-2 shrink-0 text-rose-500 hover:bg-rose-50"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
@@ -526,7 +823,55 @@ export default function AntenneAdminDashboard() {
         file={previewFile}
         orgName={previewFile ? orgName(previewFile.orgId) : undefined}
         isAdmin={true}
+        onDelete={(f) => setDeletingFile(f)}
       />
+
+      {/* Modale de renommage */}
+      {renamingFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => setRenamingFile(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display text-lg font-bold text-deep">Renommer le document</h3>
+            <input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') confirmRename(); }}
+              className="input-asf w-full"
+              placeholder="Nouveau nom du fichier"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setRenamingFile(null)} className="btn-secondary text-sm">Annuler</button>
+              <button onClick={confirmRename} className="btn-asf text-sm">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation de suppression */}
+      {deletingFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => !deleting && setDeletingFile(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold text-deep">Supprimer le document ?</h3>
+                <p className="text-sm text-slate-500">Cette action est irréversible.</p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 truncate">
+              📄 {deletingFile.name}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeletingFile(null)} disabled={deleting} className="btn-secondary text-sm disabled:opacity-60">Annuler</button>
+              <button onClick={confirmDelete} disabled={deleting} className="btn-danger text-sm disabled:opacity-60">
+                {deleting ? 'Suppression…' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </div>
