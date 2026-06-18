@@ -298,20 +298,29 @@ service cloud.firestore {
                      (incoming().get('role', '') == 'admin_antenne' && hasMatchingInvite(incoming())));
       
       allow update: if isSignedIn() && isValidId(orgId) && isValidOrganization(incoming()) && (
-                    isSuperAdmin() || 
-                    (hasUserDoc() && (getUser().get('role', '') == 'admin_delegation' || getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') && (
+                    isSuperAdmin() ||
+                    // Coordinateur de délégation : gère les comptes de sa délégation,
+                    // mais jamais les comptes du personnel (super admin / admin) et ne
+                    // peut promouvoir personne à ces rôles (anti-escalade).
+                    (hasUserDoc() && getUser().get('role', '') == 'admin_delegation' &&
+                      existing().get('role', '') != 'super_admin' && existing().get('role', '') != 'admin' &&
+                      incoming().get('role', '') != 'super_admin' && incoming().get('role', '') != 'admin' && (
                       // Either they manage the existing delegation
                       getUser().get('delegation_id', '') == existing().get('delegation_id', '') ||
                       // Or they are adopting an orphan account into their own delegation
                       (getUser().get('delegation_id', '') == incoming().get('delegation_id', '') && (!('delegation_id' in existing()) || existing().get('delegation_id', '') == null || existing().get('delegation_id', '') == ''))
-                    )) || 
+                    )) ||
                     (isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) && incoming().diff(existing()).affectedKeys().hasOnly(['submissionStatus', 'updatedAt'])) ||
                     (isOwner(orgId) && incoming().get('role', '') == 'admin_antenne' && hasMatchingInvite(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'delegation_id', 'antenne_id', 'updatedAt'])) ||
                     (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt']))
                   );
 
-      // Suppression d'un compte partenaire : réservée au super admin.
-      allow delete: if isSuperAdmin();
+      // Suppression d'un compte : super admin partout ; un coordinateur de
+      // délégation peut supprimer un compte (non-personnel) de sa délégation.
+      allow delete: if isSuperAdmin() ||
+                    (isSignedIn() && hasUserDoc() && getUser().get('role', '') == 'admin_delegation' &&
+                     getUser().get('delegation_id', '') == existing().get('delegation_id', '') &&
+                     existing().get('role', '') != 'super_admin' && existing().get('role', '') != 'admin');
     }
 
     // 4. Folders

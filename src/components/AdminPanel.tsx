@@ -1348,6 +1348,7 @@ export default function AdminPanel() {
               )}
 
               {/* Card 4: Journal d'activité (super admin : tous les logs) */}
+              {isSuperAdminMode && (
               <button
                 onClick={() => {
                   setNavigationView('logs');
@@ -1375,6 +1376,7 @@ export default function AdminPanel() {
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </button>
+              )}
 
             </div>
 
@@ -2130,6 +2132,10 @@ export default function AdminPanel() {
                           <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                             {orgProfiles.filter(p => p.delegation_id === delegationFilterId).map((org) => {
                               const st = org.submissionStatus || 'Pending';
+                              // Le super admin gère tous les comptes. Un coordinateur de
+                              // délégation gère les comptes de sa délégation, mais PAS les
+                              // comptes du personnel (super admin / admin / autres coordinateurs).
+                              const manageable = isSuperAdminMode || org.role === 'organization' || org.role === 'admin_antenne';
                               return (
                                 <tr key={org.id} className="hover:bg-slate-50/70 transition-colors">
                                   
@@ -2202,7 +2208,7 @@ export default function AdminPanel() {
                                           </select>
                                         </div>
 
-                                        {isSuperAdminMode && (
+                                        {manageable && (
                                           <div>
                                             <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Rôle du compte</label>
                                             <select
@@ -2249,16 +2255,18 @@ export default function AdminPanel() {
                                         <p className="text-[11.5px] text-slate-400 font-semibold font-mono">
                                           📍 {org.antenne_id ? (ANTENNES_BY_DELEGATION[org.delegation_id || '']?.find(a => a.id === org.antenne_id)?.name || org.antenne_id) : "Non affecté"}
                                         </p>
-                                        <button
-                                          onClick={() => {
-                                            setEditingOrgId(org.id);
-                                            setEditDelegation(org.delegation_id || '');
-                                            setEditAntenne(org.antenne_id || '');
-                                          }}
-                                          className="text-[11px] text-azur hover:underline font-black mt-2 block cursor-pointer"
-                                        >
-                                          ✏️ Modifier la ville
-                                        </button>
+                                        {manageable && (
+                                          <button
+                                            onClick={() => {
+                                              setEditingOrgId(org.id);
+                                              setEditDelegation(org.delegation_id || '');
+                                              setEditAntenne(org.antenne_id || '');
+                                            }}
+                                            className="text-[11px] text-azur hover:underline font-black mt-2 block cursor-pointer"
+                                          >
+                                            ✏️ Modifier la ville
+                                          </button>
+                                        )}
                                       </div>
                                     )}
                                   </td>
@@ -2269,7 +2277,7 @@ export default function AdminPanel() {
 
                                   <td className="px-5 py-4 text-right">
                                     <div className="flex justify-end gap-1.5">
-                                      {org.submissionStatus !== 'Validated' && (
+                                      {manageable && org.submissionStatus !== 'Validated' && (
                                         <button
                                           onClick={() => handleUpdateOrgStatus(org.id, 'Validated')}
                                           className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11.5px] px-3.5 py-1.5 rounded-xl cursor-pointer transition-all shadow-xs"
@@ -2278,7 +2286,7 @@ export default function AdminPanel() {
                                         </button>
                                       )}
 
-                                      {org.submissionStatus === 'Validated' && (
+                                      {manageable && org.submissionStatus === 'Validated' && (
                                         <button
                                           onClick={() => handleUpdateOrgStatus(org.id, 'Incomplete')}
                                           className="bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold border border-rose-200 text-[11.5px] px-3.5 py-1.5 rounded-xl cursor-pointer transition-all"
@@ -2287,7 +2295,7 @@ export default function AdminPanel() {
                                         </button>
                                       )}
 
-                                      {isSuperAdminMode && (
+                                      {manageable && (
                                         <button
                                           onClick={() => handleDeleteOrg(org)}
                                           className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all shadow-xs inline-flex items-center gap-1"
