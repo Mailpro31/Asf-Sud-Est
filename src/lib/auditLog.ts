@@ -33,6 +33,7 @@ export type AuditAction =
   | 'file_delete'
   | 'file_status_change'
   | 'file_share_toggle'
+  | 'file_rename'
   | 'folder_create'
   | 'folder_delete'
   | 'org_create'
