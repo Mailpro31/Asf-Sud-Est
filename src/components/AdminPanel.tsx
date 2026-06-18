@@ -806,6 +806,15 @@ export default function AdminPanel() {
     setUploading(true);
     setUploadProgress(0);
 
+    // Journalise un dépôt réellement enregistré (rattaché à l'antenne ciblée).
+    const logUpload = (f: File) => logAction('file_upload', {
+      targetType: 'file',
+      targetName: f.name,
+      antenne_id: activeAntenneId || undefined,
+      delegation_id: delegationFilterId || undefined,
+      details: 'Dépôt par un coordinateur',
+    });
+
     for (const f of selectedFiles) {
       if (localDb.isSandboxActive()) {
         const reader = new FileReader();
@@ -831,6 +840,7 @@ export default function AdminPanel() {
           };
           reader.readAsDataURL(f);
         });
+        logUpload(f);
         continue;
       }
 
@@ -873,6 +883,7 @@ export default function AdminPanel() {
             }
           );
         });
+        logUpload(f);
       } catch (err: any) {
         console.error("Upload error:", err);
         // Fallback Base64 for sandbox compatibility if Storage blocks
@@ -897,20 +908,11 @@ export default function AdminPanel() {
             uploadedBy: 'admin',
             submissionStatus: 'Pending'
           });
+          logUpload(f);
         } catch (baseErr) {
           toast(`Erreur de secours pour ${f.name} : ${baseErr}`, 'error');
         }
       }
-    }
-    // Journal d'activité : un dépôt par fichier (rattaché à l'antenne ciblée).
-    for (const f of selectedFiles) {
-      logAction('file_upload', {
-        targetType: 'file',
-        targetName: f.name,
-        antenne_id: activeAntenneId || undefined,
-        delegation_id: delegationFilterId || undefined,
-        details: 'Dépôt par un coordinateur',
-      });
     }
     if (localDb.isSandboxActive()) {
       setFiles(localDb.getFiles());
