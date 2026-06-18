@@ -5,6 +5,10 @@ import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { AntenneGroup, Organization } from '../types';
 import { localDb } from '../lib/localDb';
 import { getMyInvite } from '../lib/antenneAdmins';
+import { logAction, setCurrentActor, AuditActor } from '../lib/auditLog';
+
+/** uids ayant déjà journalisé leur connexion durant cette session (anti-doublon). */
+const loginLogged = new Set<string>();
 
 /**
  * Comptes (par uid) dont l'invitation d'antenne a déjà été résolue dans cette
@@ -325,6 +329,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Mémorise l'acteur courant pour le journal d'activité, et journalise la
+  // connexion une seule fois par session dès que le profil est disponible.
+  useEffect(() => {
+    if (user && organization) {
+      const actor: AuditActor = {
+        uid: user.uid,
+        name: organization.name || organization.contactName || user.email || user.uid,
+        role: organization.role || 'organization',
+        delegation_id: organization.delegation_id,
+        antenne_id: organization.antenne_id,
+      };
+      setCurrentActor(actor);
+      if (!loginLogged.has(user.uid)) {
+        loginLogged.add(user.uid);
+        logAction('login', {
+          actor,
+          targetType: 'session',
+          details: `Connexion (${user.email || 'compte'})`,
+        });
+      }
+    } else if (!user) {
+      setCurrentActor(null);
+    }
+  }, [user, organization]);
+
   // Listen to 'localdb-update' so sandbox changes (like validating an org, changing role, delegation or antenne) propagate instantly!
   useEffect(() => {
     const handleLocalDbUpdate = () => {
@@ -499,6 +528,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    // Journalise la déconnexion tant que l'acteur est encore connu.
+    if (user && organization) {
+      await logAction('logout', {
+        actor: {
+          uid: user.uid,
+          name: organization.name || organization.contactName || user.email || user.uid,
+          role: organization.role || 'organization',
+          delegation_id: organization.delegation_id,
+          antenne_id: organization.antenne_id,
+        },
+        targetType: 'session',
+        details: 'Déconnexion',
+      });
+      loginLogged.delete(user.uid);
+    }
+    setCurrentActor(null);
     await firebaseSignOut(auth);
     setError(null);
   };

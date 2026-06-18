@@ -37,6 +37,7 @@ import UserProfileModal from './UserProfileModal';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
 import { notifyAntenneOnUpload } from '../lib/antenneSettings';
+import { logAction } from '../lib/auditLog';
 import { firebaseConfig } from '../lib/firebaseConfig';
 import { StatusBadge } from './ui';
 import { getStatusMeta } from '../lib/status';
@@ -516,6 +517,10 @@ export default function Dashboard() {
         okCount > 1 ? `${okCount} fichiers` : acceptedFiles[0]?.name || 'fichier',
         { partnerName: organization?.name, antenneName: antName },
       );
+      // Journal d'activité : une entrée par fichier déposé.
+      for (const f of acceptedFiles) {
+        logAction('file_upload', { targetType: 'file', targetName: f.name });
+      }
     }
   }, [user, currentFolderId, organization, refreshLocalState, antennes]);
 
@@ -590,6 +595,7 @@ export default function Dashboard() {
       folderName,
       { partnerName: organization?.name, antenneName: antName },
     );
+    logAction('folder_create', { targetType: 'folder', targetName: folderName });
   };
 
   const handleRenameSubmit = async (e: React.FormEvent) => {
@@ -615,6 +621,7 @@ export default function Dashboard() {
     if (!deletingFile) return;
     if (localDb.isSandboxActive()) {
       localDb.deleteFile(deletingFile.id);
+      logAction('file_delete', { targetType: 'file', targetId: deletingFile.id, targetName: deletingFile.name });
       refreshLocalState();
       setDeletingFile(null);
       return;
@@ -643,6 +650,7 @@ export default function Dashboard() {
         }
       }
       await deleteDoc(doc(db, 'files', deletingFile.id));
+      logAction('file_delete', { targetType: 'file', targetId: deletingFile.id, targetName: deletingFile.name });
     } catch (error) {
       console.error('Error deleting file:', error);
     } finally {
