@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  collection, 
-  query, 
-  onSnapshot, 
-  updateDoc, 
-  doc, 
-  deleteDoc, 
-  addDoc, 
-  setDoc
+import {
+  collection,
+  query,
+  onSnapshot,
+  updateDoc,
+  doc,
+  deleteDoc,
+  addDoc,
+  setDoc,
+  getDocs
 } from 'firebase/firestore';
-import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { Organization, DossierFile, Folder, SubmissionStatus, AntenneGroup } from '../types';
 import { 
@@ -72,6 +73,10 @@ const ROLE_META: Record<string, { label: string; className: string; icon: string
 };
 
 const roleMeta = (role?: string) => ROLE_META[role || 'organization'] || ROLE_META.organization;
+
+// Pseudo-dossier regroupant les fichiers d'une antenne déposés hors dossier
+// (uploadés par un partenaire directement à la racine de son espace).
+const UNFILED_FOLDER_ID = '__unfiled__';
 
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
@@ -147,16 +152,22 @@ export default function AdminPanel() {
   const { toast, confirm } = useFeedback();
 
   // Active Simulated Role State (For easy local testing of Admin roles)
+  // Seul le super_admin (et l'admin national) accède au mode national. Un
+  // coordinateur de délégation (admin_delegation) est cantonné à sa délégation.
   const [simulationRole, setSimulationRole] = useState<'super_admin' | 'admin'>(() => {
-    if (organization?.role === 'admin') {
+    if (organization?.role === 'admin' || organization?.role === 'admin_delegation') {
       return 'admin';
     }
     return 'super_admin';
   });
 
   const isSuperAdminMode = simulationRole === 'super_admin';
-  
-  const [activeDelegationId, setActiveDelegationId] = useState<string | null>('france');
+
+  const [activeDelegationId, setActiveDelegationId] = useState<string | null>(
+    (organization?.role === 'admin_delegation' || organization?.role === 'admin') && organization?.delegation_id
+      ? organization.delegation_id
+      : 'france',
+  );
   const delegationFilterId = activeDelegationId ?? 'france';
   const [tempCoords, setTempCoords] = useState<{ x: number; y: number } | null>(null);
 
@@ -171,6 +182,10 @@ export default function AdminPanel() {
     if (organization?.role === 'admin' && organization?.antenne_id) {
       setSimulationRole('admin');
       setActiveAntenneId(organization.antenne_id);
+    } else if (organization?.role === 'admin_delegation') {
+      // Coordinateur de délégation : mode scoped, cantonné à sa délégation.
+      setSimulationRole('admin');
+      if (organization?.delegation_id) setActiveDelegationId(organization.delegation_id);
     }
   }, [organization]);
 
@@ -943,10 +958,27 @@ export default function AdminPanel() {
       return;
     }
     try {
+      // Nettoyage du stockage associé (chunks Firestore ou objet Storage natif).
+      if (fileToDelete.storagePath === 'firestore_fallback_chunked') {
+        try {
+          const chunksSnap = await getDocs(collection(db, 'files', fileToDelete.id, 'chunks'));
+          await Promise.all(chunksSnap.docs.map(d => deleteDoc(d.ref)));
+        } catch (e) {
+          console.error('Error deleting file chunks:', e);
+        }
+      } else if (fileToDelete.storagePath && fileToDelete.storagePath !== 'firestore_fallback') {
+        try {
+          await deleteObject(ref(storage, fileToDelete.storagePath));
+        } catch (e: any) {
+          if (e?.code !== 'storage/object-not-found') console.error('Storage deletion error:', e);
+        }
+      }
       await deleteDoc(doc(db, 'files', fileToDelete.id));
+      toast('Fichier supprimé.', 'success');
       setFileToDelete(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting document:", err);
+      toast("Échec de la suppression : " + (err?.message || 'erreur'), 'error');
     }
   };
 
@@ -997,7 +1029,13 @@ export default function AdminPanel() {
   });
 
   const filteredFiles = files.filter(f => {
-    if (f.folderId !== currentFolderId) return false;
+    if (currentFolderId === UNFILED_FOLDER_ID) {
+      // Fichiers de l'antenne courante non rangés dans un dossier.
+      if (f.folderId) return false;
+      if (f.antenne_id !== activeAntenneId) return false;
+    } else if (f.folderId !== currentFolderId) {
+      return false;
+    }
     const matchesSearch = f.name.toLowerCase().includes(searchQuery.toLowerCase());
     
     let matchesType = true;
@@ -1018,7 +1056,15 @@ export default function AdminPanel() {
     ? ANTENNES_BY_DELEGATION[delegationFilterId || ''].find(a => a.id === activeAntenneId)
     : null;
 
-  const currentFolder = folders.find(fd => fd.id === currentFolderId);
+  // Fichiers de l'antenne active déposés hors dossier (par un partenaire).
+  const unfiledFiles = activeAntenneId
+    ? files.filter(f => !f.folderId && f.antenne_id === activeAntenneId)
+    : [];
+
+  const currentFolder =
+    currentFolderId === UNFILED_FOLDER_ID
+      ? ({ id: UNFILED_FOLDER_ID, name: 'Documents non classés', orgId: 'public' } as any)
+      : folders.find(fd => fd.id === currentFolderId);
 
   // Compteurs d'éléments en attente de validation, affichés en badge sur les cards du hub.
   const pendingFilesCount = files.filter(f => f.submissionStatus === 'Pending').length;
@@ -1056,11 +1102,13 @@ export default function AdminPanel() {
           <LogoASF className="w-10 h-10 shrink-0" variant="color" />
           <div>
             <h1 className="text-md font-bold text-deep dark:text-white leading-tight font-display flex items-center gap-1.5">
-              <span>Portail de Coordination Nationale</span>
-              <span className="text-[10px] bg-azur-light text-azur border border-azur/15 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">Admin</span>
+              <span>{isSuperAdminMode ? 'Portail de Coordination Nationale' : 'Portail de Coordination Régionale'}</span>
+              <span className="text-[10px] bg-azur-light text-azur border border-azur/15 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">{isSuperAdminMode ? 'Admin' : 'Coordinateur'}</span>
             </h1>
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400">
-              Aviation Sans Frontières France — Pilotage des délégations et autorisations de vol.
+              {isSuperAdminMode
+                ? 'Aviation Sans Frontières France — Pilotage des délégations et autorisations de vol.'
+                : `Aviation Sans Frontières — Coordination de ${selectedDelegationData?.name || 'votre délégation'}.`}
             </p>
           </div>
         </div>
@@ -1095,7 +1143,7 @@ export default function AdminPanel() {
           <div className="max-w-5xl mx-auto space-y-8 py-6">
             {/* Welcome header */}
             <div className="space-y-1.5">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-azur font-bold">Cabinet de pilotage national</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-azur font-bold">{isSuperAdminMode ? 'Cabinet de pilotage national' : 'Cabinet de coordination régionale'}</p>
               <h2 className="text-2xl sm:text-3xl font-black font-display text-deep dark:text-white tracking-tight">
                 Bonjour {organization?.contactName?.split(' ')[0] || 'Administrateur'} 👋
               </h2>
@@ -1206,7 +1254,8 @@ export default function AdminPanel() {
                 </div>
               </button>
 
-              {/* Card 3: Implantations / Stations */}
+              {/* Card 3: Implantations / Stations (super admin only) */}
+              {isSuperAdminMode && (
               <button
                 onClick={() => {
                   setNavigationView('implantations');
@@ -1235,6 +1284,7 @@ export default function AdminPanel() {
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </button>
+              )}
 
             </div>
 
@@ -1532,7 +1582,7 @@ export default function AdminPanel() {
                           />
                         </div>
 
-                        {filteredFolders.length === 0 ? (
+                        {filteredFolders.length === 0 && unfiledFiles.length === 0 ? (
                           <div className="border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-3xs">
                             <FolderIcon className="w-12 h-12 text-slate-300 bg-slate-50 dark:bg-slate-800 p-3 rounded-full" />
                             <div>
@@ -1550,6 +1600,40 @@ export default function AdminPanel() {
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {unfiledFiles.length > 0 && (
+                              (() => {
+                                const pendingUnfiled = unfiledFiles.filter(f => f.submissionStatus === 'Pending' || !f.submissionStatus).length;
+                                return (
+                                  <div
+                                    onClick={() => { setCurrentFolderId(UNFILED_FOLDER_ID); setSearchQuery(''); }}
+                                    className={`bg-amber-50/60 dark:bg-amber-950/15 border border-amber-200/70 dark:border-amber-900/40 rounded-3xl p-5 shadow-3xs cursor-pointer group flex flex-col justify-between h-44 transition-all duration-300 relative hover:border-amber-400`}
+                                    title="Fichiers déposés par les partenaires sans dossier"
+                                  >
+                                    <div className="flex justify-between items-start">
+                                      <div className="w-11 h-11 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/60 dark:border-amber-900/40 shadow-3xs">
+                                        <AlertCircle className="w-5.5 h-5.5" />
+                                      </div>
+                                    </div>
+                                    <div className="mt-4">
+                                      <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200 truncate">
+                                        Documents non classés
+                                      </h4>
+                                      <p className="text-[10.5px] text-amber-700/70 dark:text-amber-400/70 mt-1 font-mono">
+                                        Déposés par des partenaires hors dossier
+                                      </p>
+                                    </div>
+                                    <div className="border-t border-amber-200/60 dark:border-amber-900/40 pt-3.5 mt-3.5 flex justify-between items-center w-full text-[11px]">
+                                      <span className="font-semibold text-amber-700/80 dark:text-amber-400/80">📄 {unfiledFiles.length} document{unfiledFiles.length !== 1 ? 's' : ''}</span>
+                                      {pendingUnfiled > 0 && (
+                                        <span className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-900/35 font-black px-2.5 py-0.5 rounded-lg font-mono">
+                                          🕒 {pendingUnfiled} attente
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()
+                            )}
                             {filteredFolders.map((folder) => {
                               const folderDocs = files.filter(f => f.folderId === folder.id);
                               const pendingDocs = folderDocs.filter(f => f.submissionStatus === 'Pending' || !f.submissionStatus).length;

@@ -2,7 +2,10 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Détermine si l'utilisateur authentifié est administrateur.
+    // Détermine si l'utilisateur authentifié fait partie du staff (super admin,
+    // admin national, coordinateur de délégation ou gestionnaire d'antenne).
+    // Le staff peut consulter et supprimer les fichiers déposés par les
+    // partenaires (aperçu côté admin/superadmin/coordinateur).
     function isAdmin() {
       return request.auth != null && (
         // Custom Claim recommandé (défini côté serveur via le SDK Admin).
@@ -11,7 +14,8 @@ service firebase.storage {
         request.auth.token.email == "mailprosasha2@gmail.com" ||
         firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) ||
         (firestore.exists(/databases/(default)/documents/organizations/$(request.auth.uid)) &&
-         firestore.get(/databases/(default)/documents/organizations/$(request.auth.uid)).data.role == "admin")
+         firestore.get(/databases/(default)/documents/organizations/$(request.auth.uid)).data.role in
+           ['admin', 'super_admin', 'admin_delegation', 'admin_antenne'])
       );
     }
 
@@ -29,6 +33,13 @@ service firebase.storage {
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       allow write: if request.auth != null && (request.auth.uid == userId || isAdmin()) && isAllowedFile();
       allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Fichiers déposés côté admin (panel super admin / coordinateur), rangés par
+    // délégation/antenne. Réservé au staff.
+    match /delegations/{allPaths=**} {
+      allow read, delete: if isAdmin();
+      allow write: if isAdmin() && isAllowedFile();
     }
 
     // Dépôt public anonyme désactivé : un compte est obligatoire pour
