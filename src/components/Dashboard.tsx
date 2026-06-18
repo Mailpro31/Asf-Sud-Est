@@ -329,8 +329,11 @@ export default function Dashboard() {
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!user) return;
-    if (organization?.submissionStatus === 'Incomplete') {
-      toast("Votre compte est suspendu : l'envoi de fichiers est temporairement désactivé. Contactez votre coordinateur ASF.", 'warning');
+    if (organization?.submissionStatus !== 'Validated') {
+      const msg = organization?.submissionStatus === 'Incomplete'
+        ? "Votre compte est suspendu : l'envoi de fichiers est désactivé. Contactez votre coordinateur ASF."
+        : "Votre compte est en attente de validation. Un coordinateur ASF doit approuver votre accès avant que vous puissiez déposer des fichiers.";
+      toast(msg, 'warning');
       return;
     }
     setUploading(true);
@@ -563,6 +566,10 @@ export default function Dashboard() {
   
   const handleCreateFolder = async (name: string) => {
     if (!user || !name.trim()) return;
+    if (organization?.submissionStatus !== 'Validated') {
+      toast("Votre compte doit être validé par un coordinateur ASF avant de pouvoir créer des dossiers.", 'warning');
+      return;
+    }
     if (localDb.isSandboxActive()) {
       localDb.saveFolder({
         id: 'local_folder_' + Date.now() + '_' + Math.random().toString(36).substring(5),
@@ -1008,20 +1015,24 @@ export default function Dashboard() {
           
           {/* Draggable Drop/Click Upload Area */}
           <div className="lg:col-span-2">
-            {organization?.submissionStatus === 'Incomplete' ? (
+            {organization?.submissionStatus !== 'Validated' ? (
               <div
                 className={`bg-rose-50 dark:bg-rose-950/20 border-2 border-dashed border-rose-200 dark:border-rose-900/50 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 shadow-xs ${containerRounded} cursor-not-allowed`}
-                title="Compte suspendu : envoi désactivé"
+                title={organization?.submissionStatus === 'Incomplete' ? 'Compte suspendu : envoi désactivé' : "Compte en attente de validation"}
               >
                 <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center shadow-xs shrink-0">
                   <AlertCircle className="w-6 h-6" />
                 </div>
                 <div className="text-center sm:text-left">
                   <p className="text-base font-bold text-rose-800 dark:text-rose-300">
-                    Envoi de fichiers suspendu
+                    {organization?.submissionStatus === 'Incomplete'
+                      ? 'Envoi de fichiers suspendu'
+                      : "Envoi en attente de validation"}
                   </p>
                   <p className="text-xs text-rose-700/80 dark:text-rose-400/80 mt-1 font-sans">
-                    Votre compte a été suspendu par un coordinateur ASF. Vous pourrez à nouveau déposer des fichiers une fois votre accès rétabli.
+                    {organization?.submissionStatus === 'Incomplete'
+                      ? 'Votre compte a été suspendu par un coordinateur ASF. Vous pourrez à nouveau déposer des fichiers une fois votre accès rétabli.'
+                      : "Votre inscription doit d'abord être approuvée par un coordinateur ASF. Vous pourrez déposer vos fichiers dès que votre accès sera validé."}
                   </p>
                 </div>
               </div>
