@@ -351,6 +351,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } else if (!user) {
       setCurrentActor(null);
+      // La session est terminée (déconnexion explicite OU expiration du jeton) :
+      // on réarme la journalisation de connexion pour la prochaine ouverture.
+      loginLogged.clear();
     }
   }, [user, organization]);
 

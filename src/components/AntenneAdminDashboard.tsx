@@ -9,6 +9,7 @@ import {
   addDoc,
   deleteDoc,
   getDocs,
+  orderBy,
 } from 'firebase/firestore';
 import {
   ref as storageRef,
@@ -273,88 +274,104 @@ export default function AntenneAdminDashboard() {
     }
   };
 
+  // Lit un fichier en data URL ; rejette si la lecture échoue (sinon la
+  // promesse resterait bloquée et figerait l'envoi).
+  const readAsDataUrl = (f: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = () => reject(r.error || new Error('Lecture du fichier impossible'));
+      r.readAsDataURL(f);
+    });
+
   // --- Dépôt de fichiers dans l'antenne (par le gestionnaire) ---
   const handleUploadFiles = async (selected: File[]) => {
     if (!selected.length || !antenneId) return;
     setUploading(true);
     setUploadProgress(0);
     let ok = 0;
-    for (const f of selected) {
-      const meta = {
-        orgId: 'admin_created',
-        folderId: null as string | null,
-        delegation_id: delegationId,
-        antenne_id: antenneId,
-        name: f.name,
-        size: f.size,
-        type: f.type || 'application/octet-stream',
-        uploadDate: Date.now(),
-        uploadedBy: 'admin' as const,
-        submissionStatus: 'Pending' as SubmissionStatus,
-        sharedWithPartner: true,
-      };
+    try {
+      for (const f of selected) {
+        const meta = {
+          orgId: 'admin_created',
+          folderId: null as string | null,
+          delegation_id: delegationId,
+          antenne_id: antenneId,
+          name: f.name,
+          size: f.size,
+          type: f.type || 'application/octet-stream',
+          uploadDate: Date.now(),
+          uploadedBy: 'admin' as const,
+          submissionStatus: 'Pending' as SubmissionStatus,
+          sharedWithPartner: true,
+        };
 
-      if (localDb.isSandboxActive()) {
-        const dataUrl = await new Promise<string>((res) => {
-          const r = new FileReader();
-          r.onload = () => res(r.result as string);
-          r.readAsDataURL(f);
-        });
-        localDb.saveFile({
-          id: `mock_file_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          ...meta,
-          storagePath: 'sandbox',
-          fallbackDataUrl: dataUrl,
-        } as DossierFile);
-        ok++;
-        continue;
-      }
+        let uploaded = false;
 
-      const path = `delegations/${delegationId}/${antenneId}/${Date.now()}_${f.name}`;
-      try {
-        const task = uploadBytesResumable(storageRef(storage, path), f);
-        await new Promise<void>((resolve, reject) => {
-          task.on(
-            'state_changed',
-            (s) => setUploadProgress(Math.round((s.bytesTransferred / s.totalBytes) * 100)),
-            reject,
-            async () => {
-              try {
-                const url = await getDownloadURL(task.snapshot.ref);
-                await addDoc(collection(db, 'files'), { ...meta, storagePath: path, fallbackDataUrl: url });
-                resolve();
-              } catch (e) {
-                reject(e);
-              }
-            },
-          );
-        });
-        ok++;
-      } catch (err) {
-        // Repli base64 si le Storage est indisponible.
-        try {
-          const dataUrl = await new Promise<string>((res) => {
-            const r = new FileReader();
-            r.onload = () => res(r.result as string);
-            r.readAsDataURL(f);
-          });
-          await addDoc(collection(db, 'files'), { ...meta, storagePath: 'firestore_fallback', fallbackDataUrl: dataUrl });
+        if (localDb.isSandboxActive()) {
+          try {
+            const dataUrl = await readAsDataUrl(f);
+            localDb.saveFile({
+              id: `mock_file_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              ...meta,
+              storagePath: 'sandbox',
+              fallbackDataUrl: dataUrl,
+            } as DossierFile);
+            uploaded = true;
+          } catch (e) {
+            console.error('Lecture fichier (sandbox) échec:', e);
+          }
+        } else {
+          const path = `delegations/${delegationId}/${antenneId}/${Date.now()}_${f.name}`;
+          try {
+            const task = uploadBytesResumable(storageRef(storage, path), f);
+            await new Promise<void>((resolve, reject) => {
+              task.on(
+                'state_changed',
+                (s) => setUploadProgress(Math.round((s.bytesTransferred / s.totalBytes) * 100)),
+                reject,
+                async () => {
+                  try {
+                    const url = await getDownloadURL(task.snapshot.ref);
+                    await addDoc(collection(db, 'files'), { ...meta, storagePath: path, fallbackDataUrl: url });
+                    resolve();
+                  } catch (e) {
+                    reject(e);
+                  }
+                },
+              );
+            });
+            uploaded = true;
+          } catch (err) {
+            // Repli base64 si le Storage est indisponible.
+            try {
+              const dataUrl = await readAsDataUrl(f);
+              await addDoc(collection(db, 'files'), { ...meta, storagePath: 'firestore_fallback', fallbackDataUrl: dataUrl });
+              uploaded = true;
+            } catch (e) {
+              console.error('Upload échec:', e);
+            }
+          }
+        }
+
+        // On ne journalise que les dépôts réellement enregistrés.
+        if (uploaded) {
           ok++;
-        } catch (e) {
-          console.error('Upload échec:', e);
+          logAction('file_upload', {
+            targetType: 'file',
+            targetName: f.name,
+            antenne_id: antenneId,
+            delegation_id: delegationId,
+            details: "Dépôt par le gestionnaire d'antenne",
+          });
         }
       }
-      logAction('file_upload', {
-        targetType: 'file',
-        targetName: f.name,
-        antenne_id: antenneId,
-        delegation_id: delegationId,
-        details: "Dépôt par le gestionnaire d'antenne",
-      });
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
     }
-    setUploading(false);
-    setUploadProgress(0);
     if (ok > 0) toast(`${ok} document(s) déposé(s) ✓`, 'success');
+    if (ok < selected.length) toast(`${selected.length - ok} fichier(s) n'ont pas pu être envoyés.`, 'error');
     if (localDb.isSandboxActive()) loadLocalNow();
   };
 
@@ -372,7 +389,11 @@ export default function AntenneAdminDashboard() {
   const handleDownload = async (file: DossierFile) => {
     try {
       let url = file.fallbackDataUrl || '';
-      if ((!url || url === '#') && file.storagePath && file.storagePath !== 'firestore_fallback' && file.storagePath !== 'sandbox') {
+      // Fichier découpé en fragments Firestore : on réassemble le base64.
+      if (file.storagePath === 'firestore_fallback_chunked') {
+        const snap = await getDocs(query(collection(db, 'files', file.id, 'chunks'), orderBy('index', 'asc')));
+        url = snap.docs.map((d) => d.data().data).join('');
+      } else if ((!url || url === '#') && file.storagePath && file.storagePath !== 'firestore_fallback' && file.storagePath !== 'sandbox') {
         url = await getDownloadURL(storageRef(storage, file.storagePath));
       }
       if (!url || url === '#') {
