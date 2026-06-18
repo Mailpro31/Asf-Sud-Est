@@ -320,9 +320,13 @@ export default function Dashboard() {
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!user) return;
+    if (organization?.submissionStatus === 'Incomplete') {
+      toast("Votre compte est suspendu : l'envoi de fichiers est temporairement désactivé. Contactez votre coordinateur ASF.", 'warning');
+      return;
+    }
     setUploading(true);
     setStorageWarning(null);
-    
+
     if (localDb.isSandboxActive()) {
       let count = 0;
       for (const file of acceptedFiles) {
@@ -1008,34 +1012,53 @@ export default function Dashboard() {
           
           {/* Draggable Drop/Click Upload Area */}
           <div className="lg:col-span-2">
-            <label 
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`bg-white border-2 border-dashed ${themeConfig.textColor} hover:brightness-98 transition-all duration-300 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 cursor-pointer shadow-xs ${containerRounded} ${
-                isDragActive
-                  ? 'border-azur bg-azur/5 scale-101'
-                  : 'border-slate-200 dark:border-slate-800'
-              }`}
-            >
-              <input 
-                type="file" 
-                multiple 
-                className="hidden" 
-                onChange={handleFileChange} 
-              />
-              <div className="w-12 h-12 bg-azur-light text-deep rounded-full flex items-center justify-center shadow-xs">
-                <CloudUpload className="w-6 h-6 animate-bounce" />
+            {organization?.submissionStatus === 'Incomplete' ? (
+              <div
+                className={`bg-rose-50 dark:bg-rose-950/20 border-2 border-dashed border-rose-200 dark:border-rose-900/50 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 shadow-xs ${containerRounded} cursor-not-allowed`}
+                title="Compte suspendu : envoi désactivé"
+              >
+                <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center shadow-xs shrink-0">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <p className="text-base font-bold text-rose-800 dark:text-rose-300">
+                    Envoi de fichiers suspendu
+                  </p>
+                  <p className="text-xs text-rose-700/80 dark:text-rose-400/80 mt-1 font-sans">
+                    Votre compte a été suspendu par un coordinateur ASF. Vous pourrez à nouveau déposer des fichiers une fois votre accès rétabli.
+                  </p>
+                </div>
               </div>
-              <div className="text-center sm:text-left">
-                <p className={`text-base font-bold ${themeConfig.textColor}`}>
-                  {isDragActive ? 'Relâchez pour lancer la transmission' : 'Déposez les fichiers de vol ici ou cliquez pour téléverser'}
-                </p>
-                <p className={`text-xs ${themeConfig.textMuted} mt-1 font-sans`}>
-                  Faites les glisser sur les dossiers ci-dessous pour les classer directement. Formats acceptés : PDF, manifestes de vol, images.
-                </p>
-              </div>
-            </label>
+            ) : (
+              <label
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`bg-white border-2 border-dashed ${themeConfig.textColor} hover:brightness-98 transition-all duration-300 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 cursor-pointer shadow-xs ${containerRounded} ${
+                  isDragActive
+                    ? 'border-azur bg-azur/5 scale-101'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
+              >
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <div className="w-12 h-12 bg-azur-light text-deep rounded-full flex items-center justify-center shadow-xs">
+                  <CloudUpload className="w-6 h-6 animate-bounce" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <p className={`text-base font-bold ${themeConfig.textColor}`}>
+                    {isDragActive ? 'Relâchez pour lancer la transmission' : 'Déposez les fichiers de vol ici ou cliquez pour téléverser'}
+                  </p>
+                  <p className={`text-xs ${themeConfig.textMuted} mt-1 font-sans`}>
+                    Faites les glisser sur les dossiers ci-dessous pour les classer directement. Formats acceptés : PDF, manifestes de vol, images.
+                  </p>
+                </div>
+              </label>
+            )}
 
             {uploading && (
               <div className={`mt-3 ${themeConfig.cardBg} ${borderStyle} p-4 ${containerRounded} animate-pulse`}>
