@@ -301,6 +301,12 @@ export const localDb = {
     this.triggerUpdate();
   },
 
+  deleteOrganization(orgId: string) {
+    const list = this.getOrganizations().filter(o => o.id !== orgId);
+    localStorage.setItem(STORAGE_KEYS.ORGS, JSON.stringify(list));
+    this.triggerUpdate();
+  },
+
   saveFile(file: DossierFile) {
     const list = this.getFiles();
     const index = list.findIndex(f => f.id === file.id);
