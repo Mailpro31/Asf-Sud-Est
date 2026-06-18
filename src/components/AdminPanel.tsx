@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   collection,
   query,
+  where,
   onSnapshot,
   updateDoc,
   doc,
@@ -165,9 +166,11 @@ export default function AdminPanel() {
   const isSuperAdminMode = simulationRole === 'super_admin';
 
   const [activeDelegationId, setActiveDelegationId] = useState<string | null>(
-    (organization?.role === 'admin_delegation' || organization?.role === 'admin') && organization?.delegation_id
-      ? organization.delegation_id
-      : 'france',
+    // Un coordinateur est cantonné à SA délégation (jamais le repli national
+    // « france », qui exposerait/mélangerait les comptes d'une autre délégation).
+    organization?.role === 'admin_delegation'
+      ? (organization?.delegation_id || '')
+      : (organization?.role === 'admin' && organization?.delegation_id ? organization.delegation_id : 'france'),
   );
   const delegationFilterId = activeDelegationId ?? 'france';
   const [tempCoords, setTempCoords] = useState<{ x: number; y: number } | null>(null);
@@ -750,8 +753,18 @@ export default function AdminPanel() {
         window.removeEventListener('localdb-update', handleLocalDbUpdate);
       };
     } else {
+      // Le super admin lit tout ; un coordinateur de délégation ne lit QUE les
+      // données de sa délégation (les règles Firestore l'imposent : une requête
+      // non filtrée serait refusée pour lui, et exposerait sinon les autres
+      // délégations). On filtre donc la requête côté client en conséquence.
+      const scopeDelegation = organization?.role === 'admin_delegation' ? delegationFilterId : null;
+      const scoped = (col: string) =>
+        scopeDelegation
+          ? query(collection(db, col), where('delegation_id', '==', scopeDelegation))
+          : query(collection(db, col));
+
       try {
-        const qFiles = query(collection(db, 'files'));
+        const qFiles = scoped('files');
         unsubFiles = onSnapshot(qFiles, (snapshot) => {
           const filesData: DossierFile[] = [];
           snapshot.forEach((doc) => {
@@ -764,7 +777,7 @@ export default function AdminPanel() {
       }
 
       try {
-        const qFolders = query(collection(db, 'folders'));
+        const qFolders = scoped('folders');
         unsubFolders = onSnapshot(qFolders, (snapshot) => {
           const foldersData: Folder[] = [];
           snapshot.forEach((doc) => {
@@ -777,7 +790,7 @@ export default function AdminPanel() {
       }
 
       try {
-        const qOrgs = query(collection(db, 'organizations'));
+        const qOrgs = scoped('organizations');
         unsubOrgs = onSnapshot(qOrgs, (snapshot) => {
           const orgsData: Organization[] = [];
           snapshot.forEach((doc) => {
@@ -2218,7 +2231,11 @@ export default function AdminPanel() {
                                               title="Définir le rôle du compte"
                                             >
                                               <option value="organization">Partenaire / Organisme</option>
-                                              <option value="admin_delegation">Coordinateur de délégation</option>
+                                              {/* Seul le super admin peut désigner un coordinateur de délégation
+                                                  (un coordinateur ne peut pas créer d'autres coordinateurs). */}
+                                              {(isSuperAdminMode || org.role === 'admin_delegation') && (
+                                                <option value="admin_delegation">Coordinateur de délégation</option>
+                                              )}
                                               {/* admin_antenne se gère via le panneau « Gestionnaires d'antennes »
                                                   (invitation + e-mail). On l'affiche en lecture seule si déjà défini. */}
                                               {org.role === 'admin_antenne' && (
@@ -2316,7 +2333,9 @@ export default function AdminPanel() {
                     )}
                   </div>
 
-                  {/* Category 2: Orphan Accounts waitlist */}
+                  {/* Category 2: Orphan Accounts waitlist (super admin uniquement :
+                      l'adoption de comptes sans délégation est une action nationale). */}
+                  {isSuperAdminMode && (
                   <div className="bg-amber-500/5 border border-amber-200/40 rounded-2xl p-6 shadow-xs space-y-4">
                     <div>
                       <h4 className="text-base font-display font-bold tracking-tight text-amber-900 flex items-center gap-2">
@@ -2462,6 +2481,7 @@ export default function AdminPanel() {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               </div>
             )}
