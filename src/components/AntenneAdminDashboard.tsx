@@ -8,14 +8,11 @@ import {
   updateDoc,
   addDoc,
   deleteDoc,
-  getDocs,
-  orderBy,
 } from 'firebase/firestore';
 import {
   ref as storageRef,
   uploadBytesResumable,
   getDownloadURL,
-  deleteObject,
 } from 'firebase/storage';
 import {
   MapPin,
@@ -39,6 +36,7 @@ import { Bell } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
+import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
@@ -274,16 +272,6 @@ export default function AntenneAdminDashboard() {
     }
   };
 
-  // Lit un fichier en data URL ; rejette si la lecture échoue (sinon la
-  // promesse resterait bloquée et figerait l'envoi).
-  const readAsDataUrl = (f: File) =>
-    new Promise<string>((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result as string);
-      r.onerror = () => reject(r.error || new Error('Lecture du fichier impossible'));
-      r.readAsDataURL(f);
-    });
-
   // --- Dépôt de fichiers dans l'antenne (par le gestionnaire) ---
   const handleUploadFiles = async (selected: File[]) => {
     if (!selected.length || !antenneId) return;
@@ -310,7 +298,7 @@ export default function AntenneAdminDashboard() {
 
         if (localDb.isSandboxActive()) {
           try {
-            const dataUrl = await readAsDataUrl(f);
+            const dataUrl = await readFileAsDataUrl(f);
             localDb.saveFile({
               id: `mock_file_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
               ...meta,
@@ -345,7 +333,7 @@ export default function AntenneAdminDashboard() {
           } catch (err) {
             // Repli base64 si le Storage est indisponible.
             try {
-              const dataUrl = await readAsDataUrl(f);
+              const dataUrl = await readFileAsDataUrl(f);
               await addDoc(collection(db, 'files'), { ...meta, storagePath: 'firestore_fallback', fallbackDataUrl: dataUrl });
               uploaded = true;
             } catch (e) {
@@ -388,25 +376,8 @@ export default function AntenneAdminDashboard() {
   // --- Téléchargement ---
   const handleDownload = async (file: DossierFile) => {
     try {
-      let url = file.fallbackDataUrl || '';
-      // Fichier découpé en fragments Firestore : on réassemble le base64.
-      if (file.storagePath === 'firestore_fallback_chunked') {
-        const snap = await getDocs(query(collection(db, 'files', file.id, 'chunks'), orderBy('index', 'asc')));
-        url = snap.docs.map((d) => d.data().data).join('');
-      } else if ((!url || url === '#') && file.storagePath && file.storagePath !== 'firestore_fallback' && file.storagePath !== 'sandbox') {
-        url = await getDownloadURL(storageRef(storage, file.storagePath));
-      }
-      if (!url || url === '#') {
-        toast('Téléchargement indisponible pour ce fichier.', 'warning');
-        return;
-      }
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const ok = await downloadFile(file);
+      if (!ok) toast('Téléchargement indisponible pour ce fichier.', 'warning');
     } catch (err) {
       console.error('Download failed:', err);
       toast('Échec du téléchargement.', 'error');
@@ -501,18 +472,7 @@ export default function AntenneAdminDashboard() {
       return;
     }
     try {
-      if (file.storagePath === 'firestore_fallback_chunked') {
-        try {
-          const chunks = await getDocs(collection(db, 'files', file.id, 'chunks'));
-          await Promise.all(chunks.docs.map((d) => deleteDoc(d.ref)));
-        } catch (e) { console.error('chunks delete', e); }
-      } else if (file.storagePath && file.storagePath !== 'firestore_fallback' && file.storagePath !== 'sandbox') {
-        try {
-          await deleteObject(storageRef(storage, file.storagePath));
-        } catch (e: any) {
-          if (e?.code !== 'storage/object-not-found') console.error('storage delete', e);
-        }
-      }
+      await deleteFileArtifacts(file);
       await deleteDoc(doc(db, 'files', file.id));
       logIt();
       toast('Fichier supprimé.', 'success');

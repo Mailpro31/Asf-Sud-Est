@@ -8,10 +8,9 @@ import {
   doc,
   deleteDoc,
   addDoc,
-  setDoc,
-  getDocs
+  setDoc
 } from 'firebase/firestore';
-import { ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
+import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { Organization, DossierFile, Folder, SubmissionStatus, AntenneGroup } from '../types';
 import { 
@@ -58,6 +57,7 @@ import AntenneGroupsManager from './AntenneGroupsManager';
 import AntenneAdminsManager from './AntenneAdminsManager';
 import { localDb } from '../lib/localDb';
 import { logAction } from '../lib/auditLog';
+import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
 import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
 import { StatusBadge } from './ui';
@@ -817,30 +817,29 @@ export default function AdminPanel() {
 
     for (const f of selectedFiles) {
       if (localDb.isSandboxActive()) {
-        const reader = new FileReader();
-        await new Promise<void>((resolve) => {
-          reader.onload = () => {
-            const mockFile: DossierFile = {
-              id: `mock_file_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-              orgId: currentFolder?.orgId || 'public',
-              folderId: currentFolderId,
-              delegation_id: delegationFilterId || 'france',
-              antenne_id: activeAntenneId || '',
-              name: f.name,
-              size: f.size,
-              type: f.type || 'application/octet-stream',
-              storagePath: 'sandbox',
-              fallbackDataUrl: reader.result as string,
-              uploadDate: Date.now(),
-              uploadedBy: 'admin',
-              submissionStatus: 'Pending'
-            };
-            localDb.saveFile(mockFile);
-            resolve();
+        try {
+          const dataUrl = await readFileAsDataUrl(f);
+          const mockFile: DossierFile = {
+            id: `mock_file_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            orgId: currentFolder?.orgId || 'public',
+            folderId: currentFolderId,
+            delegation_id: delegationFilterId || 'france',
+            antenne_id: activeAntenneId || '',
+            name: f.name,
+            size: f.size,
+            type: f.type || 'application/octet-stream',
+            storagePath: 'sandbox',
+            fallbackDataUrl: dataUrl,
+            uploadDate: Date.now(),
+            uploadedBy: 'admin',
+            submissionStatus: 'Pending'
           };
-          reader.readAsDataURL(f);
-        });
-        logUpload(f);
+          localDb.saveFile(mockFile);
+          logUpload(f);
+        } catch (e) {
+          console.error('Lecture fichier (sandbox) échec:', e);
+          toast(`Lecture impossible pour ${f.name}.`, 'error');
+        }
         continue;
       }
 
@@ -888,12 +887,8 @@ export default function AdminPanel() {
         console.error("Upload error:", err);
         // Fallback Base64 for sandbox compatibility if Storage blocks
         try {
-          const fallbackUrl = await new Promise<string>((resolveBase64) => {
-            const r = new FileReader();
-            r.onload = () => resolveBase64(r.result as string);
-            r.readAsDataURL(f);
-          });
-          
+          const fallbackUrl = await readFileAsDataUrl(f);
+
           await addDoc(collection(db, 'files'), {
             orgId: currentFolder?.orgId || 'public',
             folderId: currentFolderId,
@@ -1037,20 +1032,7 @@ export default function AdminPanel() {
     }
     try {
       // Nettoyage du stockage associé (chunks Firestore ou objet Storage natif).
-      if (fileToDelete.storagePath === 'firestore_fallback_chunked') {
-        try {
-          const chunksSnap = await getDocs(collection(db, 'files', fileToDelete.id, 'chunks'));
-          await Promise.all(chunksSnap.docs.map(d => deleteDoc(d.ref)));
-        } catch (e) {
-          console.error('Error deleting file chunks:', e);
-        }
-      } else if (fileToDelete.storagePath && fileToDelete.storagePath !== 'firestore_fallback') {
-        try {
-          await deleteObject(ref(storage, fileToDelete.storagePath));
-        } catch (e: any) {
-          if (e?.code !== 'storage/object-not-found') console.error('Storage deletion error:', e);
-        }
-      }
+      await deleteFileArtifacts(fileToDelete);
       await deleteDoc(doc(db, 'files', fileToDelete.id));
       logIt();
       toast('Fichier supprimé.', 'success');

@@ -156,26 +156,34 @@ export function subscribeAuditLogs(
 
   try {
     if (antenneId) {
-      // Filtre par antenne sans `orderBy` (évite un index composite à créer
-      // manuellement) : on trie côté client.
-      const q = query(
-        collection(db, 'audit_logs'),
-        where('antenne_id', '==', antenneId),
-        limit(1000),
-      );
-      return onSnapshot(
-        q,
-        (snap) => {
-          const list: AuditLog[] = [];
-          snap.forEach((d) => list.push({ id: d.id, ...d.data() } as AuditLog));
-          list.sort((a, b) => b.timestamp - a.timestamp);
-          cb(list.slice(0, max));
-        },
+      const coll = collection(db, 'audit_logs');
+      const emit = (snap: any) => {
+        const list: AuditLog[] = [];
+        snap.forEach((d: any) => list.push({ id: d.id, ...d.data() } as AuditLog));
+        list.sort((a, b) => b.timestamp - a.timestamp);
+        cb(list.slice(0, max));
+      };
+      // Requête triée côté serveur (newest-first, bornée à `max`). Si l'index
+      // composite (antenne_id, timestamp desc) n'est pas encore déployé, on
+      // bascule sur une requête sans `orderBy` triée côté client — la vue
+      // fonctionne dans les deux cas.
+      let inner = () => {};
+      inner = onSnapshot(
+        query(coll, where('antenne_id', '==', antenneId), orderBy('timestamp', 'desc'), limit(max)),
+        emit,
         (err) => {
-          console.warn('subscribeAuditLogs (antenne) échec :', err);
-          cb([]);
+          console.warn('subscribeAuditLogs (antenne) : repli sans tri serveur (index manquant ?) :', err);
+          inner = onSnapshot(
+            query(coll, where('antenne_id', '==', antenneId), limit(1000)),
+            emit,
+            (e2) => {
+              console.warn('subscribeAuditLogs (antenne) échec :', e2);
+              cb([]);
+            },
+          );
         },
       );
+      return () => inner();
     }
 
     const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(max));

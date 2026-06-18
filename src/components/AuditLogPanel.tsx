@@ -98,6 +98,13 @@ export default function AuditLogPanel({
   }, [logs, search, category]);
 
   const exportCsv = () => {
+    // Neutralise les retours-ligne (et le risque d'injection de formule Excel)
+    // dans chaque cellule, puis échappe les guillemets.
+    const cell = (v: unknown) => {
+      let s = String(v ?? '').replace(/[\r\n]+/g, ' ');
+      if (/^[=+\-@]/.test(s)) s = "'" + s; // anti CSV-injection
+      return `"${s.replace(/"/g, '""')}"`;
+    };
     const header = ['Date', 'Acteur', 'Rôle', 'Action', 'Cible', 'Détails', 'Antenne'];
     const rows = filtered.map((l) => [
       formatDate(l.timestamp),
@@ -105,12 +112,12 @@ export default function AuditLogPanel({
       ROLE_LABEL[l.actorRole] || l.actorRole || '',
       actionMeta(l.action).label,
       l.targetName || '',
-      (l.details || '').replace(/\n/g, ' '),
+      l.details || '',
       l.antenne_id || '',
     ]);
     const csv = [header, ...rows]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+      .map((r) => r.map(cell).join(','))
+      .join('\r\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

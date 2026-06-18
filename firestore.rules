@@ -147,10 +147,31 @@ service cloud.firestore {
              (!('updatedAt' in data) || data.updatedAt is number);
     }
 
+    // Liste blanche des actions journalisables (anti-pollution du journal).
+    function isKnownAuditAction(a) {
+      return a in [
+        'login', 'logout',
+        'file_upload', 'file_delete', 'file_status_change', 'file_share_toggle', 'file_rename',
+        'folder_create', 'folder_delete',
+        'org_create', 'org_delete', 'org_role_change', 'org_status_change', 'org_assign_antenne', 'org_profile_update',
+        'antenne_create', 'antenne_delete', 'antenne_settings_change'
+      ];
+    }
+
+    // Actions qu'un compte partenaire (rôle organization) peut légitimement
+    // journaliser pour lui-même : il ne peut pas forger des actions d'admin
+    // (changement de rôle, suppression de compte, etc.).
+    function isPartnerAuditAction(a) {
+      return a in ['login', 'logout', 'file_upload', 'file_delete', 'folder_create', 'folder_delete', 'file_rename'];
+    }
+
     function isValidAuditLog(data) {
-      return data.get('actorUid', '') is string && data.get('actorUid', '').size() <= 128 &&
+      return data.keys().hasOnly(['timestamp', 'actorUid', 'actorName', 'actorRole', 'action',
+                                  'targetType', 'targetId', 'targetName', 'delegation_id', 'antenne_id', 'details']) &&
+             data.keys().hasAll(['timestamp', 'actorUid', 'actorName', 'actorRole', 'action']) &&
+             data.get('actorUid', '') is string && data.get('actorUid', '').size() <= 128 &&
              data.get('timestamp', 0) is number &&
-             data.get('action', '') is string && data.get('action', '').size() > 0 && data.get('action', '').size() <= 50 &&
+             data.get('action', '') is string && isKnownAuditAction(data.get('action', '')) &&
              data.get('actorName', '') is string && data.get('actorName', '').size() <= 250 &&
              data.get('actorRole', '') is string && data.get('actorRole', '').size() <= 40 &&
              (data.get('antenne_id', null) == null || (data.get('antenne_id', '') is string && data.get('antenne_id', '').size() <= 128)) &&
@@ -244,8 +265,15 @@ service cloud.firestore {
     //    d'antenne ne voit que les logs de SON antenne.
     //  - logs immuables : ni modification ni suppression.
     match /audit_logs/{logId} {
+      // Un compte ne journalise QUE ses propres actions (actorUid == uid courant),
+      // et un partenaire (organization) est limité aux actions qu'il peut
+      // réellement effectuer (pas de forge d'actions d'administration).
       allow create: if isSignedIn() && isValidAuditLog(incoming()) &&
-                       incoming().get('actorUid', '') == request.auth.uid;
+                       incoming().get('actorUid', '') == request.auth.uid &&
+                       (
+                         !(hasUserDoc() && getUser().get('role', '') == 'organization') ||
+                         isPartnerAuditAction(incoming().get('action', ''))
+                       );
 
       allow get, list: if isSuperAdmin() ||
                           (isSignedIn() && hasUserDoc() &&

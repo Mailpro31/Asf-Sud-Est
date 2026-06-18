@@ -23,8 +23,8 @@ import {
   Settings,
   X
 } from 'lucide-react';
-import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc, getDocs, orderBy } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytesResumable } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -38,6 +38,7 @@ import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
 import { notifyAntenneOnUpload } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
+import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
 import { StatusBadge } from './ui';
 import { getStatusMeta } from '../lib/status';
@@ -627,28 +628,7 @@ export default function Dashboard() {
       return;
     }
     try {
-      if (deletingFile.storagePath === 'firestore_fallback_chunked') {
-        try {
-          const chunksRef = collection(db, 'files', deletingFile.id, 'chunks');
-          const querySnapshot = await getDocs(chunksRef);
-          const deletePromises: Promise<void>[] = [];
-          querySnapshot.forEach((doc) => {
-            deletePromises.push(deleteDoc(doc.ref));
-          });
-          await Promise.all(deletePromises);
-        } catch (chunksErr) {
-          console.error('Error deleting file chunks:', chunksErr);
-        }
-      } else if (deletingFile.storagePath !== 'firestore_fallback') {
-        try {
-          const fileRef = ref(storage, deletingFile.storagePath);
-          await deleteObject(fileRef);
-        } catch (storageErr: any) {
-          if (storageErr.code !== 'storage/object-not-found') {
-            console.error('Storage deletion error:', storageErr);
-          }
-        }
-      }
+      await deleteFileArtifacts(deletingFile);
       await deleteDoc(doc(db, 'files', deletingFile.id));
       logAction('file_delete', { targetType: 'file', targetId: deletingFile.id, targetName: deletingFile.name });
     } catch (error) {
@@ -660,38 +640,8 @@ export default function Dashboard() {
 
   const handleDownloadFile = async (file: DossierFile) => {
     try {
-      if (file.storagePath === 'firestore_fallback' && file.fallbackDataUrl) {
-        const link = document.createElement('a');
-        link.href = file.fallbackDataUrl;
-        link.download = file.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return;
-      }
-      if (file.storagePath === 'firestore_fallback_chunked') {
-        const chunksRef = collection(db, 'files', file.id, 'chunks');
-        const q = query(chunksRef, orderBy('index', 'asc'));
-        const querySnapshot = await getDocs(q);
-        
-        const chunksData: string[] = [];
-        querySnapshot.forEach((doc) => {
-          chunksData.push(doc.data().data);
-        });
-        
-        const fullBase64 = chunksData.join('');
-        
-        const link = document.createElement('a');
-        link.href = fullBase64;
-        link.download = file.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return;
-      }
-      const fileRef = ref(storage, file.storagePath);
-      const url = await getDownloadURL(fileRef);
-      window.open(url, '_blank');
+      const ok = await downloadFile(file);
+      if (!ok) toast('Téléchargement indisponible pour ce fichier.', 'warning');
     } catch (error) {
       console.error('Failed to get download URL', error);
       toast('Échec du téléchargement du fichier. Il se peut qu\'il ait été supprimé ou que les règles de stockage n\'autorisent pas l\'accès.', 'error');
