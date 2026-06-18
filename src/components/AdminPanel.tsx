@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  collection, 
-  query, 
-  onSnapshot, 
-  updateDoc, 
-  doc, 
-  deleteDoc, 
-  addDoc, 
-  setDoc
+import {
+  collection,
+  query,
+  onSnapshot,
+  updateDoc,
+  doc,
+  deleteDoc,
+  addDoc,
+  setDoc,
+  getDocs
 } from 'firebase/firestore';
-import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { Organization, DossierFile, Folder, SubmissionStatus, AntenneGroup } from '../types';
 import { 
@@ -957,10 +958,27 @@ export default function AdminPanel() {
       return;
     }
     try {
+      // Nettoyage du stockage associé (chunks Firestore ou objet Storage natif).
+      if (fileToDelete.storagePath === 'firestore_fallback_chunked') {
+        try {
+          const chunksSnap = await getDocs(collection(db, 'files', fileToDelete.id, 'chunks'));
+          await Promise.all(chunksSnap.docs.map(d => deleteDoc(d.ref)));
+        } catch (e) {
+          console.error('Error deleting file chunks:', e);
+        }
+      } else if (fileToDelete.storagePath && fileToDelete.storagePath !== 'firestore_fallback') {
+        try {
+          await deleteObject(ref(storage, fileToDelete.storagePath));
+        } catch (e: any) {
+          if (e?.code !== 'storage/object-not-found') console.error('Storage deletion error:', e);
+        }
+      }
       await deleteDoc(doc(db, 'files', fileToDelete.id));
+      toast('Fichier supprimé.', 'success');
       setFileToDelete(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting document:", err);
+      toast("Échec de la suppression : " + (err?.message || 'erreur'), 'error');
     }
   };
 

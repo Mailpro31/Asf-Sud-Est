@@ -19,7 +19,8 @@ import {
   Save
 } from 'lucide-react';
 import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../lib/firebase';
 import { DossierFile } from '../types';
 import { StatusBadge } from './ui';
 import { STATUS_META, STATUS_ORDER } from '../lib/status';
@@ -225,6 +226,21 @@ export default function FilePreviewModal({
           if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.json') || file.name.endsWith('.csv') || file.name.endsWith('.md')) {
             const text = decodeBase64Text(fullBase64);
             setTextContent(text);
+          }
+        } else if (file.storagePath && file.storagePath !== 'firestore_fallback') {
+          // Fichier stocké nativement dans Firebase Storage : on récupère une URL
+          // de téléchargement consultable (image/PDF/vidéo/audio en aperçu direct).
+          try {
+            rawDataUrl = await getDownloadURL(ref(storage, file.storagePath));
+            if (file.type.startsWith('text/') || /\.(txt|json|csv|md)$/i.test(file.name)) {
+              try {
+                const resp = await fetch(rawDataUrl);
+                setTextContent(await resp.text());
+              } catch { /* aperçu texte indisponible */ }
+            }
+          } catch (e) {
+            console.warn('getDownloadURL a échoué, repli sur la donnée locale :', e);
+            rawDataUrl = file.fallbackDataUrl || null;
           }
         } else {
           rawDataUrl = file.fallbackDataUrl || null;
