@@ -87,7 +87,10 @@ export default function Dashboard() {
     }
     let finalFiles = combinedFiles.filter(f => {
       if (f.uploadedBy === 'admin') {
-        return f.submissionStatus === 'Validated' && (f as any).sharedWithPartner !== false;
+        // Un fichier déposé par un coordinateur est visible par le partenaire
+        // sauf s'il a été explicitement marqué « Privé Coordinateur ».
+        // Le statut de validation (En attente / Validé) ne masque pas le fichier.
+        return (f as any).sharedWithPartner !== false;
       }
       return true;
     });
@@ -146,7 +149,10 @@ export default function Dashboard() {
       
       let finalFiles = combined.filter(f => {
         if (f.uploadedBy === 'admin') {
-          return f.submissionStatus === 'Validated' && (f as any).sharedWithPartner !== false;
+          // Un fichier déposé par un coordinateur est visible par le partenaire
+          // sauf s'il a été explicitement marqué « Privé Coordinateur ».
+          // Le statut de validation (En attente / Validé) ne masque pas le fichier.
+          return (f as any).sharedWithPartner !== false;
         }
         return true;
       });
