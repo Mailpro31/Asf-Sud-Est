@@ -98,7 +98,7 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
         toast(
           sent
             ? `Invitation envoyée par e-mail à ${cleanEmail}.`
-            : `Invitation créée pour ${cleanEmail}. (E-mail non envoyé : extension absente — utilisez « Copier ».)`,
+            : `Invitation créée pour ${cleanEmail}. (E-mail non envoyé : envoi non configuré — utilisez « Copier ».)`,
           sent ? 'success' : 'warning',
         );
       }

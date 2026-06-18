@@ -190,28 +190,44 @@ instructions DNS. Pensez ensuite à ajouter ce domaine dans
 
 ## 12. E-mails d'invitation des gestionnaires d'antennes
 
-L'attribution d'une antenne à un e-mail (panneau super admin) peut **envoyer
-automatiquement un e-mail** d'invitation. L'application écrit le message dans la
-collection Firestore **`mail`** ; l'envoi est assuré par l'extension Firebase
-**« Trigger Email from Firestore »**.
+L'attribution d'une antenne à un e-mail (panneau super admin) **envoie
+automatiquement un e-mail** d'invitation. L'envoi se fait via **EmailJS**
+(envoi direct depuis le navigateur, **sans backend ni extension Firebase**).
 
-**Installation (une fois) :**
+### Méthode recommandée : EmailJS
 
-1. Console Firebase → **Extensions** → installer **« Trigger Email from
-   Firestore »** (`firebase/firestore-send-email`).
-2. Paramètres de l'extension :
-   - **Email documents collection** : `mail`
-   - **SMTP connection URI** : l'URI de votre fournisseur, par ex.
-     - SendGrid : `smtps://apikey:VOTRE_CLE_API@smtp.sendgrid.net:465`
-     - Gmail (app password) : `smtps://votre.adresse@gmail.com:MOT_DE_PASSE_APP@smtp.gmail.com:465`
-   - **Default FROM address** : l'adresse expéditrice (ex. `no-reply@votre-domaine.org`).
-3. Déployer les règles : `firebase deploy --only firestore:rules` (la collection
-   `mail` n'est inscriptible que par le super admin).
+**Installation (une fois, ~5 min) :**
 
-> Tant que l'extension n'est pas installée, les invitations sont quand même
-> enregistrées et le bouton **« Copier l'invitation »** permet de l'envoyer
-> manuellement. L'accès s'active à la première connexion de la personne avec
-> l'e-mail invité.
+1. Créer un compte gratuit sur **https://www.emailjs.com** (200 e-mails/mois).
+2. **Email Services** → **Add New Service** → choisir **Gmail** → connecter votre
+   compte (`mailprosasha2@gmail.com`). Noter le **Service ID** (`service_xxxxx`).
+3. **Email Templates** → **Create New Template**. Dans le template :
+   - **To Email** : `{{to_email}}`
+   - **From Name** : `{{from_name}}`
+   - **Subject** : `{{subject}}`
+   - **Content** : passer l'éditeur en mode HTML (`<>`) et mettre `{{{message_html}}}`
+     (triple accolades = HTML non échappé). En repli texte : `{{message}}`.
+   - Sauvegarder et noter le **Template ID** (`template_xxxxx`).
+4. **Account** → **General** → copier la **Public Key**.
+5. Renseigner ces 3 valeurs dans les variables d'environnement (Vercel →
+   *Project Settings → Environment Variables*, puis redéployer) :
+   - `VITE_EMAILJS_SERVICE_ID`
+   - `VITE_EMAILJS_TEMPLATE_ID`
+   - `VITE_EMAILJS_PUBLIC_KEY`
+6. (Sécurité, conseillé) Dans EmailJS → **Account → Security**, restreindre aux
+   domaines autorisés (votre URL Vercel).
+
+> La **Public Key** EmailJS est faite pour être exposée côté client : c'est sans
+> danger. La restriction par domaine empêche son usage ailleurs.
+
+### Repli sans EmailJS
+
+Si les variables `VITE_EMAILJS_*` ne sont pas définies, l'application retombe sur
+l'écriture dans la collection Firestore **`mail`** (extension Firebase
+**« Trigger Email from Firestore »**) — uniquement si cette extension est
+installée. Dans tous les cas, le bouton **« Copier l'invitation »** permet
+d'envoyer le message manuellement. L'accès s'active à la première connexion de la
+personne avec l'e-mail invité.
 
 ---
 
