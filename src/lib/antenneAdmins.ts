@@ -8,8 +8,10 @@ import {
   onSnapshot,
   addDoc,
 } from 'firebase/firestore';
+import emailjs from '@emailjs/browser';
 import { db } from './firebase';
 import { localDb } from './localDb';
+import { emailjsConfig, emailjsConfigured } from './emailConfig';
 import { AntenneInvite, Organization } from '../types';
 
 /**
@@ -139,13 +141,18 @@ export function subscribeInvites(cb: (list: AntenneInvite[]) => void): () => voi
   }
 }
 
-// --- Envoi d'e-mail (extension Firebase "Trigger Email from Firestore") ---
+// --- Envoi d'e-mail ---
 
 /**
- * Met un e-mail en file d'envoi en écrivant un document dans la collection
- * `mail`, traitée par l'extension Firebase « Trigger Email ». Sans extension
- * installée, le document reste simplement non traité (échec silencieux). En
- * mode sandbox, on ne fait rien (pas de backend).
+ * Envoie un e-mail. Deux mécanismes, par ordre de priorité :
+ *
+ *   1. EmailJS (recommandé) — envoi direct depuis le navigateur, sans backend
+ *      ni extension. Actif dès que `VITE_EMAILJS_*` est configuré.
+ *   2. Repli historique : écriture dans la collection Firestore `mail`, traitée
+ *      par l'extension Firebase « Trigger Email » si elle est installée.
+ *
+ * Renvoie `true` uniquement si l'e-mail a réellement été envoyé (ou mis en file
+ * pour l'extension). En mode sandbox, on ne fait rien (pas de backend).
  */
 export async function queueEmail(
   to: string,
@@ -154,6 +161,30 @@ export async function queueEmail(
   html: string,
 ): Promise<boolean> {
   if (localDb.isSandboxActive()) return false;
+
+  // 1) EmailJS : envoi direct côté client, sans backend.
+  if (emailjsConfigured) {
+    try {
+      await emailjs.send(
+        emailjsConfig.serviceId,
+        emailjsConfig.templateId,
+        {
+          to_email: to,
+          subject,
+          message: text,
+          message_html: html,
+          from_name: 'ASF Sud-Est',
+        },
+        { publicKey: emailjsConfig.publicKey },
+      );
+      return true;
+    } catch (err) {
+      console.warn('Envoi EmailJS échoué :', err);
+      return false;
+    }
+  }
+
+  // 2) Repli : collection `mail` + extension Firebase « Trigger Email ».
   try {
     await addDoc(collection(db, 'mail'), {
       to: [to],
@@ -161,7 +192,7 @@ export async function queueEmail(
     });
     return true;
   } catch (err) {
-    console.warn('queueEmail failed (extension Trigger Email non installée ?):', err);
+    console.warn('queueEmail échoué (ni EmailJS configuré ni extension Trigger Email) :', err);
     return false;
   }
 }
