@@ -227,6 +227,9 @@ service cloud.firestore {
                     (isOwner(orgId) && incoming().get('role', '') == 'admin_antenne' && hasMatchingInvite(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'delegation_id', 'antenne_id', 'updatedAt'])) ||
                     (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt']))
                   );
+
+      // Suppression d'un compte partenaire : réservée au super admin.
+      allow delete: if isSuperAdmin();
     }
 
     // 4. Folders

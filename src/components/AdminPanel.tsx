@@ -62,6 +62,17 @@ import { StatusBadge } from './ui';
 import { STATUS_META } from '../lib/status';
 import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
 
+// Libellé + style de badge pour chaque rôle de compte.
+const ROLE_META: Record<string, { label: string; className: string; icon: string }> = {
+  super_admin: { label: 'Super administrateur', icon: '👑', className: 'bg-violet-50 text-violet-700 border-violet-200' },
+  admin: { label: 'Administrateur', icon: '🛡️', className: 'bg-violet-50 text-violet-700 border-violet-200' },
+  admin_delegation: { label: 'Coordinateur de délégation', icon: '⛵', className: 'bg-azur-light text-azur-dark border-azur-pastel' },
+  admin_antenne: { label: "Gestionnaire d'antenne", icon: '📍', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  organization: { label: 'Partenaire / Organisme', icon: '🏢', className: 'bg-slate-100 text-slate-600 border-slate-200' },
+};
+
+const roleMeta = (role?: string) => ROLE_META[role || 'organization'] || ROLE_META.organization;
+
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
   gradientClass: string;
@@ -562,6 +573,27 @@ export default function AdminPanel() {
       });
     } catch (err) {
       console.error("Error updating user role:", err);
+    }
+  };
+
+  const handleDeleteOrg = async (org: Organization) => {
+    const label = org.name || org.contactName || org.email || org.id;
+    const ok = await confirm(
+      `Supprimer définitivement le compte « ${label} » ?\n\nCette action est irréversible. Le profil partenaire sera retiré ; ses fichiers déjà déposés ne seront pas effacés.`,
+    );
+    if (!ok) return;
+    if (localDb.isSandboxActive()) {
+      localDb.deleteOrganization(org.id);
+      setOrgProfiles(localDb.getOrganizations());
+      toast(`Compte « ${label} » supprimé.`, 'success');
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, 'organizations', org.id));
+      toast(`Compte « ${label} » supprimé.`, 'success');
+    } catch (err: any) {
+      console.error("Error deleting organization:", err);
+      toast("Échec de la suppression : " + (err?.message || 'erreur inconnue'), 'error');
     }
   };
 
@@ -1892,6 +1924,7 @@ export default function AdminPanel() {
                             <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50/80 text-slate-500">
                               <th className="px-5 py-3">Raison sociale / Organisme</th>
                               <th className="px-5 py-3">Point de contact</th>
+                              <th className="px-5 py-3 w-44">Rôle</th>
                               <th className="px-5 py-3 w-64">Attribution régionale</th>
                               <th className="px-5 py-3 w-40">Statut d'accès</th>
                               <th className="px-5 py-3 text-right">Décision d'accréditation</th>
@@ -1920,6 +1953,21 @@ export default function AdminPanel() {
                                     <p className="font-bold text-slate-800">{org.contactName}</p>
                                     <p className="text-[11px] text-azur font-semibold">{org.email}</p>
                                     <p className="text-[11.5px] text-slate-500 font-mono">{org.phone}</p>
+                                  </td>
+
+                                  <td className="px-5 py-4">
+                                    {(() => {
+                                      const rm = roleMeta(org.role);
+                                      return (
+                                        <span
+                                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10.5px] font-bold leading-tight ${rm.className}`}
+                                          title={`Rôle du compte : ${rm.label}`}
+                                        >
+                                          <span>{rm.icon}</span>
+                                          <span>{rm.label}</span>
+                                        </span>
+                                      );
+                                    })()}
                                   </td>
 
                                   <td className="px-5 py-4">
@@ -2048,6 +2096,16 @@ export default function AdminPanel() {
                                           className="bg-azur-light hover:bg-azur/10 text-deep font-bold border border-azur-pastel text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all"
                                         >
                                           Mettre en examen
+                                        </button>
+                                      )}
+
+                                      {isSuperAdminMode && (
+                                        <button
+                                          onClick={() => handleDeleteOrg(org)}
+                                          className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all shadow-xs inline-flex items-center gap-1"
+                                          title="Supprimer définitivement ce compte"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" /> Supprimer
                                         </button>
                                       )}
                                     </div>
