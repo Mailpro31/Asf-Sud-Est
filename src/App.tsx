@@ -90,10 +90,13 @@ function MainApp() {
         </div>
       );
     }
-    if (organization.role === 'super_admin' || organization.role === 'admin' || organization.role === 'admin_delegation') {
+    // Seuls le super admin et l'admin national accèdent au grand panneau national.
+    if (organization.role === 'super_admin' || organization.role === 'admin') {
       return <AdminPanel />;
     }
-    if (organization.role === 'admin_antenne') {
+    // Un coordinateur de délégation OU un gestionnaire d'antenne est strictement
+    // cantonné à son antenne : interface simplifiée, jamais le panneau super admin.
+    if (organization.role === 'admin_antenne' || organization.role === 'admin_delegation') {
       return <AntenneAdminDashboard />;
     }
     return <Dashboard />;
