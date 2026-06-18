@@ -394,8 +394,9 @@ service cloud.firestore {
                    );
 
       allow create: if isSignedIn() && isValidFile(incoming()) && (
-                      // Le propriétaire peut déposer SAUF si son compte est suspendu (Incomplete).
-                      (incoming().get('orgId', '') == request.auth.uid && hasUserDoc() && getUser().get('submissionStatus', '') != 'Incomplete') ||
+                      // Le propriétaire ne peut déposer QUE si son compte est validé
+                      // (un nouveau compte « En attente » ou suspendu ne peut pas déposer).
+                      (incoming().get('orgId', '') == request.auth.uid && hasUserDoc() && getUser().get('submissionStatus', '') == 'Validated') ||
                       isSuperAdmin() ||
                       isAdminAntenneOf(incoming().get('delegation_id', ''), incoming().get('antenne_id', '')) ||
                       (hasUserDoc() && (

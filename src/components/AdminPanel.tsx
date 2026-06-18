@@ -2287,15 +2287,6 @@ export default function AdminPanel() {
                                         </button>
                                       )}
 
-                                      {org.submissionStatus === 'Pending' && (
-                                        <button
-                                          onClick={() => handleUpdateOrgStatus(org.id, 'Under review')}
-                                          className="bg-azur-light hover:bg-azur/10 text-deep font-bold border border-azur-pastel text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all"
-                                        >
-                                          Mettre en examen
-                                        </button>
-                                      )}
-
                                       {isSuperAdminMode && (
                                         <button
                                           onClick={() => handleDeleteOrg(org)}
