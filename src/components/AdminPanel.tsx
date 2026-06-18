@@ -151,16 +151,22 @@ export default function AdminPanel() {
   const { toast, confirm } = useFeedback();
 
   // Active Simulated Role State (For easy local testing of Admin roles)
+  // Seul le super_admin (et l'admin national) accède au mode national. Un
+  // coordinateur de délégation (admin_delegation) est cantonné à sa délégation.
   const [simulationRole, setSimulationRole] = useState<'super_admin' | 'admin'>(() => {
-    if (organization?.role === 'admin') {
+    if (organization?.role === 'admin' || organization?.role === 'admin_delegation') {
       return 'admin';
     }
     return 'super_admin';
   });
 
   const isSuperAdminMode = simulationRole === 'super_admin';
-  
-  const [activeDelegationId, setActiveDelegationId] = useState<string | null>('france');
+
+  const [activeDelegationId, setActiveDelegationId] = useState<string | null>(
+    (organization?.role === 'admin_delegation' || organization?.role === 'admin') && organization?.delegation_id
+      ? organization.delegation_id
+      : 'france',
+  );
   const delegationFilterId = activeDelegationId ?? 'france';
   const [tempCoords, setTempCoords] = useState<{ x: number; y: number } | null>(null);
 
@@ -175,6 +181,10 @@ export default function AdminPanel() {
     if (organization?.role === 'admin' && organization?.antenne_id) {
       setSimulationRole('admin');
       setActiveAntenneId(organization.antenne_id);
+    } else if (organization?.role === 'admin_delegation') {
+      // Coordinateur de délégation : mode scoped, cantonné à sa délégation.
+      setSimulationRole('admin');
+      if (organization?.delegation_id) setActiveDelegationId(organization.delegation_id);
     }
   }, [organization]);
 
@@ -1074,11 +1084,13 @@ export default function AdminPanel() {
           <LogoASF className="w-10 h-10 shrink-0" variant="color" />
           <div>
             <h1 className="text-md font-bold text-deep dark:text-white leading-tight font-display flex items-center gap-1.5">
-              <span>Portail de Coordination Nationale</span>
-              <span className="text-[10px] bg-azur-light text-azur border border-azur/15 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">Admin</span>
+              <span>{isSuperAdminMode ? 'Portail de Coordination Nationale' : 'Portail de Coordination Régionale'}</span>
+              <span className="text-[10px] bg-azur-light text-azur border border-azur/15 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">{isSuperAdminMode ? 'Admin' : 'Coordinateur'}</span>
             </h1>
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400">
-              Aviation Sans Frontières France — Pilotage des délégations et autorisations de vol.
+              {isSuperAdminMode
+                ? 'Aviation Sans Frontières France — Pilotage des délégations et autorisations de vol.'
+                : `Aviation Sans Frontières — Coordination de ${selectedDelegationData?.name || 'votre délégation'}.`}
             </p>
           </div>
         </div>
@@ -1113,7 +1125,7 @@ export default function AdminPanel() {
           <div className="max-w-5xl mx-auto space-y-8 py-6">
             {/* Welcome header */}
             <div className="space-y-1.5">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-azur font-bold">Cabinet de pilotage national</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-azur font-bold">{isSuperAdminMode ? 'Cabinet de pilotage national' : 'Cabinet de coordination régionale'}</p>
               <h2 className="text-2xl sm:text-3xl font-black font-display text-deep dark:text-white tracking-tight">
                 Bonjour {organization?.contactName?.split(' ')[0] || 'Administrateur'} 👋
               </h2>
@@ -1224,7 +1236,8 @@ export default function AdminPanel() {
                 </div>
               </button>
 
-              {/* Card 3: Implantations / Stations */}
+              {/* Card 3: Implantations / Stations (super admin only) */}
+              {isSuperAdminMode && (
               <button
                 onClick={() => {
                   setNavigationView('implantations');
@@ -1253,6 +1266,7 @@ export default function AdminPanel() {
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </button>
+              )}
 
             </div>
 
