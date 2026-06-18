@@ -21,7 +21,9 @@ import {
   Eye,
   ChevronDown,
 } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { db } from '../lib/firebase';
+import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
@@ -66,6 +68,43 @@ export default function AntenneAdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<'all' | SubmissionStatus>('all');
   const [previewFile, setPreviewFile] = useState<DossierFile | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // Réglages de notification e-mail de l'antenne.
+  const [notifyEnabled, setNotifyEnabled] = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState('');
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  useEffect(() => {
+    if (!antenneId) return;
+    const unsub = subscribeAntenneSettings(antenneId, (s) => {
+      setNotifyEnabled(s.notifyEnabled);
+      setNotifyEmail(s.notifyEmail);
+    });
+    return unsub;
+  }, [antenneId]);
+
+  const handleSaveSettings = async () => {
+    const email = notifyEmail.trim();
+    if (notifyEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast('Veuillez saisir une adresse e-mail valide.', 'warning');
+      return;
+    }
+    setSavingSettings(true);
+    try {
+      await saveAntenneSettings(antenneId, { notifyEnabled, notifyEmail: email });
+      toast(
+        notifyEnabled
+          ? `Notifications activées vers ${email}.`
+          : 'Notifications désactivées.',
+        'success',
+      );
+    } catch (err: any) {
+      console.error('Save antenne settings failed:', err);
+      toast("Échec de l'enregistrement des réglages : " + (err?.message || 'erreur'), 'error');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   // --- Chargement des données scoupées à l'antenne ---
   useEffect(() => {
@@ -274,6 +313,54 @@ export default function AntenneAdminDashboard() {
             </div>
           ))}
         </div>
+
+        {/* Réglages : notification e-mail à chaque dépôt */}
+        <section className="card-asf p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+              <Bell className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-display text-deep font-bold tracking-tight">Notifications par e-mail</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Recevez un e-mail à chaque nouveau dossier ou fichier déposé par un partenaire de votre antenne.
+              </p>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={notifyEnabled}
+              onChange={(e) => setNotifyEnabled(e.target.checked)}
+              className="w-4 h-4 accent-azur cursor-pointer"
+            />
+            <span className="text-sm font-semibold text-deep">Activer les notifications de dépôt</span>
+          </label>
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <div className="flex-1">
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
+                Adresse e-mail de notification
+              </label>
+              <input
+                type="email"
+                value={notifyEmail}
+                onChange={(e) => setNotifyEmail(e.target.value)}
+                placeholder="prenom.nom@exemple.org"
+                disabled={!notifyEnabled}
+                className="input-asf text-sm w-full disabled:opacity-50"
+              />
+            </div>
+            <button
+              onClick={handleSaveSettings}
+              disabled={savingSettings}
+              className="btn-primary text-sm whitespace-nowrap disabled:opacity-60"
+            >
+              {savingSettings ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+          </div>
+        </section>
 
         {/* Organismes */}
         <section className="space-y-3">

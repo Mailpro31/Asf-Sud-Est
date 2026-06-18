@@ -141,6 +141,12 @@ service cloud.firestore {
              (!('createdAt' in data) || data.createdAt is number);
     }
 
+    function isValidAntenneSettings(data) {
+      return (!('notifyEmail' in data) || data.notifyEmail == null || (data.notifyEmail is string && data.notifyEmail.size() <= 150)) &&
+             (!('notifyEnabled' in data) || data.notifyEnabled is bool) &&
+             (!('updatedAt' in data) || data.updatedAt is number);
+    }
+
     function isValidMail(data) {
       return data.get('to', []) is list && data.get('to', []).size() > 0 && data.get('to', []).size() <= 50 &&
              data.get('message', {}) is map &&
@@ -190,6 +196,21 @@ service cloud.firestore {
                      request.auth.token.email != null && request.auth.token.email.lower() == inviteId);
       allow list: if isSuperAdmin();
       allow create, update: if isSuperAdmin() && isValidInvite(incoming());
+      allow delete: if isSuperAdmin();
+    }
+
+    // 2c-bis. Réglages par antenne (notifications e-mail). Lisible par tout
+    // utilisateur connecté (les partenaires lisent pour savoir où notifier),
+    // modifiable par le super admin, le gestionnaire de l'antenne, ou un
+    // coordinateur de la délégation.
+    match /antenne_settings/{antenneId} {
+      allow get: if isSignedIn();
+      allow list: if isSuperAdmin();
+      allow create, update: if isValidAntenneSettings(incoming()) && (
+                              isSuperAdmin() ||
+                              (hasUserDoc() && getUser().get('role', '') == 'admin_antenne' && getUser().get('antenne_id', '') == antenneId) ||
+                              (hasUserDoc() && getUser().get('role', '') == 'admin_delegation')
+                            );
       allow delete: if isSuperAdmin();
     }
 

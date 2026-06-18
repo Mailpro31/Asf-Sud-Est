@@ -36,6 +36,7 @@ import CreateFolderModal from './CreateFolderModal';
 import UserProfileModal from './UserProfileModal';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
+import { notifyAntenneOnUpload } from '../lib/antenneSettings';
 import { firebaseConfig } from '../lib/firebaseConfig';
 import { StatusBadge } from './ui';
 import { getStatusMeta } from '../lib/status';
@@ -362,6 +363,13 @@ export default function Dashboard() {
       refreshLocalState();
       if (count > 0) {
         toast(`${count} fichier(s) enregistré(s) ✓`, 'success');
+        const antName = (antennes[organization?.delegation_id || ''] || []).find(a => a.id === organization?.antenne_id)?.name;
+        notifyAntenneOnUpload(
+          organization?.antenne_id,
+          'file',
+          count > 1 ? `${count} fichiers` : acceptedFiles[0]?.name || 'fichier',
+          { partnerName: organization?.name, antenneName: antName },
+        );
       }
       return;
     }
@@ -491,7 +499,19 @@ export default function Dashboard() {
         toast("L'envoi du fichier a échoué. Réessayez ou vérifiez votre connexion.", 'error');
       }
     }
-  }, [user, currentFolderId, organization, refreshLocalState]);
+
+    // Notifie le gestionnaire de l'antenne (si activé) du nouveau dépôt.
+    const okCount = acceptedFiles.length;
+    if (okCount > 0) {
+      const antName = (antennes[organization?.delegation_id || ''] || []).find(a => a.id === organization?.antenne_id)?.name;
+      notifyAntenneOnUpload(
+        organization?.antenne_id,
+        'file',
+        okCount > 1 ? `${okCount} fichiers` : acceptedFiles[0]?.name || 'fichier',
+        { partnerName: organization?.name, antenneName: antName },
+      );
+    }
+  }, [user, currentFolderId, organization, refreshLocalState, antennes]);
 
   const [isDragActive, setIsDragActive] = useState(false);
 
@@ -542,6 +562,7 @@ export default function Dashboard() {
         antenne_id: organization?.antenne_id || ''
       });
       refreshLocalState();
+      notifyFolderCreated(name.trim());
       return;
     }
     await addDoc(collection(db, 'folders'), {
@@ -552,6 +573,17 @@ export default function Dashboard() {
       delegation_id: organization?.delegation_id || '',
       antenne_id: organization?.antenne_id || ''
     });
+    notifyFolderCreated(name.trim());
+  };
+
+  const notifyFolderCreated = (folderName: string) => {
+    const antName = (antennes[organization?.delegation_id || ''] || []).find(a => a.id === organization?.antenne_id)?.name;
+    notifyAntenneOnUpload(
+      organization?.antenne_id,
+      'folder',
+      folderName,
+      { partnerName: organization?.name, antenneName: antName },
+    );
   };
 
   const handleRenameSubmit = async (e: React.FormEvent) => {
