@@ -73,6 +73,10 @@ const ROLE_META: Record<string, { label: string; className: string; icon: string
 
 const roleMeta = (role?: string) => ROLE_META[role || 'organization'] || ROLE_META.organization;
 
+// Pseudo-dossier regroupant les fichiers d'une antenne déposés hors dossier
+// (uploadés par un partenaire directement à la racine de son espace).
+const UNFILED_FOLDER_ID = '__unfiled__';
+
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
   gradientClass: string;
@@ -997,7 +1001,13 @@ export default function AdminPanel() {
   });
 
   const filteredFiles = files.filter(f => {
-    if (f.folderId !== currentFolderId) return false;
+    if (currentFolderId === UNFILED_FOLDER_ID) {
+      // Fichiers de l'antenne courante non rangés dans un dossier.
+      if (f.folderId) return false;
+      if (f.antenne_id !== activeAntenneId) return false;
+    } else if (f.folderId !== currentFolderId) {
+      return false;
+    }
     const matchesSearch = f.name.toLowerCase().includes(searchQuery.toLowerCase());
     
     let matchesType = true;
@@ -1018,7 +1028,15 @@ export default function AdminPanel() {
     ? ANTENNES_BY_DELEGATION[delegationFilterId || ''].find(a => a.id === activeAntenneId)
     : null;
 
-  const currentFolder = folders.find(fd => fd.id === currentFolderId);
+  // Fichiers de l'antenne active déposés hors dossier (par un partenaire).
+  const unfiledFiles = activeAntenneId
+    ? files.filter(f => !f.folderId && f.antenne_id === activeAntenneId)
+    : [];
+
+  const currentFolder =
+    currentFolderId === UNFILED_FOLDER_ID
+      ? ({ id: UNFILED_FOLDER_ID, name: 'Documents non classés', orgId: 'public' } as any)
+      : folders.find(fd => fd.id === currentFolderId);
 
   // Compteurs d'éléments en attente de validation, affichés en badge sur les cards du hub.
   const pendingFilesCount = files.filter(f => f.submissionStatus === 'Pending').length;
@@ -1532,7 +1550,7 @@ export default function AdminPanel() {
                           />
                         </div>
 
-                        {filteredFolders.length === 0 ? (
+                        {filteredFolders.length === 0 && unfiledFiles.length === 0 ? (
                           <div className="border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-3xs">
                             <FolderIcon className="w-12 h-12 text-slate-300 bg-slate-50 dark:bg-slate-800 p-3 rounded-full" />
                             <div>
@@ -1550,6 +1568,40 @@ export default function AdminPanel() {
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {unfiledFiles.length > 0 && (
+                              (() => {
+                                const pendingUnfiled = unfiledFiles.filter(f => f.submissionStatus === 'Pending' || !f.submissionStatus).length;
+                                return (
+                                  <div
+                                    onClick={() => { setCurrentFolderId(UNFILED_FOLDER_ID); setSearchQuery(''); }}
+                                    className={`bg-amber-50/60 dark:bg-amber-950/15 border border-amber-200/70 dark:border-amber-900/40 rounded-3xl p-5 shadow-3xs cursor-pointer group flex flex-col justify-between h-44 transition-all duration-300 relative hover:border-amber-400`}
+                                    title="Fichiers déposés par les partenaires sans dossier"
+                                  >
+                                    <div className="flex justify-between items-start">
+                                      <div className="w-11 h-11 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/60 dark:border-amber-900/40 shadow-3xs">
+                                        <AlertCircle className="w-5.5 h-5.5" />
+                                      </div>
+                                    </div>
+                                    <div className="mt-4">
+                                      <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200 truncate">
+                                        Documents non classés
+                                      </h4>
+                                      <p className="text-[10.5px] text-amber-700/70 dark:text-amber-400/70 mt-1 font-mono">
+                                        Déposés par des partenaires hors dossier
+                                      </p>
+                                    </div>
+                                    <div className="border-t border-amber-200/60 dark:border-amber-900/40 pt-3.5 mt-3.5 flex justify-between items-center w-full text-[11px]">
+                                      <span className="font-semibold text-amber-700/80 dark:text-amber-400/80">📄 {unfiledFiles.length} document{unfiledFiles.length !== 1 ? 's' : ''}</span>
+                                      {pendingUnfiled > 0 && (
+                                        <span className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-900/35 font-black px-2.5 py-0.5 rounded-lg font-mono">
+                                          🕒 {pendingUnfiled} attente
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()
+                            )}
                             {filteredFolders.map((folder) => {
                               const folderDocs = files.filter(f => f.folderId === folder.id);
                               const pendingDocs = folderDocs.filter(f => f.submissionStatus === 'Pending' || !f.submissionStatus).length;
