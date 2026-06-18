@@ -15,16 +15,13 @@ service firebase.storage {
       );
     }
 
-    // Contraintes communes aux fichiers déposés.
+    // Contraintes communes aux fichiers déposés : on autorise tous les types de
+    // documents/médias courants (PDF, images, bureautique, archives, audio,
+    // vidéo, texte…), avec une limite de taille raisonnable. Le portail étant
+    // réservé aux comptes authentifiés, on n'impose pas de liste blanche stricte
+    // de types MIME (qui bloquait par ex. .xlsx et .zip).
     function isAllowedFile() {
-      return request.resource.size <= 10 * 1024 * 1024 &&
-        request.resource.contentType in [
-          'application/pdf',
-          'image/jpeg',
-          'image/png',
-          'application/msword',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ];
+      return request.resource.size <= 50 * 1024 * 1024;
     }
 
     // Espace privé des organisations : accès au propriétaire ou aux admins.
