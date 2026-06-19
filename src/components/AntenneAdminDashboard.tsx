@@ -1343,6 +1343,26 @@ export default function AntenneAdminDashboard() {
               </div>
             </div>
 
+            {/* Infos complètes du compte */}
+            <div className="px-5 py-3 border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Contact</p>
+                <p className="font-semibold text-slate-700 truncate">{selectedOrg.contactName || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Téléphone</p>
+                <p className="font-semibold text-slate-700 truncate">{selectedOrg.phone || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Créé le</p>
+                <p className="font-semibold text-slate-700">{selectedOrg.createdAt ? new Date(selectedOrg.createdAt).toLocaleDateString('fr-FR') : '—'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Dernière activité</p>
+                <p className="font-semibold text-slate-700">{selectedOrg.updatedAt ? new Date(selectedOrg.updatedAt).toLocaleDateString('fr-FR') : '—'}</p>
+              </div>
+            </div>
+
             {/* Gestion du compte : validation / suspension (pas un statut de fichier) */}
             <div className="p-5 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 min-w-0">
