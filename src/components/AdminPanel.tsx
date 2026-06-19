@@ -66,7 +66,7 @@ import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
 import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, type TourStep } from './ui';
-import { STATUS_META } from '../lib/status';
+import { STATUS_META, STATUS_ORDER } from '../lib/status';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
@@ -201,6 +201,10 @@ export default function AdminPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState('all');
   const [fileStatusFilter, setFileStatusFilter] = useState<'all' | SubmissionStatus>('all');
+  // Gestionnaire d'utilisateurs : recherche + filtres rôle/statut.
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberRole, setMemberRole] = useState<'all' | 'organization' | 'admin_antenne' | 'super_admin'>('all');
+  const [memberStatus, setMemberStatus] = useState<'all' | SubmissionStatus>('all');
   const [activeTour, setActiveTour] = useState<TourStep[] | null>(null);
   const [sortBy, setSortBy] = useState('date-desc');
 
@@ -1256,6 +1260,33 @@ export default function AdminPanel() {
     () => files.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length,
     [files],
   );
+
+  // Gestionnaire d'utilisateurs : membres de la délégation + filtres.
+  const delegationMembers = useMemo(
+    () => orgProfiles.filter((p) => p.delegation_id === delegationFilterId),
+    [orgProfiles, delegationFilterId],
+  );
+  const memberStatusCounts = useMemo(() => {
+    const c: Record<string, number> = { all: delegationMembers.length };
+    for (const s of STATUS_ORDER) c[s] = 0;
+    for (const m of delegationMembers) c[m.submissionStatus || 'Pending'] = (c[m.submissionStatus || 'Pending'] || 0) + 1;
+    return c;
+  }, [delegationMembers]);
+  const filteredMembers = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase();
+    return delegationMembers.filter((m) => {
+      const roleMatch =
+        memberRole === 'all' ||
+        (memberRole === 'super_admin' ? (m.role === 'super_admin' || m.role === 'admin') : m.role === memberRole);
+      const statusMatch = memberStatus === 'all' || (m.submissionStatus || 'Pending') === memberStatus;
+      const textMatch =
+        !q ||
+        (m.name || '').toLowerCase().includes(q) ||
+        (m.email || '').toLowerCase().includes(q) ||
+        (m.contactName || '').toLowerCase().includes(q);
+      return roleMatch && statusMatch && textMatch;
+    });
+  }, [delegationMembers, memberSearch, memberRole, memberStatus]);
 
   // Visite guidée contextuelle : les étapes s'adaptent à la page affichée.
   const tourIntro: TourStep = { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Il s'adapte à la page affichée : relancez-le sur chaque espace pour en découvrir les options." };
@@ -2398,12 +2429,60 @@ export default function AdminPanel() {
                       </div>
                     </div>
 
-                    {orgProfiles.filter(p => p.delegation_id === delegationFilterId).length === 0 ? (
+                    {/* Barre d'outils : recherche + filtres rôle / statut */}
+                    {delegationMembers.length > 0 && (
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                        <div className="relative flex-1 min-w-[180px]">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <input
+                            data-admin-search
+                            value={memberSearch}
+                            onChange={(e) => setMemberSearch(e.target.value)}
+                            placeholder="Rechercher un membre (nom, e-mail, contact)… ⌘K"
+                            className="w-full pl-9 pr-3 py-2.5 text-xs border rounded-2xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-azur/40"
+                          />
+                        </div>
+                        <div className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl shrink-0">
+                          {([
+                            { id: 'all', label: 'Tous' },
+                            { id: 'organization', label: 'Partenaires' },
+                            { id: 'admin_antenne', label: 'Antenne' },
+                            { id: 'super_admin', label: 'Admins' },
+                          ] as const).map((r) => (
+                            <button
+                              key={r.id}
+                              onClick={() => setMemberRole(r.id)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${memberRole === r.id ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                              {r.label}
+                            </button>
+                          ))}
+                        </div>
+                        <StatusFilterChips
+                          value={memberStatus}
+                          onChange={setMemberStatus}
+                          counts={memberStatusCounts}
+                          allLabel="Tous statuts"
+                          keepDotColorWhenActive
+                          className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl flex-nowrap shrink-0"
+                          chipClass={(active) =>
+                            `px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center whitespace-nowrap ${active ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 hover:text-slate-800'}`
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {delegationMembers.length === 0 ? (
                       <div className="py-10 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
                         Aucun partenaire enregistré sous cette délégation actuellement.
                       </div>
+                    ) : filteredMembers.length === 0 ? (
+                      <div className="py-10 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
+                        Aucun membre ne correspond à votre recherche.
+                      </div>
                     ) : (
                       <div data-tour="members-table" className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
+                        <p className="px-5 py-2 text-[11px] text-slate-400 font-semibold border-b border-slate-100">{filteredMembers.length} membre{filteredMembers.length > 1 ? 's' : ''} affiché{filteredMembers.length > 1 ? 's' : ''}</p>
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50/80 text-slate-500">
@@ -2416,7 +2495,7 @@ export default function AdminPanel() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
-                            {orgProfiles.filter(p => p.delegation_id === delegationFilterId).map((org, _rowIdx) => {
+                            {filteredMembers.map((org, _rowIdx) => {
                               const st = org.submissionStatus || 'Pending';
                               const isExample = _rowIdx === 0;
                               // Le super admin gère tous les comptes. Un coordinateur de
