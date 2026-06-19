@@ -275,10 +275,10 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                     <path d="M-5 70 Q 28 44 55 52 T 108 24" stroke="#ffffff" strokeOpacity="0.45" strokeWidth="0.5" strokeDasharray="2.5 2.5" fill="none" />
                   </svg>
 
-                  {/* Cessna principal (profondeur avant) */}
-                  <div className="absolute top-[38%] left-0 right-0" style={{ transform: "translateZ(70px)" }}>
-                    <div className="asf-plane-cross w-32 md:w-48">
-                      <div className="asf-bob drop-shadow-[0_10px_12px_rgba(10,70,89,0.3)]">
+                  {/* Cessna principal — vol réaliste (perspective + turbulence) */}
+                  <div className="absolute top-[34%] left-0 right-0" style={{ transform: "translateZ(70px)" }}>
+                    <div className="asf-fly-realistic w-36 md:w-52">
+                      <div className="asf-turbulence">
                         <CessnaPlane variant="color" className="w-full" />
                       </div>
                     </div>

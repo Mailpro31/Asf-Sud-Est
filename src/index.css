@@ -363,6 +363,26 @@
 .asf-float        { animation: asf-float 4s ease-in-out infinite; }
 .cessna-prop      { animation: cessna-prop-spin 0.16s linear infinite; }
 
+/* === Vol réaliste : perspective (l'avion grossit en approchant), légère
+   montée puis descente, et turbulence subtile === */
+@keyframes asf-fly-realistic {
+  0%   { transform: translate(-150%, 26px) scale(0.62) rotate(-1deg); opacity: 0; }
+  10%  { opacity: 1; }
+  35%  { transform: translate(70%, -18px) scale(0.92) rotate(2deg); }
+  55%  { transform: translate(170%, -34px) scale(1.06) rotate(1deg); }
+  80%  { transform: translate(330%, -8px) scale(0.92) rotate(-1.5deg); }
+  90%  { opacity: 1; }
+  100% { transform: translate(540%, 28px) scale(0.66) rotate(-2deg); opacity: 0; }
+}
+@keyframes asf-turbulence {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-2.5px) rotate(0.7deg); }
+  50%      { transform: translateY(1.5px) rotate(-0.5deg); }
+  75%      { transform: translateY(-1.5px) rotate(0.4deg); }
+}
+.asf-fly-realistic { animation: asf-fly-realistic 22s linear infinite; will-change: transform, opacity; }
+.asf-turbulence    { animation: asf-turbulence 2.6s ease-in-out infinite; }
+
 /* Scène 3D : léger basculement en perspective (parallaxe de profondeur) */
 @keyframes asf-tilt3d {
   0%, 100% { transform: rotateX(7deg) rotateY(-12deg); }
