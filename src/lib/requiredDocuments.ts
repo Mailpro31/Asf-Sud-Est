@@ -38,13 +38,24 @@ function normalize(s: string): string {
   return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
-/** Documents rattachés à une pièce (catégorie explicite, sinon mots-clés). */
-export function matchFiles(files: DossierFile[], item: RequiredDoc): DossierFile[] {
-  return files.filter((f) => {
-    if (f.category) return f.category === item.id;
+/**
+ * Rattache chaque document à AU PLUS UNE pièce : catégorie explicite si
+ * présente, sinon la première pièce dont un mot-clé correspond au nom. Évite
+ * qu'un seul fichier (nom multi-mots-clés) ne valide plusieurs pièces à la fois.
+ */
+export function assignFiles(files: DossierFile[]): Record<string, DossierFile[]> {
+  const assigned: Record<string, DossierFile[]> = {};
+  for (const d of REQUIRED_DOCS) assigned[d.id] = [];
+  for (const f of files) {
+    if (f.category) {
+      if (assigned[f.category]) assigned[f.category].push(f);
+      continue;
+    }
     const n = normalize(f.name);
-    return item.keywords.some((k) => n.includes(normalize(k)));
-  });
+    const hit = REQUIRED_DOCS.find((d) => d.keywords.some((k) => n.includes(normalize(k))));
+    if (hit) assigned[hit.id].push(f);
+  }
+  return assigned;
 }
 
 export type ChecklistItemState = 'missing' | 'pending' | 'incomplete' | 'validated';
@@ -77,8 +88,9 @@ export interface ChecklistResult {
 const RANK: Record<SubmissionStatus, number> = { Pending: 0, 'Under review': 1, Incomplete: 0, Validated: 2 };
 
 export function computeChecklist(files: DossierFile[]): ChecklistResult {
+  const assigned = assignFiles(files);
   const entries: ChecklistEntry[] = REQUIRED_DOCS.map((item) => {
-    const matches = matchFiles(files, item);
+    const matches = assigned[item.id];
     if (matches.length === 0) {
       return { item, state: 'missing', count: 0 };
     }

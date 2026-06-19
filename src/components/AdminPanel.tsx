@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   collection,
@@ -65,9 +65,10 @@ import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
-import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, type TourStep } from './ui';
-import { STATUS_META, STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { markTourSeen } from '../lib/tour';
+import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, type TourStep } from './ui';
+import { STATUS_META } from '../lib/status';
+import { useCmdK } from '../hooks/useCmdK';
+import { useFirstRunTour } from '../hooks/useFirstRunTour';
 import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
 
 // Libellé + style de badge pour chaque rôle de compte.
@@ -1245,20 +1246,16 @@ export default function AdminPanel() {
   }, [isSuperAdminMode]);
 
   // Raccourci clavier ⌘K / Ctrl+K : focus la première barre de recherche visible.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        const el = document.querySelector('[data-admin-search]') as HTMLInputElement | null;
-        if (el) el.focus();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  useCmdK(() => {
+    const el = document.querySelector('[data-admin-search]') as HTMLInputElement | null;
+    if (el) el.focus();
+  });
 
   // Conformité globale (tous documents) pour l'anneau du hub.
-  const globalValidated = files.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
+  const globalValidated = useMemo(
+    () => files.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length,
+    [files],
+  );
 
   // Visite guidée contextuelle : les étapes s'adaptent à la page affichée.
   const tourIntro: TourStep = { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Il s'adapte à la page affichée : relancez-le sur chaque espace pour en découvrir les options." };
@@ -1297,18 +1294,8 @@ export default function AdminPanel() {
   };
   const startTour = () => setActiveTour(buildTour());
 
-  // Lance automatiquement la visite à la TOUTE première connexion du compte
-  // (mémorisé sur le profil, donc pas de relance au rechargement de page).
-  const autoTourRef = useRef(false);
-  useEffect(() => {
-    if (autoTourRef.current || !organization) return;
-    autoTourRef.current = true;
-    if (organization.hasSeenTour) return;
-    markTourSeen(organization.id);
-    const t = setTimeout(() => setActiveTour(buildTour()), 900);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization?.id]);
+  // Lance automatiquement la visite à la TOUTE première connexion du compte.
+  useFirstRunTour(organization, () => setActiveTour(buildTour()));
 
   return (
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>
@@ -2148,29 +2135,15 @@ export default function AdminPanel() {
                         </div>
 
                         {/* Status quick filters */}
-                        <div className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl">
-                          <button
-                            onClick={() => setFileStatusFilter('all')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${fileStatusFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
-                          >
-                            Tous statuts
-                          </button>
-                          {STATUS_ORDER.map((s) => {
-                            const meta = getStatusMeta(s);
-                            const active = fileStatusFilter === s;
-                            return (
-                              <button
-                                key={s}
-                                onClick={() => setFileStatusFilter(s)}
-                                title={meta.label}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${active ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
-                              >
-                                <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                                {meta.label}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <StatusFilterChips
+                          value={fileStatusFilter}
+                          onChange={setFileStatusFilter}
+                          keepDotColorWhenActive
+                          className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl flex-nowrap"
+                          chipClass={(active) =>
+                            `px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center whitespace-nowrap ${active ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 hover:text-slate-800'}`
+                          }
+                        />
 
                         {/* Sorting Selection */}
                         <select
