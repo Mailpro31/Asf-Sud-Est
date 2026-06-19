@@ -39,6 +39,9 @@ import {
   Folder as FolderIcon,
   FolderPlus,
   FolderOpen,
+  FileDown,
+  CheckCheck,
+  CloudUpload,
 } from 'lucide-react';
 import { Bell } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
@@ -93,6 +96,12 @@ export default function AntenneAdminDashboard() {
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
+  // Tri, filtre par organisme, sélection multiple, glisser-déposer
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc');
+  const [orgFilter, setOrgFilter] = useState<string>('all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [dragOver, setDragOver] = useState(false);
+  const [orgDocSearch, setOrgDocSearch] = useState('');
   const [previewFile, setPreviewFile] = useState<DossierFile | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   // Fiche détaillée d'un organisme (ses fichiers + gestion de son compte).
@@ -248,13 +257,31 @@ export default function AntenneAdminDashboard() {
 
   const visibleFiles = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return files.filter((f) => {
+    const rank: Record<string, number> = { Pending: 0, 'Under review': 1, Incomplete: 2, Validated: 3 };
+    const list = files.filter((f) => {
       const matchesSearch = !q || f.name.toLowerCase().includes(q);
       const matchesStatus = statusFilter === 'all' || (f.submissionStatus || 'Pending') === statusFilter;
       const matchesFolder = !activeFolderId || (f.folderId || null) === activeFolderId;
-      return matchesSearch && matchesStatus && matchesFolder;
+      const matchesOrg = orgFilter === 'all' || f.orgId === orgFilter;
+      return matchesSearch && matchesStatus && matchesFolder && matchesOrg;
     });
-  }, [files, searchQuery, statusFilter, activeFolderId]);
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'date_asc': return a.uploadDate - b.uploadDate;
+        case 'name': return a.name.localeCompare(b.name, 'fr');
+        case 'size': return b.size - a.size;
+        case 'status': return (rank[a.submissionStatus || 'Pending'] ?? 0) - (rank[b.submissionStatus || 'Pending'] ?? 0);
+        default: return b.uploadDate - a.uploadDate;
+      }
+    });
+    return list;
+  }, [files, searchQuery, statusFilter, activeFolderId, orgFilter, sortBy]);
+
+  const orgModalFiles = useMemo(() => {
+    if (!selectedOrgId) return [];
+    const q = orgDocSearch.trim().toLowerCase();
+    return files.filter((f) => f.orgId === selectedOrgId && (!q || f.name.toLowerCase().includes(q)));
+  }, [files, selectedOrgId, orgDocSearch]);
 
   const folderFileCount = (folderId: string) => files.filter((f) => (f.folderId || null) === folderId).length;
 
@@ -614,6 +641,116 @@ export default function AntenneAdminDashboard() {
     setPreviewFile(null);
   };
 
+  // --- Sélection multiple ---
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+  const selectedFiles = files.filter((f) => selectedIds.has(f.id));
+
+  // --- Actions groupées (réutilisables : sélection ET fiche organisme) ---
+  const applyStatusToFiles = async (targets: DossierFile[], status: SubmissionStatus) => {
+    if (!targets.length) return;
+    const log = (f: DossierFile) => logAction('file_status_change', {
+      targetType: 'file', targetId: f.id, targetName: f.name,
+      antenne_id: f.antenne_id || antenneId, delegation_id: f.delegation_id || delegationId,
+      details: `Statut du document : ${getStatusMeta(status).label}`,
+    });
+    if (localDb.isSandboxActive()) {
+      targets.forEach((f) => {
+        const t = localDb.getFiles().find((x) => x.id === f.id);
+        if (t) { t.submissionStatus = status; localDb.saveFile(t); }
+        log(f);
+      });
+      loadLocalNow();
+      toast(`${targets.length} document(s) → ${getStatusMeta(status).label}`, 'success');
+      return;
+    }
+    let ok = 0;
+    for (const f of targets) {
+      try { await updateDoc(doc(db, 'files', f.id), { submissionStatus: status }); log(f); ok++; }
+      catch (e) { console.error('bulk status failed', e); }
+    }
+    toast(`${ok} document(s) → ${getStatusMeta(status).label}`, ok ? 'success' : 'error');
+  };
+
+  const downloadFiles = async (targets: DossierFile[]) => {
+    for (const f of targets) {
+      try { await downloadFile(f); } catch (e) { console.error('download failed', e); }
+    }
+  };
+
+  const deleteFiles = async (targets: DossierFile[]) => {
+    if (!targets.length) return;
+    const log = (f: DossierFile) => logAction('file_delete', {
+      targetType: 'file', targetId: f.id, targetName: f.name,
+      antenne_id: f.antenne_id || antenneId, delegation_id: f.delegation_id || delegationId,
+    });
+    if (localDb.isSandboxActive()) {
+      targets.forEach((f) => { localDb.deleteFile(f.id); log(f); });
+      loadLocalNow();
+      toast(`${targets.length} document(s) supprimé(s).`, 'success');
+      return;
+    }
+    let ok = 0;
+    for (const f of targets) {
+      try { await deleteFileArtifacts(f); await deleteDoc(doc(db, 'files', f.id)); log(f); ok++; }
+      catch (e) { console.error('bulk delete failed', e); }
+    }
+    toast(`${ok} document(s) supprimé(s).`, ok ? 'success' : 'error');
+  };
+
+  const handleBulkStatus = async (status: SubmissionStatus) => { await applyStatusToFiles(selectedFiles, status); clearSelection(); };
+  const handleBulkDownload = async () => { await downloadFiles(selectedFiles); };
+  const handleBulkDelete = async () => {
+    const n = selectedFiles.length;
+    if (!n) return;
+    const ok = await confirm(`Supprimer ${n} document(s) sélectionné(s) ? Cette action est irréversible.`);
+    if (!ok) return;
+    await deleteFiles(selectedFiles);
+    clearSelection();
+  };
+
+  // --- Export CSV de la liste de documents visible ---
+  const exportCsv = () => {
+    const cell = (v: unknown) => {
+      let s = String(v ?? '').replace(/[\r\n]+/g, ' ');
+      if (/^[=+\-@]/.test(s)) s = "'" + s;
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const header = ['Document', 'Organisme', 'Statut', 'Taille (Ko)', 'Date', 'Dépôt'];
+    const rows = visibleFiles.map((f) => [
+      f.name,
+      orgName(f.orgId),
+      getStatusMeta(f.submissionStatus).label,
+      Math.round(f.size / 1024),
+      new Date(f.uploadDate).toLocaleString('fr-FR'),
+      f.uploadedBy === 'admin' ? "Gestionnaire" : 'Partenaire',
+    ]);
+    const csv = [header, ...rows].map((r) => r.map(cell).join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `documents_${antenneName}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Glisser-déposer de fichiers sur la zone documents.
+  const onDropFiles = (e: any) => {
+    e.preventDefault();
+    setDragOver(false);
+    const dropped = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+    if (dropped.length) handleUploadFiles(dropped as File[]);
+  };
+
   // Couleur de la pastille de statut (lecture en un coup d'œil).
   const STATUS_SELECT_CLS: Record<SubmissionStatus, string> = {
     Pending: 'border-amber-300 bg-amber-50 text-amber-700',
@@ -624,8 +761,17 @@ export default function AntenneAdminDashboard() {
   const statusSelectCls = (s?: SubmissionStatus) => STATUS_SELECT_CLS[s || 'Pending'] || STATUS_SELECT_CLS.Pending;
 
   // Ligne de document réutilisable (liste principale + fiche organisme).
-  const renderFileRow = (file: DossierFile) => (
-    <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/70 transition-colors">
+  const renderFileRow = (file: DossierFile, opts?: { selectable?: boolean }) => (
+    <div key={file.id} className={`flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70'}`}>
+      {opts?.selectable && (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(file.id)}
+          onChange={() => toggleSelect(file.id)}
+          className="w-4 h-4 accent-azur cursor-pointer shrink-0"
+          title="Sélectionner"
+        />
+      )}
       <div className="w-9 h-9 rounded-lg bg-azur/10 text-azur flex items-center justify-center shrink-0">
         <FileText className="w-4 h-4" />
       </div>
@@ -693,7 +839,6 @@ export default function AntenneAdminDashboard() {
   if (!organization) return null;
 
   const selectedOrg = selectedOrgId ? partnerOrgs.find((o) => o.id === selectedOrgId) || null : null;
-  const selectedOrgFiles = selectedOrg ? files.filter((f) => f.orgId === selectedOrg.id) : [];
 
   const STAT_CARDS = [
     { label: 'Documents', value: stats.total, icon: FileText, tone: 'text-azur bg-azur/10' },
@@ -893,26 +1038,59 @@ export default function AntenneAdminDashboard() {
             <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
               <FileText className="w-5 h-5 text-azur" /> Documents
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Rechercher…"
-                  className="input-asf pl-10 w-44 sm:w-56"
+                  className="input-asf pl-10 w-40 sm:w-52"
                 />
               </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | SubmissionStatus)}
                 className="input-asf w-auto"
+                title="Filtrer par statut"
               >
                 <option value="all">Tous les statuts</option>
                 {STATUS_ORDER.map((s) => (
                   <option key={s} value={s}>{getStatusMeta(s).label}</option>
                 ))}
               </select>
+              <select
+                value={orgFilter}
+                onChange={(e) => setOrgFilter(e.target.value)}
+                className="input-asf w-auto"
+                title="Filtrer par organisme"
+              >
+                <option value="all">Tous les organismes</option>
+                {partnerOrgs.map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="input-asf w-auto"
+                title="Trier"
+              >
+                <option value="date_desc">Plus récents</option>
+                <option value="date_asc">Plus anciens</option>
+                <option value="name">Nom (A→Z)</option>
+                <option value="status">Statut</option>
+                <option value="size">Taille</option>
+              </select>
+              <button
+                onClick={exportCsv}
+                disabled={visibleFiles.length === 0}
+                className="btn-secondary text-sm shrink-0 disabled:opacity-50"
+                title="Exporter la liste en CSV"
+              >
+                <FileDown className="w-4 h-4" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -982,15 +1160,71 @@ export default function AntenneAdminDashboard() {
             </p>
           )}
 
-          <div className="card-asf overflow-hidden">
+          {/* Barre d'actions groupées */}
+          {selectedIds.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 bg-azur/10 border border-azur/25 rounded-2xl px-4 py-2.5">
+              <span className="text-sm font-bold text-deep">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
+              <div className="flex-1" />
+              <button onClick={() => handleBulkStatus('Validated')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5">
+                <CheckCheck className="w-3.5 h-3.5" /> Valider
+              </button>
+              <select
+                onChange={(e) => { if (e.target.value) { handleBulkStatus(e.target.value as SubmissionStatus); e.target.value = ''; } }}
+                defaultValue=""
+                className="input-asf w-auto text-xs py-1.5"
+                title="Changer le statut"
+              >
+                <option value="" disabled>Changer le statut…</option>
+                {STATUS_ORDER.map((s) => (<option key={s} value={s}>{getStatusMeta(s).label}</option>))}
+              </select>
+              <button onClick={handleBulkDownload} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5">
+                <Download className="w-3.5 h-3.5" /> Télécharger
+              </button>
+              <button onClick={handleBulkDelete} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-1.5">
+                <Trash2 className="w-3.5 h-3.5" /> Supprimer
+              </button>
+              <button onClick={clearSelection} className="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">
+                Annuler
+              </button>
+            </div>
+          )}
+
+          <div
+            className={`card-asf overflow-hidden transition-shadow ${dragOver ? 'ring-2 ring-azur ring-offset-2' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDropFiles}
+          >
             {loading ? (
               <div className="p-10 text-center text-sm text-slate-500">Chargement des documents…</div>
             ) : visibleFiles.length === 0 ? (
-              <div className="p-10 text-center text-sm text-slate-500">Aucun document à afficher.</div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {visibleFiles.map((file) => renderFileRow(file))}
+              <div className="p-12 text-center text-sm text-slate-400 flex flex-col items-center gap-2">
+                <CloudUpload className="w-8 h-8 text-slate-300" />
+                Aucun document à afficher.
+                <span className="text-xs">Glissez-déposez des fichiers ici pour les déposer.</span>
               </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 px-4 py-2 border-b border-slate-100 bg-slate-50/60">
+                  <input
+                    type="checkbox"
+                    checked={visibleFiles.every((f) => selectedIds.has(f.id))}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(new Set(visibleFiles.map((f) => f.id)));
+                      else clearSelection();
+                    }}
+                    className="w-4 h-4 accent-azur cursor-pointer"
+                    title="Tout sélectionner"
+                  />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    {visibleFiles.length} document{visibleFiles.length > 1 ? 's' : ''}
+                  </span>
+                  {dragOver && <span className="text-[11px] font-bold text-azur ml-auto">Déposez pour téléverser…</span>}
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {visibleFiles.map((file) => renderFileRow(file, { selectable: true }))}
+                </div>
+              </>
             )}
           </div>
         </section>
@@ -1145,20 +1379,56 @@ export default function AntenneAdminDashboard() {
               </button>
             </div>
 
-            {/* Documents de l'organisme */}
-            <div className="max-h-[55vh] overflow-y-auto">
-              <div className="px-5 py-3 flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  {selectedOrgFiles.length} document{selectedOrgFiles.length > 1 ? 's' : ''}
-                </span>
+            {/* Barre d'actions + recherche pour les documents de l'organisme */}
+            <div className="px-5 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100">
+              <div className="relative flex-1 min-w-[160px]">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  value={orgDocSearch}
+                  onChange={(e) => setOrgDocSearch(e.target.value)}
+                  placeholder="Rechercher dans ses documents…"
+                  className="input-asf pl-9 py-2 w-full text-sm"
+                />
               </div>
-              {selectedOrgFiles.length === 0 ? (
+              <button
+                onClick={() => applyStatusToFiles(orgModalFiles, 'Validated')}
+                disabled={orgModalFiles.length === 0}
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <CheckCheck className="w-3.5 h-3.5" /> Tout valider
+              </button>
+              <button
+                onClick={() => downloadFiles(orgModalFiles)}
+                disabled={orgModalFiles.length === 0}
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Download className="w-3.5 h-3.5" /> Tout télécharger
+              </button>
+            </div>
+
+            {/* Documents de l'organisme */}
+            <div className="max-h-[50vh] overflow-y-auto">
+              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  {orgModalFiles.length} document{orgModalFiles.length > 1 ? 's' : ''}
+                </span>
+                {(['Validated', 'Pending', 'Under review', 'Incomplete'] as SubmissionStatus[]).map((s) => {
+                  const n = orgModalFiles.filter((f) => (f.submissionStatus || 'Pending') === s).length;
+                  if (!n) return null;
+                  return (
+                    <span key={s} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusSelectCls(s)}`}>
+                      {n} {getStatusMeta(s).label}
+                    </span>
+                  );
+                })}
+              </div>
+              {orgModalFiles.length === 0 ? (
                 <div className="px-5 pb-8 pt-2 text-center text-sm text-slate-400 font-semibold">
-                  Cet organisme n'a déposé aucun document pour le moment.
+                  {orgDocSearch ? 'Aucun document ne correspond à votre recherche.' : "Cet organisme n'a déposé aucun document pour le moment."}
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 border-t border-slate-100">
-                  {selectedOrgFiles.map((file) => renderFileRow(file))}
+                  {orgModalFiles.map((file) => renderFileRow(file))}
                 </div>
               )}
             </div>
