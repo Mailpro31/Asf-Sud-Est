@@ -749,7 +749,7 @@ export default function AntenneAdminDashboard() {
             <button
               onClick={handleSaveSettings}
               disabled={savingSettings}
-              className="btn-primary text-sm whitespace-nowrap disabled:opacity-60"
+              className="btn-asf text-sm whitespace-nowrap disabled:opacity-60"
             >
               {savingSettings ? 'Enregistrement…' : 'Enregistrer'}
             </button>
@@ -932,11 +932,11 @@ export default function AntenneAdminDashboard() {
       {/* Fiche détaillée d'un organisme : ses documents + gestion du compte */}
       {selectedOrg && (
         <div
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-overlay-in"
           onClick={() => setSelectedOrgId(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl w-full max-w-3xl my-auto"
+            className="bg-white rounded-2xl shadow-asf-lg w-full max-w-3xl my-auto animate-panel-in"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête */}
