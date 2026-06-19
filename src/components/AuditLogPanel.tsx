@@ -29,7 +29,10 @@ const ACTION_META: Record<string, { label: string; icon: string; cls: string }> 
   org_profile_update: { label: 'Profil mis à jour', icon: '✏️', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
   antenne_create: { label: "Création d'antenne", icon: '🛰️', cls: 'bg-azur/10 text-azur border-azur/20' },
   antenne_delete: { label: "Suppression d'antenne", icon: '💥', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+  antenne_update: { label: "Modification d'antenne", icon: '🛠️', cls: 'bg-azur/10 text-azur border-azur/20' },
+  antenne_group_change: { label: "Groupe d'antennes", icon: '🗺️', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
   antenne_settings_change: { label: "Réglages d'antenne", icon: '🔔', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  delegation_create: { label: 'Création de délégation', icon: '🏛️', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -65,6 +68,7 @@ const CATEGORIES: { id: string; label: string; actions: string[] }[] = [
   { id: 'files', label: 'Fichiers', actions: ['file_upload', 'file_delete', 'file_status_change', 'file_share_toggle', 'file_rename', 'file_move', 'file_download'] },
   { id: 'folders', label: 'Dossiers', actions: ['folder_create', 'folder_delete'] },
   { id: 'accounts', label: 'Comptes & rôles', actions: ['org_create', 'org_delete', 'org_role_change', 'org_status_change', 'org_reminder', 'org_assign_antenne', 'org_profile_update'] },
+  { id: 'structure', label: 'Antennes & délégations', actions: ['antenne_create', 'antenne_delete', 'antenne_update', 'antenne_group_change', 'antenne_settings_change', 'delegation_create'] },
 ];
 
 export default function AuditLogPanel({
