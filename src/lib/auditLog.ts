@@ -132,20 +132,29 @@ export async function logAction(action: AuditAction, opts: LogOptions = {}): Pro
 
 /**
  * Abonnement temps réel au journal.
- *  - `antenneId` fourni → uniquement les logs de cette antenne (vue d'antenne).
- *  - `antenneId` absent/null → tous les logs (vue super admin).
+ *  - `antenneId` fourni  → logs de cette antenne (vue gestionnaire d'antenne).
+ *  - `delegationId` fourni → logs de cette délégation (vue coordinateur).
+ *  - aucun des deux → tous les logs (vue super admin).
  */
 export function subscribeAuditLogs(
-  scope: { antenneId?: string | null },
+  scope: { antenneId?: string | null; delegationId?: string | null },
   cb: (logs: AuditLog[]) => void,
   max = 500,
 ): () => void {
   const antenneId = scope.antenneId || null;
+  const delegationId = scope.delegationId || null;
+  // L'antenne prime sur la délégation si les deux sont fournis.
+  const field: 'antenne_id' | 'delegation_id' | null = antenneId
+    ? 'antenne_id'
+    : delegationId
+      ? 'delegation_id'
+      : null;
+  const value = antenneId || delegationId || null;
 
   if (localDb.isSandboxActive()) {
     const load = () => {
       let logs = localDb.getAuditLogs();
-      if (antenneId) logs = logs.filter((l) => l.antenne_id === antenneId);
+      if (field && value) logs = logs.filter((l) => (l as any)[field] === value);
       logs.sort((a, b) => b.timestamp - a.timestamp);
       cb(logs.slice(0, max));
     };
@@ -155,7 +164,7 @@ export function subscribeAuditLogs(
   }
 
   try {
-    if (antenneId) {
+    if (field && value) {
       const coll = collection(db, 'audit_logs');
       const emit = (snap: any) => {
         const list: AuditLog[] = [];
@@ -164,20 +173,20 @@ export function subscribeAuditLogs(
         cb(list.slice(0, max));
       };
       // Requête triée côté serveur (newest-first, bornée à `max`). Si l'index
-      // composite (antenne_id, timestamp desc) n'est pas encore déployé, on
-      // bascule sur une requête sans `orderBy` triée côté client — la vue
-      // fonctionne dans les deux cas.
+      // composite (<champ>, timestamp desc) n'est pas encore déployé, on bascule
+      // sur une requête sans `orderBy` triée côté client — la vue fonctionne
+      // dans les deux cas.
       let inner = () => {};
       inner = onSnapshot(
-        query(coll, where('antenne_id', '==', antenneId), orderBy('timestamp', 'desc'), limit(max)),
+        query(coll, where(field, '==', value), orderBy('timestamp', 'desc'), limit(max)),
         emit,
         (err) => {
-          console.warn('subscribeAuditLogs (antenne) : repli sans tri serveur (index manquant ?) :', err);
+          console.warn('subscribeAuditLogs : repli sans tri serveur (index manquant ?) :', err);
           inner = onSnapshot(
-            query(coll, where('antenne_id', '==', antenneId), limit(1000)),
+            query(coll, where(field, '==', value), limit(1000)),
             emit,
             (e2) => {
-              console.warn('subscribeAuditLogs (antenne) échec :', e2);
+              console.warn('subscribeAuditLogs échec :', e2);
               cb([]);
             },
           );
