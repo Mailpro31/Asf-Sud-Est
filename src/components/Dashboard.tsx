@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { formatBytes } from '../lib/utils';
 import { 
   ShieldAlert, 
@@ -21,6 +21,7 @@ import {
   User,
   HardDrive,
   Settings,
+  GraduationCap,
   X
 } from 'lucide-react';
 import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
@@ -40,8 +41,8 @@ import { notifyAntenneOnUpload } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
-import { StatusBadge } from './ui';
-import { getStatusMeta } from '../lib/status';
+import { StatusBadge, GuidedTour, type TourStep } from './ui';
+import { getStatusMeta, STATUS_ORDER } from '../lib/status';
 
 
 export default function Dashboard() {
@@ -559,7 +560,30 @@ export default function Dashboard() {
   const [renameInput, setRenameInput] = useState('');
   const [previewingFile, setPreviewingFile] = useState<DossierFile | null>(null);
   const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
+  const [fileStatusFilter, setFileStatusFilter] = useState<'all' | SubmissionStatus>('all');
   const [sortBy, setSortBy] = useState<string>('date-desc');
+  const [tourOpen, setTourOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Raccourci clavier ⌘K / Ctrl+K : focus la recherche de documents.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (searchInputRef.current) searchInputRef.current.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const tourSteps: TourStep[] = [
+    { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment." },
+    { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },
+    { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents ici, ou cliquez pour parcourir. Vous pouvez aussi les ranger dans des dossiers." },
+    { target: '[data-tour="filters"]', title: 'Rechercher et filtrer', text: "Retrouvez un document par son nom (raccourci ⌘K / Ctrl+K), ou filtrez par type et par statut." },
+    { target: '[data-tour="docs"]', title: 'Vos documents', text: "La liste de vos fichiers déposés, avec leur statut de validation. Vous pouvez les prévisualiser, télécharger ou renommer." },
+  ];
   const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
   const [deletingFolder, setDeletingFolder] = useState<Folder | null>(null);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -773,7 +797,9 @@ export default function Dashboard() {
         matchesType = f.type.startsWith('audio/') || f.type.startsWith('video/') || /\.(mp3|wav|ogg|m4a|mp4|webm|ogv)$/i.test(f.name);
       }
       
-      return matchesFolder && matchesSearch && matchesType;
+      const matchesStatus = fileStatusFilter === 'all' || (f.submissionStatus || 'Pending') === fileStatusFilter;
+
+      return matchesFolder && matchesSearch && matchesType && matchesStatus;
     })
     .sort((a, b) => {
       if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
@@ -937,8 +963,17 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTourOpen(true)}
+              data-tour="tutoriel"
+              className="btn-sourire text-sm"
+              title="Visite guidée de votre espace"
+            >
+              <GraduationCap className="w-4 h-4" />
+              <span className="hidden sm:inline">Tutoriel</span>
+            </button>
             {/* Submission Status Card */}
-            <div className={`card-asf px-5 py-3 ${containerRounded} flex items-center gap-3`}>
+            <div data-tour="status" className={`card-asf px-5 py-3 ${containerRounded} flex items-center gap-3`}>
               <div className="text-left">
                 <p className={`text-[9px] uppercase tracking-widest font-bold ${themeConfig.textMuted}`}>Statut de la revue</p>
                 <div className="mt-1">
@@ -1041,8 +1076,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 shrink-0">
-          
+        <div data-tour="upload" className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 shrink-0">
+
           {/* Draggable Drop/Click Upload Area */}
           <div className="lg:col-span-2">
             {organization?.submissionStatus !== 'Validated' ? (
@@ -1139,18 +1174,20 @@ export default function Dashboard() {
         </div>
 
         {/* Search, Filter & Sort Panel combined */}
-        <div className={`mb-4 px-5 py-4.5 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 shadow-xs`}>
-          
+        <div data-tour="filters" className={`mb-4 px-5 py-4.5 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 shadow-xs`}>
+
           {/* Left search */}
           <div className="relative w-full xl:w-72 shrink-0">
             <Search className={`absolute left-3.5 top-3 w-4 h-4 ${themeConfig.textMuted}`} />
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Rechercher des documents..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-asf pl-10 text-xs"
+              className="input-asf pl-10 pr-14 text-xs"
             />
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 border border-slate-200 rounded-md px-1.5 py-0.5 bg-slate-50 hidden sm:block">⌘K</span>
           </div>
 
           {/* Middle Type Filters */}
@@ -1180,6 +1217,32 @@ export default function Dashboard() {
             })}
           </div>
 
+          {/* Status quick filters */}
+          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto py-1 scrollbar-hide">
+            <button
+              type="button"
+              onClick={() => setFileStatusFilter('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all cursor-pointer ${fileStatusFilter === 'all' ? 'bg-deep text-white shadow-3xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+            >
+              Tous statuts
+            </button>
+            {STATUS_ORDER.map((s) => {
+              const meta = getStatusMeta(s);
+              const active = fileStatusFilter === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setFileStatusFilter(s)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all cursor-pointer inline-flex items-center gap-1.5 ${active ? 'bg-deep text-white shadow-3xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : meta.dot}`} />
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Right Sort dropdown */}
           <div className="flex items-center gap-2 self-end xl:self-auto">
             <span className={`text-[10px] font-bold uppercase tracking-wider ${themeConfig.textMuted} shrink-0`}>Trier par :</span>
@@ -1200,7 +1263,7 @@ export default function Dashboard() {
         </div>
 
         {/* Consolidated Files & Folders Workspace Container Card */}
-        <section className={`flex-1 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} ${cardShadow} overflow-hidden flex flex-col min-h-[350px] transition-all duration-300`}>
+        <section data-tour="docs" className={`flex-1 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} ${cardShadow} overflow-hidden flex flex-col min-h-[350px] transition-all duration-300`}>
           
           {/* Header Controls line */}
           <div className={`px-6 py-4 border-b ${themeConfig.cardBorder} bg-slate-100/50 dark:bg-black/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0`}>
@@ -1446,6 +1509,8 @@ export default function Dashboard() {
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
       />
+
+      <GuidedTour open={tourOpen} steps={tourSteps} onClose={() => setTourOpen(false)} />
 
       {/* Modale de renommage de fichier */}
       {renamingFile && (
