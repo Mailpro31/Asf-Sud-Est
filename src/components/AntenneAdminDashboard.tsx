@@ -53,6 +53,7 @@ import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
 import UserProfileModal from './UserProfileModal';
 import AuditLogPanel from './AuditLogPanel';
+import CessnaPlane from './CessnaPlane';
 
 /**
  * Dashboard personnalisé d'un gestionnaire d'antenne (rôle `admin_antenne`).
@@ -678,6 +679,10 @@ export default function AntenneAdminDashboard() {
         {/* Bannière de conformité */}
         <div className="rounded-3xl bg-gradient-to-r from-deep via-azur to-deep-dark p-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Cessna qui traverse la bannière */}
+          <div className="asf-plane-cross-slow absolute top-3 left-0 w-20 opacity-60 pointer-events-none">
+            <CessnaPlane variant="white" className="w-full" />
+          </div>
           <div className="relative flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.2em] text-azur-pastel font-bold flex items-center gap-1.5">

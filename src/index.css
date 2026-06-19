@@ -332,6 +332,37 @@
 .animate-overlay-in { animation: asf-overlay-in 0.2s var(--ease-asf); }
 .animate-panel-in   { animation: asf-panel-in 0.28s var(--ease-asf); }
 
+/* === Scène aérienne : Cessna, nuages, flottement (thème ASF) === */
+@keyframes asf-plane-cross {
+  0%   { transform: translateX(-130%); opacity: 0; }
+  7%   { opacity: 1; }
+  93%  { opacity: 1; }
+  100% { transform: translateX(560%); opacity: 0; }
+}
+@keyframes asf-bob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-7px) rotate(2deg); }
+}
+@keyframes asf-cloud-drift {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(26px); }
+}
+@keyframes asf-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+@keyframes cessna-prop-spin {
+  to { transform: rotate(360deg); }
+}
+
+.asf-plane-cross  { animation: asf-plane-cross 15s linear infinite; }
+.asf-plane-cross-slow { animation: asf-plane-cross 26s linear infinite; }
+.asf-bob          { animation: asf-bob 3s ease-in-out infinite; }
+.asf-cloud-slow   { animation: asf-cloud-drift 16s ease-in-out infinite; }
+.asf-cloud-fast   { animation: asf-cloud-drift 11s ease-in-out infinite; }
+.asf-float        { animation: asf-float 4s ease-in-out infinite; }
+.cessna-prop      { animation: cessna-prop-spin 0.16s linear infinite; }
+
 /* Respect des préférences d'accessibilité : on coupe le mouvement. */
 @media (prefers-reduced-motion: reduce) {
   *,

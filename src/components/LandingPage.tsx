@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ShieldAlert, Compass, Calendar, CheckCircle2, ChevronRight, Users, Heart, ClipboardCheck, ArrowRight, Menu, X, Mail, Upload } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import CessnaPlane from './CessnaPlane';
 
 interface LandingPageProps {
   onNavigateLogin: () => void;
@@ -17,8 +18,27 @@ export function LogoASF({ className = "w-16 h-16", variant = "color" }: { classN
   const mainColor = variant === "color" ? azur : white;
   const pastelColor = variant === "color" ? azurPastel : white;
 
+  // Logo officiel (image fournie). On l'affiche en priorité ; si le fichier
+  // n'est pas encore présent dans le dépôt, on retombe sur le logo vectoriel
+  // intégré ci-dessous (aucune image cassée).
+  //   - variant "color" → /logo-asf.png       (fonds clairs)
+  //   - variant "white" → /logo-asf-white.png  (fonds foncés)
+  const [imgFailed, setImgFailed] = useState(false);
+  const src = variant === "white" ? "/logo-asf-white.png" : "/logo-asf.png";
+  if (!imgFailed) {
+    return (
+      <img
+        src={src}
+        alt="Aviation Sans Frontières France"
+        className={`${className} object-contain select-none`}
+        draggable={false}
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+
   return (
-    <svg 
+    <svg
       viewBox="0 0 120 120" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
@@ -212,36 +232,71 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
               </motion.div>
             </div>
 
-            {/* Right Image/Graphic Column */}
+            {/* Right Graphic Column — scène aérienne animée (Cessna) */}
             <div className="lg:col-span-6 relative">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6 }}
-                className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200"
+                className="relative rounded-3xl overflow-hidden shadow-asf-lg border border-azur/15 h-80 md:h-[440px] bg-gradient-to-b from-[#cdeafa] via-[#8fcdec] to-[#2f9fc9]"
               >
-                {/* Aircraft image representing flight */}
-                <img 
-                  src="https://images.unsplash.com/photo-1540962351504-03099e0a754b?auto=format&fit=crop&w=1200&q=80" 
-                  alt="Aviation Sans Frontières en plein vol"
-                  className="w-full h-80 md:h-[420px] object-cover"
-                  referrerPolicy="no-referrer"
-                />
-                
-                {/* Overlay card */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent p-6 text-white text-left">
+                {/* Soleil */}
+                <div className="absolute top-7 right-9 w-24 h-24 rounded-full bg-white/40 blur-xl pointer-events-none"></div>
+                <div className="absolute top-9 right-11 w-16 h-16 rounded-full bg-amber-50/90 pointer-events-none"></div>
+
+                {/* Nuages dérivants */}
+                <div className="asf-cloud-slow absolute top-14 left-8 pointer-events-none">
+                  <div className="relative">
+                    <div className="w-24 h-7 bg-white/85 rounded-full"></div>
+                    <div className="w-12 h-12 bg-white/85 rounded-full absolute -top-4 left-3"></div>
+                    <div className="w-9 h-9 bg-white/85 rounded-full absolute -top-2 left-12"></div>
+                  </div>
+                </div>
+                <div className="asf-cloud-fast absolute top-32 right-12 pointer-events-none">
+                  <div className="relative scale-75">
+                    <div className="w-20 h-6 bg-white/70 rounded-full"></div>
+                    <div className="w-10 h-10 bg-white/70 rounded-full absolute -top-3 left-2"></div>
+                  </div>
+                </div>
+                <div className="asf-cloud-slow absolute bottom-32 left-24 pointer-events-none">
+                  <div className="relative scale-90">
+                    <div className="w-16 h-5 bg-white/60 rounded-full"></div>
+                    <div className="w-8 h-8 bg-white/60 rounded-full absolute -top-2.5 left-2"></div>
+                  </div>
+                </div>
+
+                {/* Trajectoire de vol (pointillés) */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M-5 72 Q 28 44 55 52 T 108 24" stroke="#ffffff" strokeOpacity="0.45" strokeWidth="0.5" strokeDasharray="2.5 2.5" fill="none" />
+                </svg>
+
+                {/* Cessna principal qui traverse le ciel */}
+                <div className="asf-plane-cross absolute top-[38%] left-0 w-32 md:w-44 pointer-events-none">
+                  <div className="asf-bob drop-shadow-[0_8px_10px_rgba(10,70,89,0.25)]">
+                    <CessnaPlane variant="color" className="w-full" />
+                  </div>
+                </div>
+                {/* Petit Cessna d'arrière-plan (profondeur) */}
+                <div className="asf-plane-cross-slow absolute top-[18%] left-0 w-16 opacity-50 pointer-events-none">
+                  <div className="asf-bob">
+                    <CessnaPlane variant="color" className="w-full" spin={false} />
+                  </div>
+                </div>
+
+                {/* Carte mission (overlay) */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-deep-dark/85 via-deep/35 to-transparent p-6 text-white text-left">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="px-2 py-0.5 rounded text-[8px] tracking-widest font-bold uppercase bg-azur">MISSION</span>
                     <p className="text-[11px] font-mono tracking-wider opacity-90">Opérations Air & Terre</p>
                   </div>
                   <h3 className="text-lg font-bold font-display">Aviation Sans Frontières : Les Ailes de l'Humanitaire</h3>
-                  <p className="text-xs opacity-75 mt-1 leading-relaxed">
+                  <p className="text-xs opacity-80 mt-1 leading-relaxed">
                     Nous mobilisons l'expertise du monde de l'aviation pour secourir, soigner et acheminer de l'aide auprès des populations marginalisées.
                   </p>
                 </div>
               </motion.div>
 
-              {/* Decorative cloud path outline */}
+              {/* Halos décoratifs */}
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-azur/5 rounded-full blur-2xl pointer-events-none"></div>
               <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-azur-pastel/10 rounded-full blur-2xl pointer-events-none"></div>
             </div>
@@ -416,8 +471,13 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
           <div className="absolute -right-16 -top-16 w-60 h-60 bg-white/5 rounded-full blur-2xl"></div>
           <div className="absolute -left-16 -bottom-16 w-60 h-60 bg-white/5 rounded-full blur-2xl"></div>
 
+          {/* Cessna qui traverse la bannière */}
+          <div className="asf-plane-cross absolute top-8 left-0 w-24 opacity-80 pointer-events-none">
+            <CessnaPlane variant="white" className="w-full" />
+          </div>
+
           <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10 flex flex-col items-center">
-            <LogoASF className="w-16 h-16 animate-bounce" variant="white" />
+            <LogoASF className="w-16 h-16 asf-float" variant="white" />
             
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight font-display">
               Accédez au Portail Aviation Sans Frontières
