@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 /**
- * Petit Cessna (avion à aile haute) stylisé, aux couleurs d'Aviation Sans
- * Frontières. Orienté vers la droite (vol de gauche à droite).
+ * Petit Cessna (avion à aile haute) aux couleurs d'Aviation Sans Frontières.
+ * Orienté vers la droite (vol de gauche à droite).
  *
- *  - variant "color" : fuselage bleu profond sur ailes azur (sur fond clair)
- *  - variant "white" : monochrome blanc (sur fond foncé / bannières)
+ * En priorité, on affiche la VRAIE photo d'avion `public/cessna.png`
+ * (idéalement détourée = fond transparent). Si le fichier est absent, on
+ * retombe sur le dessin vectoriel intégré → aucune image cassée.
+ *
+ *  - variant "color" : photo réelle (ou fuselage bleu profond / ailes azur)
+ *  - variant "white" : silhouette blanche vectorielle (fonds foncés)
  */
 export default function CessnaPlane({
   className = 'w-28',
@@ -16,6 +20,23 @@ export default function CessnaPlane({
   variant?: 'color' | 'white';
   spin?: boolean;
 }) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  // La photo (fond clair) n'est utilisée que sur les fonds clairs.
+  // La photo fournie regarde vers la GAUCHE → on la retourne (-scale-x-100)
+  // pour qu'elle « regarde » dans le sens du vol (vers la droite).
+  if (variant === 'color' && !imgFailed) {
+    return (
+      <img
+        src="/cessna.png"
+        alt="Cessna en vol"
+        className={`${className} h-auto object-contain select-none -scale-x-100 drop-shadow-[0_10px_14px_rgba(10,70,89,0.28)]`}
+        draggable={false}
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+
   const body = variant === 'color' ? '#0e5e76' : '#ffffff';
   const wing = variant === 'color' ? '#1b98c4' : '#ffffff';
   const glass = variant === 'color' ? '#e8f5fb' : 'rgba(255,255,255,0.65)';
