@@ -41,10 +41,10 @@ import { notifyAntenneOnUpload, notifyAntenneOnSubmission } from '../lib/antenne
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
-import { StatusBadge, GuidedTour, ChecklistPanel, type TourStep } from './ui';
-import { getStatusMeta, STATUS_ORDER } from '../lib/status';
+import { StatusBadge, GuidedTour, ChecklistPanel, StatusFilterChips, type TourStep } from './ui';
 import { categoryOptions, computeChecklist } from '../lib/requiredDocuments';
-import { markTourSeen } from '../lib/tour';
+import { useCmdK } from '../hooks/useCmdK';
+import { useFirstRunTour } from '../hooks/useFirstRunTour';
 
 
 export default function Dashboard() {
@@ -568,29 +568,10 @@ export default function Dashboard() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   // Raccourci clavier ⌘K / Ctrl+K : focus la recherche de documents.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        if (searchInputRef.current) searchInputRef.current.focus();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  useCmdK(() => { if (searchInputRef.current) searchInputRef.current.focus(); });
 
-  // Lance automatiquement la visite à la TOUTE première connexion du compte
-  // (mémorisé sur le profil, donc pas de relance au rechargement de page).
-  const autoTourRef = useRef(false);
-  useEffect(() => {
-    if (autoTourRef.current || !organization) return;
-    autoTourRef.current = true;
-    if (organization.hasSeenTour) return;
-    markTourSeen(organization.id);
-    const t = setTimeout(() => setTourOpen(true), 900);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization?.id]);
+  // Lance automatiquement la visite à la TOUTE première connexion du compte.
+  useFirstRunTour(organization, () => setTourOpen(true));
 
   // Étapes « documents » détaillées sur un exemple concret (1ère ligne) si des
   // fichiers existent, sinon une explication générale de la zone.
@@ -1360,30 +1341,14 @@ export default function Dashboard() {
           </div>
 
           {/* Status quick filters */}
-          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto py-1 scrollbar-hide">
-            <button
-              type="button"
-              onClick={() => setFileStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all cursor-pointer ${fileStatusFilter === 'all' ? 'bg-deep text-white shadow-3xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-            >
-              Tous statuts
-            </button>
-            {STATUS_ORDER.map((s) => {
-              const meta = getStatusMeta(s);
-              const active = fileStatusFilter === s;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setFileStatusFilter(s)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all cursor-pointer inline-flex items-center gap-1.5 ${active ? 'bg-deep text-white shadow-3xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : meta.dot}`} />
-                  {meta.label}
-                </button>
-              );
-            })}
-          </div>
+          <StatusFilterChips
+            value={fileStatusFilter}
+            onChange={setFileStatusFilter}
+            className="overflow-x-auto py-1 scrollbar-hide"
+            chipClass={(active) =>
+              `px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all cursor-pointer inline-flex items-center ${active ? 'bg-deep text-white shadow-3xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`
+            }
+          />
 
           {/* Right Sort dropdown */}
           <div className="flex items-center gap-2 self-end xl:self-auto">

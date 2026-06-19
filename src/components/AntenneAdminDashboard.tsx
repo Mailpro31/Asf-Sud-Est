@@ -50,7 +50,8 @@ import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { queueEmail } from '../lib/antenneAdmins';
 import { logAction } from '../lib/auditLog';
-import { markTourSeen } from '../lib/tour';
+import { useCmdK } from '../hooks/useCmdK';
+import { useFirstRunTour } from '../hooks/useFirstRunTour';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
 import { useAuth } from '../context/AuthContext';
@@ -58,7 +59,8 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, ComplianceBar, ChecklistPanel, GuidedTour, type TourStep } from './ui';
+import { StatusBadge, ComplianceBar, ChecklistPanel, GuidedTour, StatusFilterChips, type TourStep } from './ui';
+import { computeChecklist } from '../lib/requiredDocuments';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -308,17 +310,10 @@ export default function AntenneAdminDashboard() {
   }, [partnerOrgs, orgSearch, orgQuickStatus]);
 
   // Raccourci clavier ⌘K / Ctrl+K : focus la recherche d'organismes.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setView('workspace');
-        setTimeout(() => orgSearchRef.current && orgSearchRef.current.focus(), 60);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  useCmdK(() => {
+    setView('workspace');
+    setTimeout(() => orgSearchRef.current && orgSearchRef.current.focus(), 60);
+  });
 
   // Étapes communes à toutes les pages.
   const tourIntro: TourStep[] = [
@@ -344,21 +339,8 @@ export default function AntenneAdminDashboard() {
   };
   const startTour = () => setActiveTour(tourByView[view]);
 
-  // Lance automatiquement la visite à la TOUTE première connexion du compte
-  // (mémorisé sur le profil, donc pas de relance au rechargement de page).
-  const autoTourRef = useRef(false);
-  useEffect(() => {
-    if (autoTourRef.current || !organization) return;
-    autoTourRef.current = true;
-    if (organization.hasSeenTour) return;
-    markTourSeen(organization.id);
-    const t = setTimeout(() => {
-      setView('workspace');
-      setActiveTour(tourByView.workspace);
-    }, 900);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization?.id]);
+  // Lance automatiquement la visite à la TOUTE première connexion du compte.
+  useFirstRunTour(organization, () => { setView('workspace'); setActiveTour(tourByView.workspace); });
 
   // Visite guidée de la fiche organisme (depuis la modale), détaillée sur un
   // exemple concret de document si l'organisme en a déposé.
@@ -1331,28 +1313,16 @@ export default function AntenneAdminDashboard() {
                 />
                 <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 border border-slate-200 rounded-md px-1.5 py-0.5 bg-slate-50 hidden sm:block">⌘K</span>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => setOrgQuickStatus('all')}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${orgQuickStatus === 'all' ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'}`}
-                >
-                  Tous ({orgStatusCounts.all})
-                </button>
-                {STATUS_ORDER.map((s) => {
-                  const meta = getStatusMeta(s);
-                  const active = orgQuickStatus === s;
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => setOrgQuickStatus(s)}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${active ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'}`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : meta.dot}`} />
-                      {meta.label} ({orgStatusCounts[s] || 0})
-                    </button>
-                  );
-                })}
-              </div>
+              <StatusFilterChips
+                value={orgQuickStatus}
+                onChange={setOrgQuickStatus}
+                counts={orgStatusCounts}
+                allLabel="Tous"
+                className="gap-2"
+                chipClass={(active) =>
+                  `text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center transition-colors ${active ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'}`
+                }
+              />
             </div>
           )}
 
@@ -1369,6 +1339,7 @@ export default function AntenneAdminDashboard() {
               {filteredPartnerOrgs.map((org) => {
                 const orgFiles = files.filter((f) => f.orgId === org.id);
                 const validated = orgFiles.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
+                const dossierToFix = !!org.dossierSubmittedAt && !computeChecklist(orgFiles).submittable;
                 return (
                   <button
                     key={org.id}
@@ -1384,9 +1355,15 @@ export default function AntenneAdminDashboard() {
                       <StatusBadge status={org.submissionStatus} />
                     </div>
                     {org.dossierSubmittedAt && (
-                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
-                        <CheckCircle2 className="w-3 h-3" /> Dossier soumis
-                      </span>
+                      dossierToFix ? (
+                        <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                          <AlertCircle className="w-3 h-3" /> Soumis · à corriger
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                          <CheckCircle2 className="w-3 h-3" /> Dossier soumis
+                        </span>
+                      )
                     )}
                     <div className="mt-3">
                       <ComplianceBar validated={validated} total={orgFiles.length} />
@@ -1592,13 +1569,23 @@ export default function AntenneAdminDashboard() {
                   </div>
 
                   {selectedOrg.dossierSubmittedAt && (
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-emerald-800">Dossier soumis pour revue</p>
-                        <p className="text-[11px] text-emerald-700">Le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')} par l'organisme.</p>
+                    computeChecklist(orgAll).submittable ? (
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-emerald-800">Dossier soumis pour revue</p>
+                          <p className="text-[11px] text-emerald-700">Le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')} par l'organisme.</p>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-amber-800">Dossier soumis · à corriger</p>
+                          <p className="text-[11px] text-amber-700">Soumis le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')}, mais une pièce est manquante ou rejetée depuis.</p>
+                        </div>
+                      </div>
+                    )
                   )}
 
                   <div data-tour="org-access" className="rounded-2xl border border-slate-200 bg-white p-4">

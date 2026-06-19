@@ -11,3 +11,4 @@ export { ComplianceBar, type ComplianceBarProps } from './ComplianceBar';
 export { ComplianceRing, type ComplianceRingProps } from './ComplianceRing';
 export { GuidedTour, type GuidedTourProps, type TourStep } from './GuidedTour';
 export { ChecklistPanel, type ChecklistPanelProps } from './ChecklistPanel';
+export { StatusFilterChips, type StatusFilterChipsProps, type StatusFilterValue } from './StatusFilterChips';
