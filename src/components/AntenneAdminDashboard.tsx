@@ -106,6 +106,8 @@ export default function AntenneAdminDashboard() {
   const [orgFolderId, setOrgFolderId] = useState<string | null>(null);
   // Téléchargement groupé en .zip en cours.
   const [zipping, setZipping] = useState(false);
+  // Onglet actif du tableau de bord (réduit la longueur de la page).
+  const [view, setView] = useState<'workspace' | 'activity' | 'settings'>('workspace');
   // Tri, filtre par organisme, sélection multiple, glisser-déposer
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc');
   const [orgFilter, setOrgFilter] = useState<string>('all');
@@ -1069,7 +1071,27 @@ export default function AntenneAdminDashboard() {
           ))}
         </div>
 
+        {/* Navigation par onglets : évite une page trop longue */}
+        <div className="flex items-center gap-1.5 bg-white border border-slate-200/70 rounded-2xl p-1.5 shadow-asf-sm w-full sm:w-fit overflow-x-auto">
+          {([
+            { id: 'workspace', label: 'Espace de travail', icon: Building2 },
+            { id: 'activity', label: 'Journal', icon: Clock },
+            { id: 'settings', label: 'Réglages', icon: Bell },
+          ] as const).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setView(t.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${
+                view === t.id ? 'bg-azur text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <t.icon className="w-4 h-4" /> {t.label}
+            </button>
+          ))}
+        </div>
+
         {/* Réglages : notification e-mail à chaque dépôt */}
+        {view === 'settings' && (
         <section className="card-asf p-5 space-y-4">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
@@ -1078,7 +1100,7 @@ export default function AntenneAdminDashboard() {
             <div className="min-w-0">
               <h2 className="font-display text-deep font-bold tracking-tight">Notifications par e-mail</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Recevez un e-mail à chaque nouveau dossier ou fichier déposé par un partenaire de votre antenne.
+                Un e-mail à chaque nouveau dépôt d'un partenaire.
               </p>
             </div>
           </div>
@@ -1116,17 +1138,15 @@ export default function AntenneAdminDashboard() {
             </button>
           </div>
         </section>
+        )}
 
+        {view === 'workspace' && (<>
         {/* Organismes */}
         <section className="space-y-3">
-          <div>
-            <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-azur" /> Organismes de l'antenne
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Cliquez sur un organisme pour voir ses documents et gérer son compte.
-            </p>
-          </div>
+          <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-azur" /> Organismes
+            <span className="text-xs font-normal text-slate-400">· cliquez pour gérer</span>
+          </h2>
           {partnerOrgs.length === 0 ? (
             <div className="card-asf p-6 text-center text-sm text-slate-500">
               Aucun organisme rattaché à cette antenne pour le moment.
@@ -1362,15 +1382,18 @@ export default function AntenneAdminDashboard() {
             )}
           </div>
         </section>
+        </>)}
 
         {/* Journal d'activité de l'antenne */}
-        <section className="mt-8">
+        {view === 'activity' && (
+        <section>
           <AuditLogPanel
             antenneId={antenneId}
-            title="Journal d'activité de l'antenne"
-            subtitle={`Toutes les actions des comptes rattachés à l'antenne ${antenneName}.`}
+            title="Journal d'activité"
+            subtitle={`Actions des comptes de l'antenne ${antenneName}.`}
           />
         </section>
+        )}
       </main>
 
       <FilePreviewModal
