@@ -31,6 +31,10 @@ import {
   Trash2,
   Download,
   Pencil,
+  X,
+  Mail,
+  Phone,
+  User,
 } from 'lucide-react';
 import { Bell } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
@@ -82,6 +86,10 @@ export default function AntenneAdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<'all' | SubmissionStatus>('all');
   const [previewFile, setPreviewFile] = useState<DossierFile | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  // Fiche détaillée d'un organisme (ses fichiers + gestion de son compte).
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [updatingOrgStatus, setUpdatingOrgStatus] = useState(false);
+  const orgUploadRef = useRef<any>(null);
 
   // Gestion des fichiers (dépôt, renommage, suppression, partage).
   const [uploading, setUploading] = useState(false);
@@ -272,8 +280,46 @@ export default function AntenneAdminDashboard() {
     }
   };
 
+  // --- Statut du COMPTE d'un organisme (valider / suspendre, etc.) ---
+  // Un organisme doit être « Validé » pour pouvoir déposer des fichiers
+  // lui-même : c'est ce levier qui autorise/bloque ses dépôts.
+  const handleUpdateOrgStatus = async (org: Organization, newStatus: SubmissionStatus) => {
+    setUpdatingOrgStatus(true);
+    const logIt = () => logAction('org_status_change', {
+      targetType: 'organization',
+      targetId: org.id,
+      targetName: org.name,
+      antenne_id: org.antenne_id || antenneId,
+      delegation_id: org.delegation_id || delegationId,
+      details: `Statut du compte : ${getStatusMeta(newStatus).label}`,
+    });
+    if (localDb.isSandboxActive()) {
+      const t = localDb.getOrganizations().find((o) => o.id === org.id);
+      if (t) { (t as any).submissionStatus = newStatus; localDb.saveOrganization(t as any); }
+      setOrgProfiles((prev) => prev.map((o) => (o.id === org.id ? { ...o, submissionStatus: newStatus } : o)));
+      logIt();
+      setUpdatingOrgStatus(false);
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'organizations', org.id), {
+        submissionStatus: newStatus,
+        updatedAt: Date.now(),
+      });
+      logIt();
+      toast(`Compte « ${org.name} » : ${getStatusMeta(newStatus).label}`, 'success');
+    } catch (err: any) {
+      console.error('Update org status failed:', err);
+      toast("Impossible de mettre à jour le statut du compte : " + (err?.message || 'erreur'), 'error');
+    } finally {
+      setUpdatingOrgStatus(false);
+    }
+  };
+
   // --- Dépôt de fichiers dans l'antenne (par le gestionnaire) ---
-  const handleUploadFiles = async (selected: File[]) => {
+  // `targetOrgId` : si fourni, le document est rattaché à cet organisme
+  // (dépôt depuis sa fiche) ; sinon document interne de l'antenne.
+  const handleUploadFiles = async (selected: File[], targetOrgId?: string) => {
     if (!selected.length || !antenneId) return;
     setUploading(true);
     setUploadProgress(0);
@@ -281,7 +327,7 @@ export default function AntenneAdminDashboard() {
     try {
       for (const f of selected) {
         const meta = {
-          orgId: 'admin_created',
+          orgId: targetOrgId || 'admin_created',
           folderId: null as string | null,
           delegation_id: delegationId,
           antenne_id: antenneId,
@@ -485,7 +531,77 @@ export default function AntenneAdminDashboard() {
     setPreviewFile(null);
   };
 
+  // Ligne de document réutilisable (liste principale + fiche organisme).
+  const renderFileRow = (file: DossierFile) => (
+    <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/70 transition-colors">
+      <div className="w-9 h-9 rounded-lg bg-azur/10 text-azur flex items-center justify-center shrink-0">
+        <FileText className="w-4 h-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <button
+          onClick={() => setPreviewFile(file)}
+          className="font-medium text-slate-800 hover:text-azur truncate block text-left w-full"
+        >
+          {file.name}
+        </button>
+        <p className="text-xs text-slate-500 truncate">
+          {orgName(file.orgId)} · {formatBytes(file.size)} · {new Date(file.uploadDate).toLocaleDateString('fr-FR')}
+        </p>
+      </div>
+
+      {/* Sélecteur de statut */}
+      <div className="relative shrink-0">
+        <select
+          value={file.submissionStatus || 'Pending'}
+          onChange={(e) => handleUpdateStatus(file, e.target.value as SubmissionStatus)}
+          className="appearance-none cursor-pointer text-xs font-semibold rounded-full border border-slate-200 bg-white pl-3 pr-7 py-1.5 text-slate-700 focus:outline-none focus:border-azur"
+          title="Changer le statut"
+        >
+          {STATUS_ORDER.map((s) => (
+            <option key={s} value={s}>{getStatusMeta(s).label}</option>
+          ))}
+        </select>
+        <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+      </div>
+
+      {/* Partage avec le partenaire (uniquement pour les dépôts gestionnaire) */}
+      {file.uploadedBy === 'admin' && (
+        <button
+          onClick={() => handleToggleShare(file)}
+          className={`text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 transition-colors ${
+            file.sharedWithPartner !== false
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-slate-100 text-slate-500 border-slate-200'
+          }`}
+          title={file.sharedWithPartner !== false ? 'Partagé avec le partenaire (cliquer pour rendre privé)' : 'Privé (cliquer pour partager)'}
+        >
+          {file.sharedWithPartner !== false ? '🔓 Partagé' : '🔒 Privé'}
+        </button>
+      )}
+
+      <button onClick={() => setPreviewFile(file)} className="btn-ghost p-2 shrink-0" title="Aperçu">
+        <Eye className="w-4 h-4" />
+      </button>
+      <button onClick={() => handleDownload(file)} className="btn-ghost p-2 shrink-0" title="Télécharger">
+        <Download className="w-4 h-4" />
+      </button>
+      <button onClick={() => openRename(file)} className="btn-ghost p-2 shrink-0" title="Renommer">
+        <Pencil className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => setDeletingFile(file)}
+        className="btn-ghost p-2 shrink-0 text-rose-500 hover:bg-rose-50"
+        title="Supprimer"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+
   if (!organization) return null;
+
+  const selectedOrg = selectedOrgId ? partnerOrgs.find((o) => o.id === selectedOrgId) || null : null;
+  const selectedOrgFiles = selectedOrg ? files.filter((f) => f.orgId === selectedOrg.id) : [];
 
   const STAT_CARDS = [
     { label: 'Documents', value: stats.total, icon: FileText, tone: 'text-azur bg-azur/10' },
@@ -644,18 +760,24 @@ export default function AntenneAdminDashboard() {
               {partnerOrgs.map((org) => {
                 const orgFiles = files.filter((f) => f.orgId === org.id);
                 return (
-                  <div key={org.id} className="card-asf p-4">
+                  <button
+                    key={org.id}
+                    onClick={() => setSelectedOrgId(org.id)}
+                    className="card-asf p-4 text-left hover:border-azur hover:shadow-md transition-all cursor-pointer group"
+                    title="Voir les documents et gérer ce compte"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-semibold text-deep truncate">{org.name}</p>
+                        <p className="font-semibold text-deep truncate group-hover:text-azur transition-colors">{org.name}</p>
                         <p className="text-xs text-slate-500 truncate">{org.email}</p>
                       </div>
                       <StatusBadge status={org.submissionStatus} />
                     </div>
-                    <p className="text-xs text-slate-500 mt-3">
-                      {orgFiles.length} document{orgFiles.length > 1 ? 's' : ''}
+                    <p className="text-xs text-slate-500 mt-3 flex items-center justify-between">
+                      <span>{orgFiles.length} document{orgFiles.length > 1 ? 's' : ''}</span>
+                      <span className="text-azur font-bold opacity-0 group-hover:opacity-100 transition-opacity">Gérer →</span>
                     </p>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -718,71 +840,7 @@ export default function AntenneAdminDashboard() {
               <div className="p-10 text-center text-sm text-slate-500">Aucun document à afficher.</div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {visibleFiles.map((file) => (
-                  <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/70 transition-colors">
-                    <div className="w-9 h-9 rounded-lg bg-azur/10 text-azur flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <button
-                        onClick={() => setPreviewFile(file)}
-                        className="font-medium text-slate-800 hover:text-azur truncate block text-left w-full"
-                      >
-                        {file.name}
-                      </button>
-                      <p className="text-xs text-slate-500 truncate">
-                        {orgName(file.orgId)} · {formatBytes(file.size)} · {new Date(file.uploadDate).toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-
-                    {/* Sélecteur de statut */}
-                    <div className="relative shrink-0">
-                      <select
-                        value={file.submissionStatus || 'Pending'}
-                        onChange={(e) => handleUpdateStatus(file, e.target.value as SubmissionStatus)}
-                        className="appearance-none cursor-pointer text-xs font-semibold rounded-full border border-slate-200 bg-white pl-3 pr-7 py-1.5 text-slate-700 focus:outline-none focus:border-azur"
-                        title="Changer le statut"
-                      >
-                        {STATUS_ORDER.map((s) => (
-                          <option key={s} value={s}>{getStatusMeta(s).label}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-
-                    {/* Partage avec le partenaire (uniquement pour les dépôts coordinateur) */}
-                    {file.uploadedBy === 'admin' && (
-                      <button
-                        onClick={() => handleToggleShare(file)}
-                        className={`text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 transition-colors ${
-                          file.sharedWithPartner !== false
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-slate-100 text-slate-500 border-slate-200'
-                        }`}
-                        title={file.sharedWithPartner !== false ? 'Partagé avec le partenaire (cliquer pour rendre privé)' : 'Privé coordinateur (cliquer pour partager)'}
-                      >
-                        {file.sharedWithPartner !== false ? '🔓 Partagé' : '🔒 Privé'}
-                      </button>
-                    )}
-
-                    <button onClick={() => setPreviewFile(file)} className="btn-ghost p-2 shrink-0" title="Aperçu">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDownload(file)} className="btn-ghost p-2 shrink-0" title="Télécharger">
-                      <Download className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => openRename(file)} className="btn-ghost p-2 shrink-0" title="Renommer">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeletingFile(file)}
-                      className="btn-ghost p-2 shrink-0 text-rose-500 hover:bg-rose-50"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                {visibleFiles.map((file) => renderFileRow(file))}
               </div>
             )}
           </div>
@@ -849,6 +907,111 @@ export default function AntenneAdminDashboard() {
               <button onClick={confirmDelete} disabled={deleting} className="btn-danger text-sm disabled:opacity-60">
                 {deleting ? 'Suppression…' : 'Supprimer'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fiche détaillée d'un organisme : ses documents + gestion du compte */}
+      {selectedOrg && (
+        <div
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto"
+          onClick={() => setSelectedOrgId(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-3xl my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* En-tête */}
+            <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-display text-lg font-bold text-deep truncate">{selectedOrg.name}</h3>
+                    <StatusBadge status={selectedOrg.submissionStatus} />
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1 space-y-0.5">
+                    {selectedOrg.contactName && (
+                      <p className="flex items-center gap-1.5 truncate"><User className="w-3 h-3" /> {selectedOrg.contactName}</p>
+                    )}
+                    {selectedOrg.email && (
+                      <p className="flex items-center gap-1.5 truncate"><Mail className="w-3 h-3" /> {selectedOrg.email}</p>
+                    )}
+                    {selectedOrg.phone && (
+                      <p className="flex items-center gap-1.5 truncate"><Phone className="w-3 h-3" /> {selectedOrg.phone}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setSelectedOrgId(null)} className="btn-ghost p-2 shrink-0" title="Fermer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Gestion du compte */}
+            <div className="p-5 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-end gap-3">
+              <div className="flex-1">
+                <label className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
+                  Statut du compte
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedOrg.submissionStatus || 'Pending'}
+                    onChange={(e) => handleUpdateOrgStatus(selectedOrg, e.target.value as SubmissionStatus)}
+                    disabled={updatingOrgStatus}
+                    className="appearance-none cursor-pointer text-sm font-semibold rounded-xl border border-slate-200 bg-white pl-3 pr-9 py-2 text-slate-700 focus:outline-none focus:border-azur disabled:opacity-60 w-full sm:w-auto"
+                  >
+                    {STATUS_ORDER.map((s) => (
+                      <option key={s} value={s}>{getStatusMeta(s).label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-snug max-w-md">
+                  L'organisme doit être <strong>Validé</strong> pour pouvoir déposer lui-même des documents.
+                </p>
+              </div>
+              <input
+                ref={orgUploadRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const fs = e.target.files ? Array.from(e.target.files) : [];
+                  if (fs.length) handleUploadFiles(fs as File[], selectedOrg.id);
+                  if (e.target) (e.target as any).value = '';
+                }}
+              />
+              <button
+                onClick={() => orgUploadRef.current && orgUploadRef.current.click()}
+                disabled={uploading}
+                className="btn-asf text-sm shrink-0 disabled:opacity-60"
+                title="Déposer un document pour cet organisme"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{uploading ? `Envoi… ${uploadProgress}%` : 'Déposer pour cet organisme'}</span>
+              </button>
+            </div>
+
+            {/* Documents de l'organisme */}
+            <div className="max-h-[55vh] overflow-y-auto">
+              <div className="px-5 py-3 flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  {selectedOrgFiles.length} document{selectedOrgFiles.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              {selectedOrgFiles.length === 0 ? (
+                <div className="px-5 pb-8 pt-2 text-center text-sm text-slate-400 font-semibold">
+                  Cet organisme n'a déposé aucun document pour le moment.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 border-t border-slate-100">
+                  {selectedOrgFiles.map((file) => renderFileRow(file))}
+                </div>
+              )}
             </div>
           </div>
         </div>
