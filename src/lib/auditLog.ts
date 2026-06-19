@@ -19,8 +19,8 @@ import { localDb } from './localDb';
  *
  * Lecture :
  *  - super admin : voit TOUS les logs.
- *  - gestionnaire / coordinateur d'antenne : voit uniquement les logs de SON
- *    antenne (filtrés par `antenne_id`).
+ *  - gestionnaire d'antenne : voit uniquement les logs de SON antenne
+ *    (filtrés par `antenne_id`).
  *
  * Les écritures sont volontairement « best-effort » : un échec de
  * journalisation ne doit jamais bloquer l'action métier de l'utilisateur.
@@ -132,24 +132,17 @@ export async function logAction(action: AuditAction, opts: LogOptions = {}): Pro
 
 /**
  * Abonnement temps réel au journal.
- *  - `antenneId` fourni  → logs de cette antenne (vue gestionnaire d'antenne).
- *  - `delegationId` fourni → logs de cette délégation (vue coordinateur).
- *  - aucun des deux → tous les logs (vue super admin).
+ *  - `antenneId` fourni → logs de cette antenne (vue gestionnaire d'antenne).
+ *  - `antenneId` absent → tous les logs (vue super admin / siège).
  */
 export function subscribeAuditLogs(
-  scope: { antenneId?: string | null; delegationId?: string | null },
+  scope: { antenneId?: string | null },
   cb: (logs: AuditLog[]) => void,
   max = 500,
 ): () => void {
   const antenneId = scope.antenneId || null;
-  const delegationId = scope.delegationId || null;
-  // L'antenne prime sur la délégation si les deux sont fournis.
-  const field: 'antenne_id' | 'delegation_id' | null = antenneId
-    ? 'antenne_id'
-    : delegationId
-      ? 'delegation_id'
-      : null;
-  const value = antenneId || delegationId || null;
+  const field: 'antenne_id' | null = antenneId ? 'antenne_id' : null;
+  const value = antenneId;
 
   if (localDb.isSandboxActive()) {
     const load = () => {

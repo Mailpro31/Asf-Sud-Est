@@ -66,12 +66,10 @@ const CATEGORIES: { id: string; label: string; actions: string[] }[] = [
 
 export default function AuditLogPanel({
   antenneId,
-  delegationId,
   title = "Journal d'activité",
   subtitle,
 }: {
   antenneId?: string | null;
-  delegationId?: string | null;
   title?: string;
   subtitle?: string;
 }) {
@@ -80,9 +78,9 @@ export default function AuditLogPanel({
   const [category, setCategory] = useState('all');
 
   useEffect(() => {
-    const unsub = subscribeAuditLogs({ antenneId: antenneId || null, delegationId: delegationId || null }, setLogs);
+    const unsub = subscribeAuditLogs({ antenneId: antenneId || null }, setLogs);
     return unsub;
-  }, [antenneId, delegationId]);
+  }, [antenneId]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
