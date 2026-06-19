@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   collection,
@@ -59,7 +59,7 @@ import AntenneGroupsManager from './AntenneGroupsManager';
 import AntenneAdminsManager from './AntenneAdminsManager';
 import AuditLogPanel from './AuditLogPanel';
 import { localDb } from '../lib/localDb';
-import { logAction } from '../lib/auditLog';
+import { logAction, subscribeAuditLogs, type AuditLog } from '../lib/auditLog';
 import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes } from '../lib/utils';
@@ -1214,6 +1214,31 @@ export default function AdminPanel() {
     .flat()
     .map((a: { id: string; name: string }) => ({ id: a.id, name: a.name }));
 
+  // --- Tableau de bord chiffré (hub) ---
+  // Conformité par antenne : documents validés / total, trié par volume.
+  const antenneStats = useMemo(() => {
+    const nameOf = (id: string) => allAntennesFlat.find((a) => a.id === id)?.name || id || '—';
+    const map = new Map<string, { total: number; validated: number }>();
+    for (const f of files) {
+      const id = f.antenne_id || '—';
+      const e = map.get(id) || { total: 0, validated: 0 };
+      e.total++;
+      if ((f.submissionStatus || 'Pending') === 'Validated') e.validated++;
+      map.set(id, e);
+    }
+    return Array.from(map.entries())
+      .map(([id, s]) => ({ id, name: nameOf(id), ...s }))
+      .sort((a, b) => b.total - a.total);
+  }, [files, allAntennesFlat]);
+
+  // Activité récente : 6 dernières entrées du journal (super admin uniquement).
+  const [recentLogs, setRecentLogs] = useState<AuditLog[]>([]);
+  useEffect(() => {
+    if (!isSuperAdminMode) return;
+    const unsub = subscribeAuditLogs({}, (l) => setRecentLogs(l.slice(0, 6)), 6);
+    return unsub;
+  }, [isSuperAdminMode]);
+
   return (
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>
       
@@ -1304,6 +1329,67 @@ export default function AdminPanel() {
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">{k.label}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Tableau de bord chiffré : conformité par antenne + activité récente */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Conformité par antenne */}
+              <div className="card-asf p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Conformité par antenne</h3>
+                  <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">validés / total</span>
+                </div>
+                {antenneStats.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-6 text-center">Aucun document pour le moment.</p>
+                ) : (
+                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                    {antenneStats.slice(0, 8).map((a) => (
+                      <div key={a.id}>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{a.name}</span>
+                          <span className="text-[11px] text-slate-400 shrink-0">{a.total} doc{a.total > 1 ? 's' : ''}</span>
+                        </div>
+                        <ComplianceBar validated={a.validated} total={a.total} showLabel={false} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Activité récente */}
+              <div className="card-asf p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Activité récente</h3>
+                  <button
+                    onClick={() => { setNavigationView('logs'); setCurrentFolderId(null); }}
+                    className="text-[11px] font-bold text-azur hover:underline inline-flex items-center gap-1"
+                  >
+                    Tout voir <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+                {recentLogs.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-6 text-center">Aucune activité récente.</p>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {recentLogs.map((log) => (
+                      <div key={log.id} className="py-2.5 flex items-start gap-2 min-w-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-azur mt-1.5 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-slate-700 dark:text-slate-200 truncate">
+                            <span className="font-bold">{log.actorName}</span>
+                            {' — '}
+                            <span className="text-slate-500">{log.details || log.action}</span>
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            {new Date(log.timestamp).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            {log.targetName ? ` · ${log.targetName}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Section title */}
@@ -1609,7 +1695,7 @@ export default function AdminPanel() {
                   
                   <div className="flex items-start gap-4 md:gap-5 relative z-10 w-full md:w-auto">
                     <div className={`w-14 h-14 ${themeAttr.colorClass} rounded-2xl flex items-center justify-center shrink-0 border border-current/10 shadow-xs transform hover:rotate-3 transition-all duration-350`}>
-                      <span className="text-2xl select-none">{themeAttr.icon}</span>
+                      <LogoASF className="w-9 h-9" variant="color" />
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
