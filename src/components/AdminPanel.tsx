@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   collection,
@@ -743,20 +743,42 @@ export default function AdminPanel() {
     }
   };
 
+  // Antenne à sélectionner après un changement de délégation (drill-in direct
+  // depuis le hub « Antennes à suivre »).
+  const pendingAntenneRef = useRef<string | null>(null);
+
   // When switcher / delegation context changes, auto-load first city tab under her responsibility
   useEffect(() => {
     if (delegationFilterId) {
       const townList = ANTENNES_BY_DELEGATION[delegationFilterId] || [];
       if (townList.length > 0) {
-        setActiveAntenneId(townList[0].id);
+        const wanted = pendingAntenneRef.current;
+        if (wanted && townList.some((t) => t.id === wanted)) {
+          setActiveAntenneId(wanted);
+        } else {
+          setActiveAntenneId(townList[0].id);
+        }
       } else {
         setActiveAntenneId(null);
       }
     } else {
       setActiveAntenneId(null);
     }
+    pendingAntenneRef.current = null;
     setCurrentFolderId(null);
   }, [delegationFilterId]);
+
+  // Entre directement dans l'espace de travail d'une antenne donnée.
+  // On pose l'antenne voulue à la fois en direct (même délégation) et via la ref
+  // (consommée par l'effet ci-dessus si la délégation change).
+  const enterAntenne = (delegationId: string, antenneId: string) => {
+    if (!delegationId) return;
+    pendingAntenneRef.current = antenneId;
+    setActiveTab('workspaces');
+    setActiveDelegationId(delegationId);
+    setNavigationView('ailes');
+    setActiveAntenneId(antenneId);
+  };
 
   // When active city changes, close active folder representing the open organism
   useEffect(() => {
@@ -1225,21 +1247,30 @@ export default function AdminPanel() {
     .map((a: { id: string; name: string }) => ({ id: a.id, name: a.name }));
 
   // --- Tableau de bord chiffré (hub) ---
-  // Conformité par antenne : documents validés / total, trié par volume.
+  // Antennes à suivre : documents validés / total + en attente, triées pour
+  // mettre en tête celles qui demandent une action (dépôts en attente).
+  const delegationOfAntenne = (antId: string) =>
+    Object.keys(ANTENNES_BY_DELEGATION).find((d) =>
+      (ANTENNES_BY_DELEGATION[d] || []).some((a) => a.id === antId),
+    ) || '';
   const antenneStats = useMemo(() => {
     const nameOf = (id: string) => allAntennesFlat.find((a) => a.id === id)?.name || id || '—';
-    const map = new Map<string, { total: number; validated: number }>();
+    const map = new Map<string, { total: number; validated: number; pending: number }>();
     for (const f of files) {
       const id = f.antenne_id || '—';
-      const e = map.get(id) || { total: 0, validated: 0 };
+      const e = map.get(id) || { total: 0, validated: 0, pending: 0 };
       e.total++;
-      if ((f.submissionStatus || 'Pending') === 'Validated') e.validated++;
+      const st = f.submissionStatus || 'Pending';
+      if (st === 'Validated') e.validated++;
+      if (st === 'Pending' || st === 'Under review') e.pending++;
       map.set(id, e);
     }
     return Array.from(map.entries())
-      .map(([id, s]) => ({ id, name: nameOf(id), ...s }))
-      .sort((a, b) => b.total - a.total);
-  }, [files, allAntennesFlat]);
+      .map(([id, s]) => ({ id, name: nameOf(id), delegationId: delegationOfAntenne(id), ...s }))
+      // En tête : le plus de dépôts en attente, puis le plus gros volume.
+      .sort((a, b) => b.pending - a.pending || b.total - a.total);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, allAntennesFlat, ANTENNES_BY_DELEGATION]);
 
   // Activité récente : 6 dernières entrées du journal (super admin uniquement).
   const [recentLogs, setRecentLogs] = useState<AuditLog[]>([]);
@@ -1319,7 +1350,7 @@ export default function AdminPanel() {
     return [
       tourIntro,
       { target: '[data-tour="kpi"]', title: 'Vos indicateurs clés', text: "De gauche à droite : documents en attente de validation, organismes en attente, total des justificatifs reçus et nombre d'organismes rattachés. Les cartes en attente sont surlignées." },
-      { target: '[data-tour="conformity"]', title: 'Conformité par antenne', text: "L'anneau donne le taux de conformité global (documents validés / total). En dessous, le détail antenne par antenne pour repérer les dossiers à relancer." },
+      { target: '[data-tour="conformity"]', title: 'Antennes à suivre', text: "L'anneau donne la conformité globale. En dessous, les antennes triées par dépôts en attente : cliquez sur une ligne pour entrer directement dans son espace et traiter les documents." },
       { target: '[data-tour="nav"]', title: 'Vos espaces de travail', text: "Entrez dans les Ailes du Sourire (délégations), les Membres (comptes et permissions), les Implantations, ou le Journal d'activité national." },
     ];
   };
@@ -1438,24 +1469,37 @@ export default function AdminPanel() {
                   <div className="flex items-center gap-3">
                     <ComplianceRing validated={globalValidated} total={files.length} size={48} />
                     <div>
-                      <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Conformité par antenne</h3>
-                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">conformité globale</p>
+                      <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Antennes à suivre</h3>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">priorité aux dépôts en attente</p>
                     </div>
                   </div>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">validés / total</span>
+                  <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">conformité {files.length > 0 ? Math.round((globalValidated / files.length) * 100) : 0}%</span>
                 </div>
                 {antenneStats.length === 0 ? (
                   <p className="text-xs text-slate-400 py-6 text-center">Aucun document pour le moment.</p>
                 ) : (
-                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                  <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
                     {antenneStats.slice(0, 8).map((a) => (
-                      <div key={a.id}>
+                      <button
+                        key={a.id}
+                        onClick={() => a.delegationId && enterAntenne(a.delegationId, a.id)}
+                        disabled={!a.delegationId}
+                        className="w-full text-left rounded-xl p-2 -mx-1 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors disabled:cursor-default group"
+                        title={a.delegationId ? `Ouvrir l'espace de ${a.name}` : a.name}
+                      >
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{a.name}</span>
-                          <span className="text-[11px] text-slate-400 shrink-0">{a.total} doc{a.total > 1 ? 's' : ''}</span>
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate group-hover:text-azur transition-colors">{a.name}</span>
+                          <span className="shrink-0 inline-flex items-center gap-1.5">
+                            {a.pending > 0 ? (
+                              <span className="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 font-mono">🕒 {a.pending} à traiter</span>
+                            ) : (
+                              <span className="text-[10px] font-black text-emerald-600">✓ à jour</span>
+                            )}
+                            <span className="text-[11px] text-slate-400">{a.total} doc{a.total > 1 ? 's' : ''}</span>
+                          </span>
                         </div>
                         <ComplianceBar validated={a.validated} total={a.total} showLabel={false} />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
