@@ -1,0 +1,144 @@
+/**
+ * Onboarding « Choix de l'antenne ».
+ *
+ * Affiché lorsqu'un compte « organisation » n'a pas encore d'antenne de
+ * rattachement — c'est notamment le cas après une inscription / création de
+ * compte via Google, où l'antenne n'est pas demandée pendant le flux OAuth.
+ * L'utilisateur choisit ici son antenne validante, puis son profil est
+ * complété et il accède à son espace.
+ */
+
+import React, { useMemo, useState } from 'react';
+import { doc, setDoc } from 'firebase/firestore';
+import { MapPin, LogOut, ArrowRight } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { localDb } from '../lib/localDb';
+import { LogoASF } from './LandingPage';
+
+export default function ChooseAntenne() {
+  const { user, organization, antennes, refreshOrganization, signOut } = useAuth();
+  const { themeConfig } = useTheme();
+  const [selectedAntenne, setSelectedAntenne] = useState(organization?.antenne_id || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Liste dédupliquée de toutes les antennes (toutes délégations).
+  const activeAntennesList = useMemo(
+    () =>
+      (Object.values(antennes || {}).flat() as { id: string; name: string }[]).filter(
+        (val, i, arr) => arr.findIndex((t) => t.id === val.id) === i,
+      ),
+    [antennes],
+  );
+
+  const getAntenneName = (id: string) => activeAntennesList.find((a) => a.id === id)?.name || '';
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!selectedAntenne) {
+      setError('Veuillez sélectionner votre antenne de rattachement.');
+      return;
+    }
+    if (!user) return;
+
+    setLoading(true);
+    const now = Date.now();
+
+    // Mise à jour locale (sandbox) au cas où Firestore serait indisponible.
+    try {
+      const existing = localDb.getOrganizations().find((o) => o.id === user.uid);
+      if (existing) {
+        localDb.saveOrganization({ ...existing, delegation_id: 'france', antenne_id: selectedAntenne, updatedAt: now });
+      }
+    } catch (err) {
+      console.warn('Could not update local organization', err);
+    }
+
+    try {
+      await setDoc(
+        doc(db, 'organizations', user.uid),
+        { delegation_id: 'france', antenne_id: selectedAntenne, updatedAt: now },
+        { merge: true },
+      );
+      await refreshOrganization();
+    } catch (err: any) {
+      console.error('Failed to set antenne:', err);
+      const msg = (err?.message || '').toLowerCase();
+      if (msg.includes('quota') || msg.includes('limit exceeded') || msg.includes('permission') || msg.includes('insufficient')) {
+        localDb.setSandboxActive(true);
+        await refreshOrganization();
+      } else {
+        setError("Impossible d'enregistrer votre antenne. Veuillez réessayer.");
+        setLoading(false);
+      }
+    }
+  };
+
+  return (
+    <div className={`min-h-screen flex flex-col justify-center items-center ${themeConfig.bg} ${themeConfig.fontFamily} p-4 md:p-8 transition-all duration-300`}>
+      <div className="w-full max-w-lg">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-azur-light flex items-center justify-center mb-3">
+            <LogoASF className="w-9 h-9" />
+          </div>
+          <h1 className="font-display text-2xl font-bold text-deep dark:text-white tracking-tight">
+            Dernière étape : votre antenne
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-md">
+            Bienvenue{organization?.contactName ? ` ${organization.contactName.split(' ')[0]}` : ''} ! Choisissez l'antenne
+            d'Aviation Sans Frontières qui validera vos dossiers et autorisera votre accès au réseau Ailes du Sourire.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="card-asf p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-azur" />
+              <span>Sélectionner votre antenne de rattachement</span>
+            </label>
+            <select
+              value={selectedAntenne}
+              onChange={(e) => setSelectedAntenne(e.target.value)}
+              required
+              className={`w-full px-4 py-3 border ${themeConfig.cardBorder} rounded-2xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-azur/20 focus:border-azur text-sm font-bold transition-all shadow-3xs`}
+            >
+              <option value="">-- Choisir l'antenne locale de proximité --</option>
+              {activeAntennesList.map((a) => (
+                <option key={a.id} value={a.id}>ASF • {a.name.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
+          {selectedAntenne && (
+            <div className="p-4 bg-azur/5 rounded-2xl border border-azur/15 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
+              <p className="font-bold text-deep dark:text-slate-200">📍 Antenne validante sélectionnée :</p>
+              <p className="font-mono">Aviation Sans Frontières • <span className="underline font-bold text-azur uppercase">{getAntenneName(selectedAntenne)}</span></p>
+              <p className="mt-2 text-[11px] leading-relaxed italic text-slate-500">
+                C'est le coordinateur d'ASF basé dans ce centre de vol qui recevra vos documents réglementaires.
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <p className="text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2">{error}</p>
+          )}
+
+          <button type="submit" disabled={loading || !selectedAntenne} className="btn-asf w-full justify-center disabled:opacity-60">
+            {loading ? 'Enregistrement…' : 'Accéder à mon espace'}
+            {!loading && <ArrowRight className="w-4 h-4" />}
+          </button>
+        </form>
+
+        <button
+          onClick={() => signOut()}
+          className="mt-4 mx-auto flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <LogOut className="w-3.5 h-3.5" /> Se déconnecter
+        </button>
+      </div>
+    </div>
+  );
+}

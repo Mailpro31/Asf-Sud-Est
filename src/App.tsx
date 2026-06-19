@@ -12,6 +12,7 @@ import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
 import AntenneAdminDashboard from './components/AntenneAdminDashboard';
+import ChooseAntenne from './components/ChooseAntenne';
 import LandingPage from './components/LandingPage';
 
 function MainApp() {
@@ -97,6 +98,11 @@ function MainApp() {
     // Un gestionnaire d'antenne accède à l'interface simplifiée de son antenne.
     if (organization.role === 'admin_antenne') {
       return <AntenneAdminDashboard />;
+    }
+    // Compte organisation sans antenne (ex. inscription via Google) :
+    // on demande de choisir l'antenne de rattachement avant l'accès à l'espace.
+    if (organization.role === 'organization' && !organization.antenne_id) {
+      return <ChooseAntenne />;
     }
     return <Dashboard />;
   }
