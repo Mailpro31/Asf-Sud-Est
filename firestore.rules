@@ -146,7 +146,7 @@ service cloud.firestore {
         'login', 'logout',
         'file_upload', 'file_delete', 'file_status_change', 'file_share_toggle', 'file_rename',
         'folder_create', 'folder_delete',
-        'org_create', 'org_delete', 'org_role_change', 'org_status_change', 'org_assign_antenne', 'org_profile_update',
+        'org_create', 'org_delete', 'org_role_change', 'org_status_change', 'org_assign_antenne', 'org_profile_update', 'org_reminder',
         'antenne_create', 'antenne_delete', 'antenne_settings_change'
       ];
     }
@@ -309,7 +309,7 @@ service cloud.firestore {
                     isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (hasUserDoc() && (
                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
-                      (getUser().get('delegation_id', '') == existing().get('delegation_id', '') && (existing().get('createdBy', '') == 'admin' || existing().get('orgId', '') == 'admin_created' || existing().get('orgId', '') == 'public'))
+                      (getUser().get('delegation_id', '') == existing().get('delegation_id', '') && (existing().get('orgId', '') == 'admin_created' || existing().get('orgId', '') == 'public'))
                     ))
                   );
 
@@ -319,7 +319,7 @@ service cloud.firestore {
                      isAdminAntenneOf(resource.data.get('delegation_id', ''), resource.data.get('antenne_id', '')) ||
                      (hasUserDoc() && (
                        (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
-                       (getUser().get('delegation_id', '') == resource.data.get('delegation_id', '') && (resource.data.get('createdBy', '') == 'admin' || resource.data.get('orgId', '') == 'admin_created' || resource.data.get('orgId', '') == 'public'))
+                       (getUser().get('delegation_id', '') == resource.data.get('delegation_id', '') && (resource.data.get('orgId', '') == 'admin_created' || resource.data.get('orgId', '') == 'public'))
                      ))
                    );
 
@@ -359,7 +359,7 @@ service cloud.firestore {
                     isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (hasUserDoc() && (
                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
-                      (getUser().get('delegation_id', '') == existing().get('delegation_id', '') && (existing().get('uploadedBy', '') == 'admin' || existing().get('orgId', '') == 'admin_created' || existing().get('orgId', '') == 'public'))
+                      (getUser().get('delegation_id', '') == existing().get('delegation_id', '') && (existing().get('orgId', '') == 'admin_created' || existing().get('orgId', '') == 'public'))
                     ))
                   );
 
@@ -369,7 +369,7 @@ service cloud.firestore {
                      isAdminAntenneOf(resource.data.get('delegation_id', ''), resource.data.get('antenne_id', '')) ||
                      (hasUserDoc() && (
                        (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin') ||
-                       (getUser().get('delegation_id', '') == resource.data.get('delegation_id', '') && (resource.data.get('uploadedBy', '') == 'admin' || resource.data.get('orgId', '') == 'admin_created' || resource.data.get('orgId', '') == 'public'))
+                       (getUser().get('delegation_id', '') == resource.data.get('delegation_id', '') && (resource.data.get('orgId', '') == 'admin_created' || resource.data.get('orgId', '') == 'public'))
                      ))
                    );
 
