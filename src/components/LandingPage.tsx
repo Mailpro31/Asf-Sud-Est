@@ -39,8 +39,8 @@ export function LogoASF({ className = "w-16 h-16", variant = "color" }: { classN
 
   return (
     <svg
-      viewBox="0 0 120 120" 
-      fill="none" 
+      viewBox="0 0 120 120"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       id="asf-graphic-logo"
@@ -48,89 +48,109 @@ export function LogoASF({ className = "w-16 h-16", variant = "color" }: { classN
       {/* Mains entrelacées formant des ailes */}
       <g>
         {/* Aile Gauche / Main gauche */}
-        <path 
-          d="M32 35C35 45 42 55 52 62C55 64 57 66 59 66C60 66 61 65 61 64C58 58 52 46 48 38C47 36 45 35 43 35C41 35 39 36 38 38L32 35Z" 
-          fill={pastelColor} 
+        <path
+          d="M32 35C35 45 42 55 52 62C55 64 57 66 59 66C60 66 61 65 61 64C58 58 52 46 48 38C47 36 45 35 43 35C41 35 39 36 38 38L32 35Z"
+          fill={pastelColor}
         />
-        <path 
-          d="M24 45C28 55 37 66 49 73C52 75 54 77 56 77C57 77 58 76 58 75C54 68 47 54 42 45C40 42 38 41 36 41C34 41 31 43 30 45L24 45Z" 
-          fill={mainColor} 
+        <path
+          d="M24 45C28 55 37 66 49 73C52 75 54 77 56 77C57 77 58 76 58 75C54 68 47 54 42 45C40 42 38 41 36 41C34 41 31 43 30 45L24 45Z"
+          fill={mainColor}
         />
-        <path 
-          d="M18 55C23 65 33 77 46 84C49 86 51 88 53 88C54 88 55 87 55 85C50 78 42 63 36 53C34 50 31 49 29 49C26 49 23 51 22 53L18 55Z" 
-          fill={pastelColor} 
+        <path
+          d="M18 55C23 65 33 77 46 84C49 86 51 88 53 88C54 88 55 87 55 85C50 78 42 63 36 53C34 50 31 49 29 49C26 49 23 51 22 53L18 55Z"
+          fill={pastelColor}
         />
-        <path 
-          d="M44 86C52 90 60 92 68 92C78 92 88 88 95 82C98 79 101 76 101 74C101 73 99 72 98 73C90 77 78 81 68 81C58 81 48 77 41 73C40 72 38 73 38 74C38 76 41 79 44 86Z" 
-          fill={mainColor} 
+        <path
+          d="M44 86C52 90 60 92 68 92C78 92 88 88 95 82C98 79 101 76 101 74C101 73 99 72 98 73C90 77 78 81 68 81C58 81 48 77 41 73C40 72 38 73 38 74C38 76 41 79 44 86Z"
+          fill={mainColor}
         />
 
         {/* Aile Droite / Main droite */}
-        <path 
-          d="M88 35C85 45 78 55 68 62C65 64 63 66 61 66C60 66 59 65 59 64C62 58 68 46 72 38C73 36 75 35 77 35C79 35 81 36 82 38L88 35Z" 
-          fill={pastelColor} 
+        <path
+          d="M88 35C85 45 78 55 68 62C65 64 63 66 61 66C60 66 59 65 59 64C62 58 68 46 72 38C73 36 75 35 77 35C79 35 81 36 82 38L88 35Z"
+          fill={pastelColor}
         />
-        <path 
-          d="M96 45C92 55 83 66 71 73C68 75 66 77 64 77C63 77 62 76 62 75C66 68 73 54 78 45C80 42 82 41 84 41C86 41 89 43 90 45L96 45Z" 
-          fill={mainColor} 
+        <path
+          d="M96 45C92 55 83 66 71 73C68 75 66 77 64 77C63 77 62 76 62 75C66 68 73 54 78 45C80 42 82 41 84 41C86 41 89 43 90 45L96 45Z"
+          fill={mainColor}
         />
-        <path 
-          d="M102 55C97 65 87 77 74 84C71 86 69 88 67 88C66 88 65 87 65 85C70 78 78 63 84 53C86 50 89 49 91 49C94 49 97 51 98 53L102 55Z" 
-          fill={pastelColor} 
+        <path
+          d="M102 55C97 65 87 77 74 84C71 86 69 88 67 88C66 88 65 87 65 85C70 78 78 63 84 53C86 50 89 49 91 49C94 49 97 51 98 53L102 55Z"
+          fill={pastelColor}
         />
       </g>
     </svg>
   );
 }
 
+/** Petit nuage cotonneux (décor de la scène aérienne). */
+function Cloud({ className = "" }: { className?: string }) {
+  return (
+    <div className={className}>
+      <div className="relative">
+        <div className="w-20 h-6 bg-white/85 rounded-full" />
+        <div className="w-11 h-11 bg-white/85 rounded-full absolute -top-4 left-3" />
+        <div className="w-8 h-8 bg-white/85 rounded-full absolute -top-2 left-11" />
+      </div>
+    </div>
+  );
+}
+
+// Révélation au défilement (réutilisable).
+const reveal = {
+  initial: { opacity: 0, y: 28 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] as const },
+};
+
 export default function LandingPage({ onNavigateLogin, onNavigateRegister }: LandingPageProps) {
-  const { themeConfig } = useTheme();
+  useTheme();
+
+  const steps = [
+    { n: "01", icon: Upload, title: "Déposez vos documents", desc: "Créez votre espace partenaire et transmettez vos justificatifs réglementaires en quelques clics, en toute sécurité." },
+    { n: "02", icon: ClipboardCheck, title: "Suivez la validation", desc: "Chaque pièce est revue par votre antenne. Statuts en temps réel : en attente, en révision, validé." },
+    { n: "03", icon: CheckCircle2, title: "Envolez-vous", desc: "Dossiers validés : les vols Les Ailes du Sourire sont autorisés. Place à l’évasion et aux sourires." },
+  ];
 
   const officialMissions = [
-    { title: "Missions Avions", subtitle: "Avion-Hôpital et Drone Humanitaire", desc: "Transport de médecins, de médicaments et d'aide urgente au plus près des populations isolées." },
-    { title: "Accompagnements d'Enfants Malades", subtitle: "Soins d'urgence à l'étranger", desc: "Prise en charge d'enfants malades transférés pour être opérés en Europe." },
-    { title: "Messagerie Médicale & Fret Humanitaire", subtitle: "Logistique solidaire", desc: "Expédition facilitée de colis de secours, vaccins, et matériel médical partout dans le monde." },
-    { title: "Accompagnements de Réfugiés", subtitle: "Vers de nouveaux horizons", desc: "Assistance et accueil des réfugiés lors de leurs voyages de réinstallation officiels." },
-    { title: "Ailes du Sourire", subtitle: "L'envol thérapeutique", desc: "Vols de découverte et d'initiation aéronautique pour personnes en situation de handicap physique, mental ou d'exclusion sociale.", highlight: true },
-    { title: "Ailes de l'Avenir", subtitle: "Insertion des jeunes", desc: "Ateliers de découverte des métiers de l'aérien pour favoriser l'insertion de jeunes en difficulté." },
-    { title: "e-Aviation", subtitle: "Éducation & sensibilisation", desc: "Outils et formations numériques pour rapprocher les populations de l'écosystème de l'aviation humanitaire." }
+    { title: "Missions Avions", subtitle: "Avion-Hôpital & Drone Humanitaire", desc: "Transport de médecins, de médicaments et d’aide urgente au plus près des populations isolées.", icon: Compass },
+    { title: "Accompagnements d’Enfants Malades", subtitle: "Soins d’urgence à l’étranger", desc: "Prise en charge d’enfants malades transférés pour être opérés en Europe.", icon: Heart },
+    { title: "Messagerie Médicale & Fret", subtitle: "Logistique solidaire", desc: "Expédition facilitée de colis de secours, vaccins et matériel médical partout dans le monde.", icon: ClipboardCheck },
+    { title: "Accompagnements de Réfugiés", subtitle: "Vers de nouveaux horizons", desc: "Assistance et accueil des réfugiés lors de leurs voyages de réinstallation officiels.", icon: Users },
+    { title: "Les Ailes du Sourire", subtitle: "L’envol thérapeutique", desc: "Vols de découverte et d’initiation pour les personnes en situation de handicap ou d’exclusion sociale.", icon: Heart, highlight: true },
+    { title: "Les Ailes de l’Avenir", subtitle: "Insertion des jeunes", desc: "Ateliers de découverte des métiers de l’aérien pour favoriser l’insertion de jeunes en difficulté.", icon: Calendar },
   ];
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-slate-50 text-slate-800 overflow-x-hidden antialiased font-sans">
-      
-      {/* Top Banner Header decoration */}
-      <div className="bg-deep text-white py-2 px-4 text-center text-xs font-medium tracking-wide">
+    <div className="min-h-screen relative flex flex-col bg-white text-slate-800 overflow-x-hidden antialiased font-sans">
+
+      {/* Bandeau d'annonce */}
+      <div className="bg-deep text-white py-2 px-4 text-center text-[11px] font-medium tracking-wide">
         Portail documentaire officiel — <span className="font-semibold">Aviation Sans Frontières · Les Ailes du Sourire</span>
       </div>
 
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-6 py-4 transition-all duration-300">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <LogoASF className="w-10 h-10 transition-transform hover:scale-105 duration-300" variant="color" />
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-azur tracking-wide text-sm md:text-base">
-                AVIATION Sans Frontières
-              </span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">
-                Les Ailes de l'Humanitaire
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
+      {/* Navigation */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/70">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-5 sm:px-6 py-2.5">
+          <img
+            src="/logo-asf.png"
+            alt="Aviation Sans Frontières France"
+            className="h-11 sm:h-12 w-auto object-contain select-none"
+            draggable={false}
+          />
+          <div className="flex items-center gap-2">
             <button
               onClick={onNavigateLogin}
               id="cta-top-login"
-              className="text-xs font-bold text-slate-600 hover:text-azur px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+              className="text-xs font-bold text-slate-600 hover:text-azur px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
             >
               Se connecter
             </button>
             <button
               onClick={onNavigateRegister}
               id="cta-top-register"
-              className="text-xs font-bold bg-sourire hover:bg-sourire-dark text-white px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+              className="btn-sourire text-xs !py-2 !px-4 cursor-pointer"
             >
               Créer un compte
             </button>
@@ -138,65 +158,62 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
         </div>
       </header>
 
-      {/* Main Content Sections */}
       <main className="flex-grow">
-        
-        {/* Hero Section */}
-        <section className="relative px-6 py-16 md:py-24 bg-gradient-to-b from-white to-slate-50 border-b border-slate-200/50">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
-            {/* CTA Left Column */}
+
+        {/* ===================== HERO ===================== */}
+        <section className="relative overflow-hidden">
+          {/* Fond ciel */}
+          <div className="absolute inset-0 bg-gradient-to-b from-azur-light via-white to-white" />
+          <div className="absolute -top-28 -left-24 w-[28rem] h-[28rem] bg-azur/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-8 -right-10 w-[26rem] h-[26rem] bg-azur-pastel/25 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative max-w-7xl mx-auto px-6 py-14 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+
+            {/* Colonne texte */}
             <div className="lg:col-span-6 flex flex-col items-start text-left space-y-6">
               <motion.div
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="px-3 py-1 rounded-full text-[10px] font-bold text-deep bg-azur/10 tracking-widest uppercase border border-azur/25"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold text-deep bg-white/80 backdrop-blur border border-azur/25 shadow-asf-sm tracking-widest uppercase"
               >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Portail documentaire · Les Ailes du Sourire
               </motion.div>
 
               <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-4xl md:text-5xl font-black tracking-tight text-deep font-display leading-[1.1]"
+                transition={{ duration: 0.55, delay: 0.05 }}
+                className="text-4xl md:text-6xl font-black tracking-tight text-deep font-display leading-[1.05]"
               >
-                Vos dossiers et certificats,<br />
-                <span className="text-azur">transmis en toute simplicité</span>
+                Donnez des ailes
+                <br />
+                <span className="bg-gradient-to-r from-azur to-deep bg-clip-text text-transparent">à vos dossiers de vol</span>
               </motion.h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-slate-600 text-sm md:text-base leading-relaxed max-w-xl font-sans"
+                transition={{ duration: 0.55, delay: 0.15 }}
+                className="text-slate-600 text-sm md:text-lg leading-relaxed max-w-xl"
               >
                 Déposez, suivez et faites valider en quelques clics les documents nécessaires aux vols
-                <span className="font-semibold text-deep"> Les Ailes du Sourire</span> d'Aviation Sans Frontières.
-                Un espace clair et sécurisé, au service de chaque sourire qui s'envole.
+                <span className="font-semibold text-deep"> Les Ailes du Sourire</span> d’Aviation Sans Frontières.
+                Un espace clair et sécurisé, au service de chaque sourire qui s’envole.
               </motion.p>
 
-              {/* Action Buttons */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={{ duration: 0.55, delay: 0.25 }}
                 className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto"
               >
-                <button
-                  onClick={onNavigateRegister}
-                  id="cta-hero-register"
-                  className="btn-sourire text-sm cursor-pointer group"
-                >
+                <button onClick={onNavigateRegister} id="cta-hero-register" className="btn-sourire text-sm cursor-pointer group">
                   Créer mon compte
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
-                <button
-                  onClick={onNavigateLogin}
-                  id="cta-hero-login"
-                  className="btn-asf text-sm cursor-pointer"
-                >
+                <button onClick={onNavigateLogin} id="cta-hero-login" className="btn-asf text-sm cursor-pointer">
                   Accéder à mon espace
                 </button>
               </motion.div>
@@ -204,334 +221,317 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="text-xs font-medium text-slate-500"
+                transition={{ duration: 0.5, delay: 0.35 }}
+                className="text-xs font-medium text-slate-500 flex items-center gap-1.5"
               >
+                <ShieldAlert className="w-3.5 h-3.5 text-azur" />
                 Le dépôt de documents nécessite un compte partenaire validé.
               </motion.p>
 
-              {/* Mini counters */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="grid grid-cols-3 gap-8 pt-6 border-t border-slate-200/80 w-full"
+                className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-200/80 w-full max-w-md"
               >
-                <div>
-                  <span className="block text-xl md:text-2xl font-black text-azur">800+</span>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold font-mono">Bénévoles</span>
-                </div>
-                <div>
-                  <span className="block text-xl md:text-2xl font-black text-azur">45 ans</span>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold font-mono">Service public</span>
-                </div>
-                <div>
-                  <span className="block text-xl md:text-2xl font-black text-azur">20+</span>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold font-mono">Missions / jour</span>
-                </div>
+                {[
+                  { v: "800+", l: "Bénévoles" },
+                  { v: "45 ans", l: "Au service" },
+                  { v: "20+", l: "Missions / jour" },
+                ].map((s) => (
+                  <div key={s.l}>
+                    <span className="block text-xl md:text-2xl font-black text-azur">{s.v}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold font-mono">{s.l}</span>
+                  </div>
+                ))}
               </motion.div>
             </div>
 
-            {/* Right Graphic Column — scène aérienne animée (Cessna) */}
-            <div className="lg:col-span-6 relative">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-                className="relative rounded-3xl overflow-hidden shadow-asf-lg border border-azur/15 h-80 md:h-[440px] bg-gradient-to-b from-[#cdeafa] via-[#8fcdec] to-[#2f9fc9]"
+            {/* Colonne scène 3D animée (Cessna) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7 }}
+              className="lg:col-span-6 relative"
+            >
+              <div
+                className="relative h-[340px] md:h-[460px] rounded-[2rem] overflow-hidden border border-white/50 shadow-asf-lg bg-gradient-to-b from-[#dbf1fc] via-[#8ccdec] to-[#2f9fc9]"
+                style={{ perspective: "1200px" }}
               >
                 {/* Soleil */}
-                <div className="absolute top-7 right-9 w-24 h-24 rounded-full bg-white/40 blur-xl pointer-events-none"></div>
-                <div className="absolute top-9 right-11 w-16 h-16 rounded-full bg-amber-50/90 pointer-events-none"></div>
+                <div className="absolute top-6 right-8 w-36 h-36 rounded-full bg-white/30 blur-2xl pointer-events-none" />
+                <div className="absolute top-8 right-10 w-24 h-24 rounded-full bg-amber-50/90 pointer-events-none" />
 
-                {/* Nuages dérivants */}
-                <div className="asf-cloud-slow absolute top-14 left-8 pointer-events-none">
-                  <div className="relative">
-                    <div className="w-24 h-7 bg-white/85 rounded-full"></div>
-                    <div className="w-12 h-12 bg-white/85 rounded-full absolute -top-4 left-3"></div>
-                    <div className="w-9 h-9 bg-white/85 rounded-full absolute -top-2 left-12"></div>
+                {/* Scène en perspective 3D */}
+                <div className="asf-scene-3d absolute inset-0">
+                  {/* Nuages lointains (profondeur arrière) */}
+                  <div className="absolute inset-0" style={{ transform: "translateZ(-60px)" }}>
+                    <Cloud className="asf-cloud-slow absolute top-10 left-6 scale-90 opacity-80" />
+                    <Cloud className="asf-cloud-fast absolute top-36 right-8 scale-75 opacity-70" />
                   </div>
-                </div>
-                <div className="asf-cloud-fast absolute top-32 right-12 pointer-events-none">
-                  <div className="relative scale-75">
-                    <div className="w-20 h-6 bg-white/70 rounded-full"></div>
-                    <div className="w-10 h-10 bg-white/70 rounded-full absolute -top-3 left-2"></div>
-                  </div>
-                </div>
-                <div className="asf-cloud-slow absolute bottom-32 left-24 pointer-events-none">
-                  <div className="relative scale-90">
-                    <div className="w-16 h-5 bg-white/60 rounded-full"></div>
-                    <div className="w-8 h-8 bg-white/60 rounded-full absolute -top-2.5 left-2"></div>
-                  </div>
-                </div>
 
-                {/* Trajectoire de vol (pointillés) */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <path d="M-5 72 Q 28 44 55 52 T 108 24" stroke="#ffffff" strokeOpacity="0.45" strokeWidth="0.5" strokeDasharray="2.5 2.5" fill="none" />
-                </svg>
+                  {/* Trajectoire de vol */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <path d="M-5 70 Q 28 44 55 52 T 108 24" stroke="#ffffff" strokeOpacity="0.45" strokeWidth="0.5" strokeDasharray="2.5 2.5" fill="none" />
+                  </svg>
 
-                {/* Cessna principal qui traverse le ciel */}
-                <div className="asf-plane-cross absolute top-[38%] left-0 w-32 md:w-44 pointer-events-none">
-                  <div className="asf-bob drop-shadow-[0_8px_10px_rgba(10,70,89,0.25)]">
-                    <CessnaPlane variant="color" className="w-full" />
+                  {/* Cessna principal (profondeur avant) */}
+                  <div className="absolute top-[38%] left-0 right-0" style={{ transform: "translateZ(70px)" }}>
+                    <div className="asf-plane-cross w-32 md:w-48">
+                      <div className="asf-bob drop-shadow-[0_10px_12px_rgba(10,70,89,0.3)]">
+                        <CessnaPlane variant="color" className="w-full" />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                {/* Petit Cessna d'arrière-plan (profondeur) */}
-                <div className="asf-plane-cross-slow absolute top-[18%] left-0 w-16 opacity-50 pointer-events-none">
-                  <div className="asf-bob">
-                    <CessnaPlane variant="color" className="w-full" spin={false} />
+
+                  {/* Nuages proches (très en avant, flous) */}
+                  <div className="absolute inset-0" style={{ transform: "translateZ(120px)" }}>
+                    <Cloud className="asf-cloud-fast absolute bottom-20 left-10 scale-110 blur-[1px]" />
+                  </div>
+
+                  {/* Badge logo flottant (avant-plan) */}
+                  <div className="absolute bottom-5 left-5" style={{ transform: "translateZ(150px)" }}>
+                    <div className="asf-float bg-white/90 backdrop-blur rounded-2xl shadow-lg p-2.5 border border-white/70">
+                      <img src="/logo-asf.png" alt="ASF" className="h-9 w-auto object-contain" draggable={false} />
+                    </div>
                   </div>
                 </div>
 
-                {/* Carte mission (overlay) */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-deep-dark/85 via-deep/35 to-transparent p-6 text-white text-left">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="px-2 py-0.5 rounded text-[8px] tracking-widest font-bold uppercase bg-azur">MISSION</span>
-                    <p className="text-[11px] font-mono tracking-wider opacity-90">Opérations Air & Terre</p>
+                {/* Bandeau mission */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-deep-dark/85 via-deep/30 to-transparent p-5 pt-12 text-white text-left pointer-events-none">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="px-2 py-0.5 rounded text-[8px] tracking-widest font-bold uppercase bg-azur">Mission</span>
+                    <p className="text-[11px] font-mono tracking-wider opacity-90">Les Ailes de l’Humanitaire</p>
                   </div>
-                  <h3 className="text-lg font-bold font-display">Aviation Sans Frontières : Les Ailes de l'Humanitaire</h3>
-                  <p className="text-xs opacity-80 mt-1 leading-relaxed">
-                    Nous mobilisons l'expertise du monde de l'aviation pour secourir, soigner et acheminer de l'aide auprès des populations marginalisées.
-                  </p>
+                  <h3 className="text-base font-bold font-display">Chaque dossier validé, c’est un vol qui peut décoller.</h3>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Halos décoratifs */}
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-azur/5 rounded-full blur-2xl pointer-events-none"></div>
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-azur-pastel/10 rounded-full blur-2xl pointer-events-none"></div>
-            </div>
-
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-azur/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-azur-pastel/20 rounded-full blur-2xl pointer-events-none" />
+            </motion.div>
           </div>
         </section>
 
-        {/* Focus on: Ailes du Sourire Section based on official description */}
-        <section className="px-6 py-16 bg-white border-b border-slate-200/50">
-          <div className="max-w-7xl mx-auto">
-            
-            <div className="text-center max-w-xl mx-auto space-y-3 mb-12">
-              <span className="px-3 py-1 rounded bg-azur/15 text-azur text-xs font-bold tracking-widest uppercase font-mono">
-                Focus Solidaire : Ailes du Sourire
+        {/* ============== COMMENT ÇA MARCHE ============== */}
+        <section className="px-6 py-20 bg-white border-t border-slate-100">
+          <div className="max-w-6xl mx-auto">
+            <motion.div {...reveal} className="text-center max-w-2xl mx-auto mb-14 space-y-3">
+              <span className="inline-block px-3 py-1 rounded-full bg-azur/10 text-azur text-[11px] font-bold tracking-widest uppercase font-mono">
+                Simple & sécurisé
               </span>
-              <h2 className="text-2xl md:text-3xl font-black font-display tracking-tight text-deep">
-                L'Évasion pour Tous : L'Envol Thérapeutique
+              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep">
+                Trois étapes pour faire décoller vos dossiers
               </h2>
-              <p className="text-slate-600 text-xs md:text-sm leading-relaxed">
-                Le programme <span className="font-bold text-azur">Ailes du Sourire</span> rompt l'isolement et offre des moments de partage magiques dans les airs aux personnes touchées par le handicap ou d'importantes précarités.
-              </p>
-            </div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-              
-              {/* Left Side: Images of Ailes du Sourire */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <div className="rounded-xl overflow-hidden shadow-md border hover:scale-[1.02] transition-transform duration-300">
-                    <img 
-                      src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80" 
-                      alt="Sourire d'un enfant en vol" 
-                      className="w-full h-44 object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="rounded-xl overflow-hidden shadow-md border bg-slate-100 p-4 flex flex-col justify-between h-36">
-                    <Heart className="w-6 h-6 text-red-500 fill-red-500" />
-                    <div>
-                      <p className="text-xs italic text-slate-600">"Un enfant qui décolle, c'est son handicap qui reste à terre le temps d'un vol."</p>
-                      <span className="text-[9px] font-mono font-bold block mt-1.5">— Pilote Bénévole</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4 pt-8">
-                  <div className="bg-azur/5 rounded-xl border border-azur/10 p-5 h-36 flex flex-col justify-center text-left">
-                    <span className="text-3xl font-black text-azur block">96%</span>
-                    <h4 className="text-xs font-bold text-deep">Sourires & Évasion</h4>
-                    <p className="text-[10px] text-slate-500 leading-relaxed mt-1">Un impact thérapeutique prouvé, renforçant l'estime de soi.</p>
-                  </div>
-                  <div className="rounded-xl overflow-hidden shadow-md border hover:scale-[1.02] transition-transform duration-300">
-                    <img 
-                      src="https://images.unsplash.com/photo-1471286174240-6ac129e742e1?auto=format&fit=crop&w=800&q=80" 
-                      alt="Partage et co-pilote" 
-                      className="w-full h-44 object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Side: Description and Benefits */}
-              <div className="text-left space-y-6">
-                <div>
-                  <h3 className="text-lg font-bold font-display text-deep flex items-center gap-2">
-                    <Compass className="w-5 h-5 text-azur" />
-                    Qu'est-ce que les Ailes du Sourire ?
-                  </h3>
-                  <p className="text-slate-600 text-xs md:text-sm leading-relaxed mt-2.5">
-                    Dans le respect le plus strict des chartes de sécurité et d'encadrement, les délégations régionales d'Aviation Sans Frontières s'organisent avec des aéroclubs partenaires pour convier des personnes souffrant d'un handicap ou de difficultés sociales à des journées d'initiation. C'est l'occasion de découvrir les bases de la navigation aérienne sous la tutelle de pilotes certifiés et de réaliser un baptême de l'air magique.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <CheckCircle2 className="w-4 h-4 text-azur shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-xs font-bold text-deep">Vols de Découverte Aérienne</h4>
-                      <p className="text-[11px] text-slate-500">Chaque passager prend place à bord d'un avion léger aux côtés d'un pilote chevronné pour un parcours d'évasion inoubliable au-dessus des plus belles régions.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <CheckCircle2 className="w-4 h-4 text-azur shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-xs font-bold text-deep">Coordination Réglementaire Renforcée</h4>
-                      <p className="text-[11px] text-slate-500">Chaque vol d'Ailes du Sourire demande un protocole de sécurité et d'autorisation d'accès dont la validation est orchestrée via notre portail numérique de gestion.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <CheckCircle2 className="w-4 h-4 text-azur shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-xs font-bold text-deep">Réseau d'Aéroclubs & Partenaires</h4>
-                      <p className="text-[11px] text-slate-500">Nous facilitons le travail conjoint entre les établissements de santé (IME, SESSAD, Foyers), les aéroclubs hôtes et nos équipes d'accompagnants.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    onClick={onNavigateLogin}
-                    id="cta-ailes-sourire"
-                    className="px-5 py-2.5 bg-azur/10 hover:bg-azur/20 border border-azur/20 text-azur text-xs font-bold rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer"
-                  >
-                    Consulter les dossiers de vol en cours <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* Overview of official missions */}
-        <section className="px-6 py-16 bg-slate-100 border-b border-slate-200/40">
-          <div className="max-w-7xl mx-auto">
-            
-            <div className="text-center max-w-xl mx-auto space-y-3 mb-12">
-              <h2 className="text-2xl md:text-3xl font-black font-display tracking-tight text-deep">
-                Nos Domaines d'Actions Majeurs
-              </h2>
-              <p className="text-slate-600 text-xs md:text-sm leading-relaxed">
-                Aviation Sans Frontières intervient sur un panel étendu d'activités logistiques, humanitaires et d'intégration à travers la France et le monde entier.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {officialMissions.map((item, index) => (
-                <div 
-                  key={index}
-                  className={`p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between items-start transition-transform hover:-translate-y-1 duration-200 relative ${item.highlight ? 'ring-2 ring-azur ring-offset-2' : ''}`}
+            <div className="grid md:grid-cols-3 gap-6">
+              {steps.map((s, i) => (
+                <motion.div
+                  key={s.n}
+                  initial={{ opacity: 0, y: 28 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.4, 0, 0.2, 1] }}
+                  className="relative card-asf p-7 hover:-translate-y-1.5 hover:shadow-asf-md"
                 >
-                  {item.highlight && (
-                    <span className="absolute top-3 right-3 bg-azur text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
-                      Mission Phare
-                    </span>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <span className="text-[10px] tracking-wider uppercase font-black text-slate-400 block font-mono">
-                      {item.subtitle}
-                    </span>
-                    <h3 className="text-sm font-bold text-deep font-display">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 leading-relaxed font-sans">
-                      {item.desc}
-                    </p>
+                  <span className="absolute top-5 right-6 text-5xl font-black text-azur/10 font-display select-none">{s.n}</span>
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-azur to-deep text-white flex items-center justify-center shadow-asf-md mb-4">
+                    <s.icon className="w-6 h-6" />
                   </div>
-                  
-                  <div className="mt-4 pt-3 border-t w-full text-right">
-                    <button
-                      onClick={onNavigateLogin}
-                      className="text-[10px] font-bold text-azur hover:underline cursor-pointer"
-                    >
-                      Voir les dossiers liés →
-                    </button>
-                  </div>
-                </div>
+                  <h3 className="text-lg font-bold font-display text-deep">{s.title}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed mt-2">{s.desc}</p>
+                </motion.div>
               ))}
             </div>
-
           </div>
         </section>
 
-        {/* Minimalist CTA banner for account access */}
-        <section className="px-6 py-20 bg-gradient-to-r from-deep to-azur text-white relative overflow-hidden">
-          
-          {/* Decorative elements */}
-          <div className="absolute -right-16 -top-16 w-60 h-60 bg-white/5 rounded-full blur-2xl"></div>
-          <div className="absolute -left-16 -bottom-16 w-60 h-60 bg-white/5 rounded-full blur-2xl"></div>
+        {/* ============== AILES DU SOURIRE ============== */}
+        <section className="px-6 py-20 bg-gradient-to-b from-azur-light/60 to-white">
+          <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <motion.div {...reveal} className="space-y-6">
+              <span className="inline-block px-3 py-1 rounded-full bg-azur/15 text-azur text-[11px] font-bold tracking-widest uppercase font-mono">
+                Focus solidaire
+              </span>
+              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep leading-tight">
+                Les Ailes du Sourire :<br />l’évasion pour tous
+              </h2>
+              <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+                Dans le respect strict des chartes de sécurité, nos délégations s’organisent avec des aéroclubs
+                partenaires pour offrir aux personnes en situation de handicap ou de précarité des journées
+                d’initiation aéronautique et un baptême de l’air inoubliable.
+              </p>
 
-          {/* Cessna qui traverse la bannière */}
-          <div className="asf-plane-cross absolute top-8 left-0 w-24 opacity-80 pointer-events-none">
+              <div className="space-y-3">
+                {[
+                  { t: "Vols de découverte aérienne", d: "Un parcours d’évasion aux côtés d’un pilote chevronné, au-dessus des plus belles régions." },
+                  { t: "Coordination réglementaire", d: "Chaque vol suit un protocole d’autorisation, orchestré via ce portail numérique." },
+                  { t: "Réseau d’aéroclubs & partenaires", d: "Nous relions établissements de santé, aéroclubs hôtes et accompagnants." },
+                ].map((b) => (
+                  <div key={b.t} className="flex items-start gap-3 bg-white/80 backdrop-blur p-3.5 rounded-xl border border-slate-100 shadow-asf-sm">
+                    <CheckCircle2 className="w-4 h-4 text-azur shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-xs font-bold text-deep">{b.t}</h4>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">{b.d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={onNavigateLogin}
+                id="cta-ailes-sourire"
+                className="btn-asf text-sm cursor-pointer group"
+              >
+                Consulter les dossiers de vol
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </motion.div>
+
+            <motion.div {...reveal} className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="rounded-2xl bg-gradient-to-br from-azur to-deep text-white p-5 h-44 flex flex-col justify-between shadow-asf-md">
+                  <Heart className="w-7 h-7 fill-white/90 text-white/90" />
+                  <p className="text-xs italic leading-relaxed">« Un enfant qui décolle, c’est son handicap qui reste à terre le temps d’un vol. »</p>
+                  <span className="text-[9px] font-mono font-bold opacity-80">— Pilote bénévole</span>
+                </div>
+                <div className="rounded-2xl bg-white border border-slate-100 p-5 h-32 flex flex-col justify-center shadow-asf-sm">
+                  <span className="text-3xl font-black text-azur">96%</span>
+                  <h4 className="text-xs font-bold text-deep">Sourires & évasion</h4>
+                  <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">Un impact thérapeutique prouvé.</p>
+                </div>
+              </div>
+              <div className="space-y-4 pt-8">
+                <div className="rounded-2xl bg-white border border-slate-100 p-5 h-32 flex flex-col justify-center shadow-asf-sm">
+                  <Compass className="w-7 h-7 text-azur" />
+                  <h4 className="text-xs font-bold text-deep mt-2">Pilotes certifiés</h4>
+                  <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">Encadrement et sécurité avant tout.</p>
+                </div>
+                <div className="rounded-2xl overflow-hidden h-44 relative bg-gradient-to-b from-[#bfe6f7] to-[#2f9fc9] shadow-asf-md">
+                  <Cloud className="asf-cloud-slow absolute top-6 left-4 scale-75 opacity-80" />
+                  <div className="asf-plane-cross absolute top-1/2 -translate-y-1/2 left-0 w-24">
+                    <div className="asf-bob"><CessnaPlane variant="color" className="w-full" /></div>
+                  </div>
+                  <span className="absolute bottom-3 left-4 text-white text-[10px] font-mono font-bold tracking-wider">En vol ✈</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ============== MISSIONS ============== */}
+        <section className="px-6 py-20 bg-slate-50 border-y border-slate-100">
+          <div className="max-w-7xl mx-auto">
+            <motion.div {...reveal} className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep">
+                Nos domaines d’action
+              </h2>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Aviation Sans Frontières intervient sur un large panel d’activités humanitaires et d’intégration, en France et dans le monde.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {officialMissions.map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.45, delay: (index % 3) * 0.08, ease: [0.4, 0, 0.2, 1] }}
+                  className={`group p-6 rounded-2xl bg-white border shadow-asf-sm hover:-translate-y-1.5 hover:shadow-asf-md transition-all relative overflow-hidden ${item.highlight ? "border-azur/40 ring-1 ring-azur/30" : "border-slate-200/80"}`}
+                >
+                  {item.highlight && (
+                    <span className="absolute top-4 right-4 bg-azur text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                      Mission phare
+                    </span>
+                  )}
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${item.highlight ? "bg-gradient-to-br from-azur to-deep text-white" : "bg-azur/10 text-azur"}`}>
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] tracking-wider uppercase font-black text-slate-400 block font-mono">{item.subtitle}</span>
+                  <h3 className="text-base font-bold text-deep font-display mt-1">{item.title}</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-2">{item.desc}</p>
+                  <button
+                    onClick={onNavigateLogin}
+                    className="mt-4 text-[11px] font-bold text-azur inline-flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer"
+                  >
+                    Voir les dossiers liés <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ============== CTA FINAL (3D) ============== */}
+        <section className="px-6 py-24 relative overflow-hidden bg-gradient-to-br from-deep via-azur to-deep-dark text-white">
+          <div className="absolute -right-16 -top-16 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute -left-16 -bottom-16 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
+          {/* Cessna qui traverse */}
+          <div className="asf-plane-cross absolute top-10 left-0 w-28 opacity-80 pointer-events-none">
             <CessnaPlane variant="white" className="w-full" />
           </div>
+          <div className="asf-plane-cross-slow absolute bottom-12 left-0 w-16 opacity-40 pointer-events-none">
+            <CessnaPlane variant="white" className="w-full" spin={false} />
+          </div>
 
-          <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10 flex flex-col items-center">
-            <LogoASF className="w-16 h-16 asf-float" variant="white" />
-            
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight font-display">
-              Accédez au Portail Aviation Sans Frontières
+          <motion.div {...reveal} className="max-w-3xl mx-auto text-center space-y-6 relative z-10 flex flex-col items-center">
+            <div className="asf-float bg-white/95 rounded-3xl p-4 shadow-asf-lg">
+              <img src="/logo-asf.png" alt="Aviation Sans Frontières France" className="h-16 w-auto object-contain" draggable={false} />
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight font-display">
+              Prêt à faire décoller vos dossiers ?
             </h2>
-            <p className="text-sm text-azur-pastel max-w-xl mx-auto leading-relaxed">
-              Connectez-vous dès maintenant pour compléter votre fiche d'organisation, uploader vos récépissés réglementaires, et collaborer avec nos chefs de mission.
+            <p className="text-sm md:text-base text-azur-pastel max-w-xl mx-auto leading-relaxed">
+              Connectez-vous pour compléter votre fiche, déposer vos récépissés réglementaires et collaborer avec nos chefs de mission.
             </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 w-full sm:w-auto justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 w-full sm:w-auto justify-center">
               <button
                 onClick={onNavigateLogin}
                 id="cta-bottom-login-btn"
-                className="px-8 py-3.5 bg-white hover:bg-slate-55 text-azur font-black text-sm rounded-xl tracking-wide shadow-lg hover:-translate-y-0.5 transition-all text-center cursor-pointer"
+                className="px-8 py-3.5 bg-white hover:bg-slate-50 text-azur font-black text-sm rounded-xl tracking-wide shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
               >
-                Se connecter à l'espace membre / partenaire
+                Accéder à mon espace
               </button>
               <button
                 onClick={onNavigateRegister}
                 id="cta-bottom-register-btn"
-                className="px-6 py-3.5 bg-transparent hover:bg-white/10 text-white font-extrabold text-sm rounded-xl border border-white/40 transition-all text-center cursor-pointer"
+                className="px-6 py-3.5 bg-transparent hover:bg-white/10 text-white font-extrabold text-sm rounded-xl border border-white/40 transition-all cursor-pointer"
               >
                 Créer un compte
               </button>
             </div>
-          </div>
+          </motion.div>
         </section>
 
       </main>
 
-      {/* Footer conforming to contact guidelines (page 19) */}
+      {/* Footer */}
       <footer className="bg-slate-900 text-slate-300 px-6 py-12 border-t border-slate-800 shrink-0">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <LogoASF className="w-10 h-10" variant="white" />
+          <div className="flex items-center gap-4">
+            <div className="bg-white rounded-2xl p-2.5 shadow-lg">
+              <img src="/logo-asf.png" alt="Aviation Sans Frontières France" className="h-12 w-auto object-contain" draggable={false} />
+            </div>
             <div className="text-left">
-              <span className="font-display font-bold text-white tracking-wide text-sm">
-                AVIATION Sans Frontières
-              </span>
-              <p className="text-[10px] text-slate-400 mt-0.5">La première ONG aéronautique d'utilité publique en France</p>
+              <span className="font-display font-bold text-white tracking-wide text-sm block">Aviation Sans Frontières</span>
+              <p className="text-[10px] text-slate-400 mt-0.5">La première ONG aéronautique d’utilité publique en France</p>
             </div>
           </div>
 
           <div className="flex flex-col md:items-end text-center md:text-right space-y-1.5 text-xs">
-            <span className="font-bold text-white uppercase tracking-wider text-[10px] text-slate-400">Une Question ?</span>
-            <a 
+            <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400">Une question ?</span>
+            <a
               href="mailto:communication@aviation-sans-frontieres-fr.org"
               id="footer-email-link"
               className="text-azur-pastel hover:underline flex items-center justify-center md:justify-end gap-1.5 font-mono"
             >
               <Mail className="w-3.5 h-3.5" /> communication@aviation-sans-frontieres-fr.org
             </a>
-            <p className="text-[10px] text-slate-500 pt-1">
-              Dernière mise à jour de la charte graphique : 05.05.2026. Tous droits réservés.
-            </p>
+            <p className="text-[10px] text-slate-500 pt-1">Tous droits réservés · Aviation Sans Frontières.</p>
           </div>
         </div>
       </footer>
