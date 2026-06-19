@@ -1560,7 +1560,7 @@ export default function AntenneAdminDashboard() {
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
 
               {/* Rail gauche : coordonnées, dates, conformité, accès */}
-              <aside data-tour="org-account" className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
+              <aside className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
                 <div className="p-5 space-y-5">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Coordonnées</p>

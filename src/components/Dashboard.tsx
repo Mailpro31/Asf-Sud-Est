@@ -693,7 +693,7 @@ export default function Dashboard() {
   const dossierChecklist = computeChecklist(files);
   const [submittingDossier, setSubmittingDossier] = useState(false);
   const handleSubmitDossier = async () => {
-    if (!organization || !dossierChecklist.allDeposited || submittingDossier) return;
+    if (!organization || !dossierChecklist.submittable || submittingDossier) return;
     setSubmittingDossier(true);
     const now = Date.now();
     try {
@@ -1265,7 +1265,7 @@ export default function Dashboard() {
           </div>
 
           {/* Carte de soumission du dossier */}
-          <div className={`card-asf p-5 flex flex-col ${dossierChecklist.allDeposited ? 'ring-1 ring-emerald-200' : ''}`}>
+          <div className={`card-asf p-5 flex flex-col ${dossierChecklist.submittable ? 'ring-1 ring-emerald-200' : ''}`}>
             <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Soumettre mon dossier</h3>
             {organization.dossierSubmittedAt ? (
               <>
@@ -1276,9 +1276,14 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-500 mt-1">
                   Le {new Date(organization.dossierSubmittedAt).toLocaleDateString('fr-FR')} · en cours de revue par votre antenne.
                 </p>
+                {!dossierChecklist.submittable && (
+                  <p className="text-[11px] text-rose-600 mt-2 font-semibold">
+                    Des pièces sont à corriger ou manquantes depuis votre dernière soumission.
+                  </p>
+                )}
                 <button
                   onClick={handleSubmitDossier}
-                  disabled={!dossierChecklist.allDeposited || submittingDossier}
+                  disabled={!dossierChecklist.submittable || submittingDossier}
                   className="btn-secondary text-sm justify-center mt-4 disabled:opacity-50"
                   title="Renvoyer le dossier après modification"
                 >
@@ -1288,19 +1293,19 @@ export default function Dashboard() {
             ) : (
               <>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  {dossierChecklist.allDeposited
-                    ? 'Toutes les pièces obligatoires sont déposées. Soumettez votre dossier pour qu\'il soit revu par votre antenne.'
-                    : `Déposez et classez les ${dossierChecklist.total} pièces obligatoires pour pouvoir soumettre votre dossier.`}
+                  {dossierChecklist.submittable
+                    ? 'Toutes les pièces obligatoires sont prêtes. Soumettez votre dossier pour qu\'il soit revu par votre antenne.'
+                    : `Déposez et classez les ${dossierChecklist.total} pièces obligatoires (sans pièce rejetée) pour pouvoir soumettre votre dossier.`}
                 </p>
                 <div className="mt-3 flex items-center justify-between text-xs">
-                  <span className="font-bold uppercase tracking-wider text-slate-400">Pièces déposées</span>
-                  <span className={`font-bold ${dossierChecklist.allDeposited ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {dossierChecklist.depositedCount}/{dossierChecklist.total}
+                  <span className="font-bold uppercase tracking-wider text-slate-400">Pièces prêtes</span>
+                  <span className={`font-bold ${dossierChecklist.submittable ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {dossierChecklist.readyCount}/{dossierChecklist.total}
                   </span>
                 </div>
                 <button
                   onClick={handleSubmitDossier}
-                  disabled={!dossierChecklist.allDeposited || submittingDossier}
+                  disabled={!dossierChecklist.submittable || submittingDossier}
                   className="btn-asf text-sm justify-center mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submittingDossier ? 'Envoi…' : 'Soumettre mon dossier'}
