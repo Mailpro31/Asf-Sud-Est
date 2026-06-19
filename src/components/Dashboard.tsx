@@ -577,6 +577,17 @@ export default function Dashboard() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Lance automatiquement la visite à la première connexion (puis mémorise).
+  useEffect(() => {
+    const key = `asf_tour_seen_org_${user?.uid || 'anon'}`;
+    if (localStorage.getItem(key)) return;
+    const t = setTimeout(() => {
+      setTourOpen(true);
+      localStorage.setItem(key, '1');
+    }, 800);
+    return () => clearTimeout(t);
+  }, [user?.uid]);
+
   const tourSteps: TourStep[] = [
     { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment." },
     { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },

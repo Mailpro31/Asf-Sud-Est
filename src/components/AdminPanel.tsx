@@ -153,7 +153,7 @@ const DELEGATION_THEMES: Record<string, {
 };
 
 export default function AdminPanel() {
-  const { organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION, antenneGroups } = useAuth();
+  const { user, organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION, antenneGroups } = useAuth();
   const { themeConfig } = useTheme();
   const { toast, confirm } = useFeedback();
 
@@ -1283,6 +1283,18 @@ export default function AdminPanel() {
     ];
   };
   const startTour = () => setActiveTour(buildTour());
+
+  // Lance automatiquement la visite à la première connexion (puis mémorise).
+  useEffect(() => {
+    const key = `asf_tour_seen_admin_${user?.uid || 'anon'}`;
+    if (localStorage.getItem(key)) return;
+    const t = setTimeout(() => {
+      setActiveTour(buildTour());
+      localStorage.setItem(key, '1');
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   return (
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>

@@ -343,6 +343,19 @@ export default function AntenneAdminDashboard() {
   };
   const startTour = () => setActiveTour(tourByView[view]);
 
+  // Lance automatiquement la visite à la première connexion (puis mémorise).
+  useEffect(() => {
+    const key = `asf_tour_seen_antenne_${user?.uid || 'anon'}`;
+    if (localStorage.getItem(key)) return;
+    const t = setTimeout(() => {
+      setView('workspace');
+      setActiveTour(tourByView.workspace);
+      localStorage.setItem(key, '1');
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
+
   // Visite guidée de la fiche organisme (depuis la modale).
   const orgModalTour: TourStep[] = [
     { target: '[data-tour="org-account"]', title: 'La fiche du compte', text: "Coordonnées, dates, conformité et gestion de l'accès (valider ou suspendre le compte) de l'organisme." },
