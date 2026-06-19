@@ -41,8 +41,7 @@ import { notifyAntenneOnUpload, notifyAntenneOnSubmission } from '../lib/antenne
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
-import { StatusBadge, GuidedTour, ChecklistPanel, StatusFilterChips, type TourStep } from './ui';
-import { categoryOptions, computeChecklist } from '../lib/requiredDocuments';
+import { StatusBadge, GuidedTour, StatusFilterChips, type TourStep } from './ui';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 
@@ -578,7 +577,6 @@ export default function Dashboard() {
   const docSteps: TourStep[] = files.length > 0
     ? [
         { target: '[data-tour="doc-row"]', title: 'Une ligne de document', text: "Prenons votre premier document comme exemple. Cliquez sur la ligne pour le prévisualiser à tout moment." },
-        { target: '[data-tour="doc-category"]', title: 'Classer la pièce', text: "Ce menu rattache le document à une pièce réglementaire (assurance, statuts…). C'est ce qui coche la pièce correspondante dans votre checklist." },
         { target: '[data-tour="doc-status"]', title: 'Le statut du document', text: "En attente, en révision, validé ou incomplet : l'état de validation par votre antenne, document par document." },
         { target: '[data-tour="doc-actions"]', title: 'Les actions', text: "Au survol de la ligne : télécharger, renommer ou supprimer le document." },
       ]
@@ -591,7 +589,7 @@ export default function Dashboard() {
     { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },
     { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents dans cette zone, ou cliquez pour parcourir votre ordinateur. Vous pouvez aussi les déposer directement sur un dossier pour les classer." },
     { target: '[data-tour="storage"]', title: 'Votre espace de stockage', text: "Suivez l'espace utilisé sur votre quota. La barre passe au rouge quand vous approchez de la limite." },
-    { target: '[data-tour="checklist"]', title: 'Pièces obligatoires & soumission', text: "À gauche, les pièces réglementaires attendues : classez chaque fichier pour les cocher. À droite, le bouton « Soumettre mon dossier » s'active dès que toutes les pièces sont déposées et prévient votre antenne." },
+    { target: '[data-tour="submit"]', title: 'Soumettre votre dossier', text: "Quand vous estimez que votre dossier est complet, cliquez sur « Soumettre mon dossier » : votre antenne est prévenue (sur son tableau de bord et par e-mail) et procède à la revue." },
     { target: '[data-tour="filters"]', title: 'Rechercher et filtrer', text: "Retrouvez un document par son nom (raccourci ⌘K / Ctrl+K), ou filtrez par type et par statut." },
     ...docSteps,
     { target: '[data-tour="account"]', title: 'Votre compte', text: "Accédez à vos informations, changez votre mot de passe ou déconnectez-vous depuis votre profil." },
@@ -670,11 +668,11 @@ export default function Dashboard() {
     setRenamingFile(null);
   };
 
-  // Soumission du dossier complet pour revue par l'antenne.
-  const dossierChecklist = computeChecklist(files);
+  // Soumission du dossier pour revue par l'antenne (l'organisme décide quand
+  // il estime son dossier complet — aucun pré-requis bloquant).
   const [submittingDossier, setSubmittingDossier] = useState(false);
   const handleSubmitDossier = async () => {
-    if (!organization || !dossierChecklist.submittable || submittingDossier) return;
+    if (!organization || submittingDossier) return;
     setSubmittingDossier(true);
     const now = Date.now();
     try {
@@ -695,7 +693,7 @@ export default function Dashboard() {
         targetType: 'organization',
         targetId: organization.id,
         targetName: organization.name,
-        details: 'Dossier complet soumis pour revue',
+        details: 'Dossier soumis pour revue',
       });
       toast('Dossier soumis à votre antenne ✓', 'success');
     } catch (err) {
@@ -703,22 +701,6 @@ export default function Dashboard() {
       toast('La soumission a échoué, réessayez.', 'error');
     } finally {
       setSubmittingDossier(false);
-    }
-  };
-
-  // Rattache un document à une pièce réglementaire (ou le déclasse).
-  const handleSetCategory = async (file: DossierFile, category: string) => {
-    const value = category || '';
-    if ((file.category || '') === value) return;
-    if (localDb.isSandboxActive()) {
-      localDb.saveFile({ ...file, category: value });
-      refreshLocalState();
-      return;
-    }
-    try {
-      await updateDoc(doc(db, 'files', file.id), { category: value });
-    } catch (error) {
-      console.error('Error setting file category:', error);
     }
   };
 
@@ -1239,60 +1221,30 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Checklist des pièces réglementaires obligatoires + soumission */}
-        <div data-tour="checklist" className="mb-6 shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-          <div className="lg:col-span-2">
-            <ChecklistPanel files={files} />
-          </div>
-
-          {/* Carte de soumission du dossier */}
-          <div className={`card-asf p-5 flex flex-col ${dossierChecklist.submittable ? 'ring-1 ring-emerald-200' : ''}`}>
-            <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Soumettre mon dossier</h3>
-            {organization.dossierSubmittedAt ? (
-              <>
-                <div className="mt-2 flex items-center gap-2 text-emerald-600">
-                  <Check className="w-5 h-5 shrink-0" />
-                  <p className="text-sm font-semibold">Dossier soumis</p>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Le {new Date(organization.dossierSubmittedAt).toLocaleDateString('fr-FR')} · en cours de revue par votre antenne.
+        {/* Soumission du dossier */}
+        <div data-tour="submit" className="mb-6 shrink-0">
+          <div className={`card-asf p-5 flex flex-col sm:flex-row sm:items-center gap-4 ${organization.dossierSubmittedAt ? 'ring-1 ring-emerald-200' : ''}`}>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Soumettre mon dossier</h3>
+              {organization.dossierSubmittedAt ? (
+                <p className="text-xs text-emerald-600 mt-1 font-semibold flex items-center gap-1.5">
+                  <Check className="w-4 h-4 shrink-0" />
+                  Dossier soumis le {new Date(organization.dossierSubmittedAt).toLocaleDateString('fr-FR')} · en cours de revue par votre antenne.
                 </p>
-                {!dossierChecklist.submittable && (
-                  <p className="text-[11px] text-rose-600 mt-2 font-semibold">
-                    Des pièces sont à corriger ou manquantes depuis votre dernière soumission.
-                  </p>
-                )}
-                <button
-                  onClick={handleSubmitDossier}
-                  disabled={!dossierChecklist.submittable || submittingDossier}
-                  className="btn-secondary text-sm justify-center mt-4 disabled:opacity-50"
-                  title="Renvoyer le dossier après modification"
-                >
-                  {submittingDossier ? 'Envoi…' : 'Soumettre à nouveau'}
-                </button>
-              </>
-            ) : (
-              <>
+              ) : (
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  {dossierChecklist.submittable
-                    ? 'Toutes les pièces obligatoires sont prêtes. Soumettez votre dossier pour qu\'il soit revu par votre antenne.'
-                    : `Déposez et classez les ${dossierChecklist.total} pièces obligatoires (sans pièce rejetée) pour pouvoir soumettre votre dossier.`}
+                  Quand vous estimez que votre dossier est complet, soumettez-le : votre antenne en est informée (tableau de bord + e-mail) et procède à la revue.
                 </p>
-                <div className="mt-3 flex items-center justify-between text-xs">
-                  <span className="font-bold uppercase tracking-wider text-slate-400">Pièces prêtes</span>
-                  <span className={`font-bold ${dossierChecklist.submittable ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {dossierChecklist.readyCount}/{dossierChecklist.total}
-                  </span>
-                </div>
-                <button
-                  onClick={handleSubmitDossier}
-                  disabled={!dossierChecklist.submittable || submittingDossier}
-                  className="btn-asf text-sm justify-center mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submittingDossier ? 'Envoi…' : 'Soumettre mon dossier'}
-                </button>
-              </>
-            )}
+              )}
+            </div>
+            <button
+              onClick={handleSubmitDossier}
+              disabled={submittingDossier}
+              className={`${organization.dossierSubmittedAt ? 'btn-secondary' : 'btn-asf'} text-sm justify-center shrink-0 disabled:opacity-60`}
+              title={organization.dossierSubmittedAt ? 'Renvoyer le dossier après modification' : 'Soumettre votre dossier pour revue'}
+            >
+              {submittingDossier ? 'Envoi…' : organization.dossierSubmittedAt ? 'Soumettre à nouveau' : 'Soumettre mon dossier'}
+            </button>
           </div>
         </div>
 
@@ -1516,21 +1468,6 @@ export default function Dashboard() {
                                 <span className="text-[9px] text-slate-400 font-mono tracking-tight flex items-center gap-1 mt-1">
                                   ID : {file.id.substring(0, 8)} | Type : {file.type.split('/').pop()?.toUpperCase()}
                                 </span>
-                                {file.orgId === user.uid && file.uploadedBy !== 'admin' && (
-                                  <select
-                                    value={file.category || ''}
-                                    data-tour={fileIdx === 0 ? 'doc-category' : undefined}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={(e) => { e.stopPropagation(); handleSetCategory(file, e.target.value); }}
-                                    title="Rattacher ce document à une pièce réglementaire"
-                                    className={`mt-1.5 w-fit max-w-[200px] text-[10px] font-semibold rounded-md border px-1.5 py-0.5 bg-white dark:bg-slate-900 ${file.category ? 'border-azur/40 text-azur' : 'border-slate-200 dark:border-slate-700 text-slate-400'} focus:outline-none focus:ring-1 focus:ring-azur/30 cursor-pointer`}
-                                  >
-                                    <option value="">Classer la pièce…</option>
-                                    {categoryOptions().map((o) => (
-                                      <option key={o.value} value={o.value}>{o.label}</option>
-                                    ))}
-                                  </select>
-                                )}
                               </div>
                             )}
                           </div>

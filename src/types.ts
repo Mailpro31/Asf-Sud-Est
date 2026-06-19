@@ -33,8 +33,6 @@ export interface DossierFile {
   antenne_id?: string;
   submissionStatus?: SubmissionStatus;
   sharedWithPartner?: boolean;
-  /** Pièce réglementaire à laquelle ce document est rattaché (cf. requiredDocuments). */
-  category?: string;
 }
 
 export interface Folder {
