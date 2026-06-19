@@ -110,7 +110,8 @@ export default function AntenneAdminDashboard() {
   const [view, setView] = useState<'workspace' | 'activity' | 'settings'>('workspace');
   // Tri, filtre par organisme, sélection multiple, glisser-déposer
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc');
-  const [orgFilter, setOrgFilter] = useState<string>('all');
+  // Documents internes de l'antenne (non rattachés à un organisme).
+  const [internalOpen, setInternalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dragOver, setDragOver] = useState(false);
   const [orgDocSearch, setOrgDocSearch] = useState('');
@@ -278,28 +279,6 @@ export default function AntenneAdminDashboard() {
     };
   }, [files, partnerOrgs]);
 
-  const visibleFiles = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const rank: Record<string, number> = { Pending: 0, 'Under review': 1, Incomplete: 2, Validated: 3 };
-    const list = files.filter((f) => {
-      const matchesSearch = !q || f.name.toLowerCase().includes(q);
-      const matchesStatus = statusFilter === 'all' || (f.submissionStatus || 'Pending') === statusFilter;
-      const matchesFolder = !activeFolderId || (f.folderId || null) === activeFolderId;
-      const matchesOrg = orgFilter === 'all' || f.orgId === orgFilter;
-      return matchesSearch && matchesStatus && matchesFolder && matchesOrg;
-    });
-    list.sort((a, b) => {
-      switch (sortBy) {
-        case 'date_asc': return a.uploadDate - b.uploadDate;
-        case 'name': return a.name.localeCompare(b.name, 'fr');
-        case 'size': return b.size - a.size;
-        case 'status': return (rank[a.submissionStatus || 'Pending'] ?? 0) - (rank[b.submissionStatus || 'Pending'] ?? 0);
-        default: return b.uploadDate - a.uploadDate;
-      }
-    });
-    return list;
-  }, [files, searchQuery, statusFilter, activeFolderId, orgFilter, sortBy]);
-
   const orgModalFiles = useMemo(() => {
     if (!selectedOrgId) return [];
     const q = orgDocSearch.trim().toLowerCase();
@@ -330,6 +309,35 @@ export default function AntenneAdminDashboard() {
   );
 
   const folderFileCount = (folderId: string) => files.filter((f) => (f.folderId || null) === folderId).length;
+
+  // Documents internes de l'antenne (non rattachés à un organisme partenaire).
+  const internalAll = useMemo(
+    () => files.filter((f) => f.orgId === 'admin_created' || f.orgId === 'public'),
+    [files],
+  );
+  const internalFolders = useMemo(
+    () => folders.filter((f) => f.orgId === 'admin_created' || f.orgId === 'public'),
+    [folders],
+  );
+  const internalFiles = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const rank: Record<string, number> = { Pending: 0, 'Under review': 1, Incomplete: 2, Validated: 3 };
+    const list = internalAll.filter((f) =>
+      (!activeFolderId || (f.folderId || null) === activeFolderId) &&
+      (statusFilter === 'all' || (f.submissionStatus || 'Pending') === statusFilter) &&
+      (!q || f.name.toLowerCase().includes(q)),
+    );
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'date_asc': return a.uploadDate - b.uploadDate;
+        case 'name': return a.name.localeCompare(b.name, 'fr');
+        case 'size': return b.size - a.size;
+        case 'status': return (rank[a.submissionStatus || 'Pending'] ?? 0) - (rank[b.submissionStatus || 'Pending'] ?? 0);
+        default: return b.uploadDate - a.uploadDate;
+      }
+    });
+    return list;
+  }, [internalAll, searchQuery, statusFilter, sortBy, activeFolderId]);
 
   const orgName = (orgId: string) =>
     orgProfiles.find((o) => o.id === orgId)?.name ||
@@ -869,6 +877,17 @@ export default function AntenneAdminDashboard() {
     setOrgStatusFilter('all'); setOrgSortBy('date_desc'); clearSelection();
   };
 
+  // Ouverture / fermeture du gestionnaire de documents internes (réutilise les
+  // filtres « globaux » : recherche, statut, tri, dossier actif).
+  const openInternal = () => {
+    setInternalOpen(true); setActiveFolderId(null); setSearchQuery('');
+    setStatusFilter('all'); setSortBy('date_desc'); clearSelection();
+  };
+  const closeInternal = () => {
+    setInternalOpen(false); setActiveFolderId(null); setSearchQuery('');
+    setStatusFilter('all'); setSortBy('date_desc'); clearSelection();
+  };
+
   const handleBulkStatus = async (status: SubmissionStatus) => { await applyStatusToFiles(selectedFiles, status); clearSelection(); };
   const handleBulkDownload = async () => { await downloadAsZip(selectedFiles, `documents_${antenneName}_${new Date().toISOString().split('T')[0]}`); };
   const handleBulkDelete = async () => {
@@ -1217,6 +1236,32 @@ export default function AntenneAdminDashboard() {
               })}
             </div>
           )}
+        </section>
+
+        {/* Documents internes de l'antenne (non rattachés à un organisme) */}
+        <section className="space-y-3">
+          <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
+            <FolderIcon className="w-5 h-5 text-azur" /> Documents internes
+            <span className="text-xs font-normal text-slate-400">· de l'antenne</span>
+          </h2>
+          <button
+            onClick={openInternal}
+            className="card-asf p-4 text-left hover:border-azur hover:shadow-md transition-all cursor-pointer group w-full sm:max-w-sm"
+            title="Documents de l'antenne non rattachés à un organisme"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                <FolderOpen className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-deep group-hover:text-azur transition-colors">Documents internes</p>
+                <p className="text-xs text-slate-500">{internalAll.length} document{internalAll.length > 1 ? 's' : ''} · usage interne</p>
+              </div>
+              <span className="inline-flex items-center gap-1 text-azur font-bold group-hover:translate-x-0.5 transition-transform">
+                Ouvrir <ChevronRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </button>
         </section>
         </>)}
 
@@ -1602,6 +1647,210 @@ export default function AntenneAdminDashboard() {
         </div>
         );
       })()}
+
+      {/* Gestionnaire des documents internes de l'antenne */}
+      {internalOpen && (
+        <div
+          className="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-overlay-in"
+          onClick={closeInternal}
+        >
+          <div
+            className={`bg-white rounded-2xl shadow-asf-lg w-full max-w-5xl my-auto animate-panel-in ${dragOver ? 'ring-2 ring-azur' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDropFiles}
+          >
+            {/* En-tête */}
+            <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                  <FolderOpen className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-display text-lg font-bold text-deep">Documents internes</h3>
+                  <p className="text-xs text-slate-500">Documents de l'antenne non rattachés à un organisme.</p>
+                </div>
+              </div>
+              <button onClick={closeInternal} className="btn-ghost p-2 shrink-0" title="Fermer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Dossiers internes */}
+            <div className="px-5 pt-4 pb-2 border-b border-slate-100">
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5 mb-2">
+                <FolderIcon className="w-3.5 h-3.5" /> Dossiers internes
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setActiveFolderId(null)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
+                    activeFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" /> Tous ({internalAll.length})
+                </button>
+                {internalFolders.map((fol) => (
+                  <span
+                    key={fol.id}
+                    className={`text-xs font-bold pl-3 pr-1.5 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
+                      activeFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                    }`}
+                  >
+                    <button onClick={() => setActiveFolderId(fol.id)} className="inline-flex items-center gap-1.5 cursor-pointer">
+                      {activeFolderId === fol.id ? <FolderOpen className="w-3.5 h-3.5" /> : <FolderIcon className="w-3.5 h-3.5" />}
+                      {fol.name} ({folderFileCount(fol.id)})
+                    </button>
+                    <button
+                      onClick={() => handleDeleteFolder(fol)}
+                      title="Supprimer le dossier"
+                      className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
+                        activeFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 text-slate-400 hover:text-rose-500'
+                      }`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                <button
+                  onClick={() => { setFolderName(''); setFolderTargetOrgId(null); setCreatingFolder(true); }}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full border border-dashed border-azur/40 text-azur hover:bg-azur/5 inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
+                </button>
+              </div>
+            </div>
+
+            {/* Barre d'actions */}
+            <div className="px-5 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100">
+              <div className="relative flex-1 min-w-[160px]">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher…"
+                  className="input-asf pl-9 py-2 w-full text-sm"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | SubmissionStatus)}
+                className="input-asf w-auto py-2 text-sm"
+                title="Filtrer par statut"
+              >
+                <option value="all">Tous les statuts</option>
+                {STATUS_ORDER.map((s) => (<option key={s} value={s}>{getStatusMeta(s).label}</option>))}
+              </select>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="input-asf w-auto py-2 text-sm"
+                title="Trier"
+              >
+                <option value="date_desc">Plus récents</option>
+                <option value="date_asc">Plus anciens</option>
+                <option value="name">Nom (A→Z)</option>
+                <option value="status">Statut</option>
+                <option value="size">Taille</option>
+              </select>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const fs = e.target.files ? Array.from(e.target.files) : [];
+                  if (fs.length) handleUploadFiles(fs as File[]);
+                  if (e.target) (e.target as any).value = '';
+                }}
+              />
+              <button
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                disabled={uploading}
+                className="btn-asf text-sm shrink-0 disabled:opacity-60"
+                title="Déposer un document interne"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{uploading ? `Envoi… ${uploadProgress}%` : 'Déposer'}</span>
+              </button>
+              <button
+                onClick={() => applyStatusToFiles(internalFiles, 'Validated')}
+                disabled={internalFiles.length === 0}
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <CheckCheck className="w-3.5 h-3.5" /> Tout valider
+              </button>
+              <button
+                onClick={() => exportCsv(internalFiles, 'internes')}
+                disabled={internalFiles.length === 0}
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+                title="Exporter la liste en CSV"
+              >
+                <FileDown className="w-3.5 h-3.5" /> Export
+              </button>
+              <button
+                onClick={() => downloadAsZip(internalFiles, 'documents_internes')}
+                disabled={internalFiles.length === 0 || zipping}
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Archive className="w-3.5 h-3.5" /> {zipping ? 'Archivage…' : '.zip'}
+              </button>
+            </div>
+
+            {/* Barre d'actions groupées */}
+            {selectedIds.size > 0 && (
+              <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 bg-azur/10 border-b border-azur/25">
+                <span className="text-sm font-bold text-deep">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
+                <div className="flex-1" />
+                <button onClick={() => handleBulkStatus('Validated')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5">
+                  <CheckCheck className="w-3.5 h-3.5" /> Valider
+                </button>
+                <button onClick={handleBulkDownload} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5">
+                  <Download className="w-3.5 h-3.5" /> Télécharger
+                </button>
+                <button onClick={handleBulkDelete} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-1.5">
+                  <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                </button>
+                <button onClick={clearSelection} className="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">Annuler</button>
+              </div>
+            )}
+
+            {/* Liste */}
+            <div className="max-h-[50vh] overflow-y-auto">
+              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100">
+                {internalFiles.length > 0 && (
+                  <input
+                    type="checkbox"
+                    checked={internalFiles.every((f) => selectedIds.has(f.id))}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(new Set(internalFiles.map((f) => f.id)));
+                      else clearSelection();
+                    }}
+                    className="w-4 h-4 accent-azur cursor-pointer"
+                    title="Tout sélectionner"
+                  />
+                )}
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  {internalFiles.length} document{internalFiles.length > 1 ? 's' : ''}
+                </span>
+                {dragOver && <span className="text-[11px] font-bold text-azur ml-auto">Déposez pour téléverser…</span>}
+              </div>
+              {internalFiles.length === 0 ? (
+                <div className="px-5 pb-8 pt-4 text-center text-sm text-slate-400 flex flex-col items-center gap-2">
+                  <CloudUpload className="w-8 h-8 text-slate-300" />
+                  Aucun document interne.
+                  <span className="text-xs">Glissez-déposez des fichiers ici ou utilisez « Déposer ».</span>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {internalFiles.map((file) => renderFileRow(file, { selectable: true }))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modale de création de dossier */}
       {creatingFolder && (
