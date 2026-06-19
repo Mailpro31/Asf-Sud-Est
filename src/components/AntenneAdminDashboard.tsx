@@ -114,6 +114,9 @@ export default function AntenneAdminDashboard() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dragOver, setDragOver] = useState(false);
   const [orgDocSearch, setOrgDocSearch] = useState('');
+  // Filtre statut + tri propres à la fiche organisme.
+  const [orgStatusFilter, setOrgStatusFilter] = useState<'all' | SubmissionStatus>('all');
+  const [orgSortBy, setOrgSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc');
   const [previewFile, setPreviewFile] = useState<DossierFile | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   // Fiche détaillée d'un organisme (ses fichiers + gestion de son compte).
@@ -300,13 +303,25 @@ export default function AntenneAdminDashboard() {
   const orgModalFiles = useMemo(() => {
     if (!selectedOrgId) return [];
     const q = orgDocSearch.trim().toLowerCase();
-    return files.filter(
+    const rank: Record<string, number> = { Pending: 0, 'Under review': 1, Incomplete: 2, Validated: 3 };
+    const list = files.filter(
       (f) =>
         f.orgId === selectedOrgId &&
         (!orgFolderId || (f.folderId || null) === orgFolderId) &&
+        (orgStatusFilter === 'all' || (f.submissionStatus || 'Pending') === orgStatusFilter) &&
         (!q || f.name.toLowerCase().includes(q)),
     );
-  }, [files, selectedOrgId, orgDocSearch, orgFolderId]);
+    list.sort((a, b) => {
+      switch (orgSortBy) {
+        case 'date_asc': return a.uploadDate - b.uploadDate;
+        case 'name': return a.name.localeCompare(b.name, 'fr');
+        case 'size': return b.size - a.size;
+        case 'status': return (rank[a.submissionStatus || 'Pending'] ?? 0) - (rank[b.submissionStatus || 'Pending'] ?? 0);
+        default: return b.uploadDate - a.uploadDate;
+      }
+    });
+    return list;
+  }, [files, selectedOrgId, orgDocSearch, orgFolderId, orgStatusFilter, orgSortBy]);
 
   // Dossiers propres à l'organisme affiché (rangement privé par organisme).
   const orgFolders = useMemo(
@@ -767,36 +782,48 @@ export default function AntenneAdminDashboard() {
     }
   };
 
-  // --- Relance d'un organisme par e-mail ---
+  // --- Relance d'un organisme par e-mail (texte modifiable avant envoi) ---
   // Envoi réel via EmailJS / extension Firebase (queueEmail) ; si l'envoi
   // n'aboutit pas (non configuré, mode sandbox), repli sur le client e-mail.
-  // Journalise la relance dans l'historique de l'antenne dans tous les cas.
   const [reminding, setReminding] = useState(false);
-  const handleRemindOrg = async (org: Organization) => {
+  const [reminderOrg, setReminderOrg] = useState<Organization | null>(null);
+  const [reminderSubject, setReminderSubject] = useState('');
+  const [reminderBody, setReminderBody] = useState('');
+
+  // Ouvre l'éditeur de relance avec un texte pré-rempli (modifiable).
+  const openReminder = (org: Organization) => {
     if (!org.email) {
-      toast('Cet organisme n\'a pas d\'adresse e-mail renseignée.', 'warning');
+      toast("Cet organisme n'a pas d'adresse e-mail renseignée.", 'warning');
       return;
     }
-    setReminding(true);
     const orgFiles = files.filter((f) => f.orgId === org.id);
     const missing = orgFiles.filter((f) => (f.submissionStatus || 'Pending') !== 'Validated').length;
-    const subject = `Aviation Sans Frontières — Suivi de votre dossier (antenne ${antenneName})`;
     const intro = orgFiles.length === 0
-      ? `nous vous invitons à déposer vos documents sur votre espace en ligne.`
+      ? 'nous vous invitons à déposer vos documents sur votre espace en ligne.'
       : missing > 0
         ? `il reste ${missing} document(s) à compléter ou à valider. Merci de vous connecter à votre espace pour les régulariser.`
-        : `nous vous remercions pour les documents transmis.`;
+        : 'nous vous remercions pour les documents transmis.';
     const portal = 'https://asf-sud-est.vercel.app';
-    const text =
+    setReminderSubject(`Aviation Sans Frontières — Suivi de votre dossier (antenne ${antenneName})`);
+    setReminderBody(
       `Bonjour ${org.contactName || ''},\n\n` +
-      `Dans le cadre du suivi de votre dossier auprès de l'antenne ${antenneName} (${delegationName}), ${intro}` +
-      `\n\nVous pouvez accéder à votre espace ici : ${portal}\n\n` +
-      `Bien cordialement,\nL'équipe de l'antenne ${antenneName}`;
-    const html =
-      `<p>Bonjour ${org.contactName || ''},</p>` +
-      `<p>Dans le cadre du suivi de votre dossier auprès de l'antenne <strong>${antenneName}</strong> (${delegationName}), ${intro}</p>` +
-      `<p><a href="${portal}">Accéder à mon espace</a></p>` +
-      `<p>Bien cordialement,<br/>L'équipe de l'antenne ${antenneName}</p>`;
+      `Dans le cadre du suivi de votre dossier auprès de l'antenne ${antenneName} (${delegationName}), ${intro}\n\n` +
+      `Vous pouvez accéder à votre espace ici : ${portal}\n\n` +
+      `Bien cordialement,\nL'équipe de l'antenne ${antenneName}`,
+    );
+    setReminderOrg(org);
+  };
+
+  // Envoie la relance avec le texte (éventuellement modifié) de l'éditeur.
+  const sendReminder = async () => {
+    const org = reminderOrg;
+    if (!org || !org.email) return;
+    const subject = reminderSubject.trim() || 'Suivi de votre dossier';
+    const text = reminderBody;
+    const html = text
+      .split('\n')
+      .map((line) => (line.trim() === '' ? '<br/>' : `<p style="margin:0 0 8px">${line}</p>`))
+      .join('');
 
     const logIt = (sent: boolean) => logAction('org_reminder', {
       targetType: 'organization',
@@ -804,17 +831,16 @@ export default function AntenneAdminDashboard() {
       targetName: org.name,
       antenne_id: org.antenne_id || antenneId,
       delegation_id: org.delegation_id || delegationId,
-      details: (missing > 0 ? `Relance — ${missing} document(s) en attente` : 'Relance')
-        + (sent ? ' (e-mail envoyé)' : ' (client e-mail ouvert)'),
+      details: 'Relance' + (sent ? ' (e-mail envoyé)' : ' (client e-mail ouvert)'),
     });
 
+    setReminding(true);
     try {
       const sent = await queueEmail(org.email, subject, text, html);
       if (sent) {
         logIt(true);
         toast(`E-mail de relance envoyé à ${org.name}.`, 'success');
       } else {
-        // Repli : ouverture du client e-mail prérempli.
         window.location.href = `mailto:${encodeURIComponent(org.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
         logIt(false);
         toast(`Relance préparée pour ${org.name}.`, 'success');
@@ -825,6 +851,7 @@ export default function AntenneAdminDashboard() {
       logIt(false);
     } finally {
       setReminding(false);
+      setReminderOrg(null);
     }
   };
 
@@ -833,8 +860,14 @@ export default function AntenneAdminDashboard() {
     handleUpdateOrgStatus(org, validated ? 'Validated' : 'Pending');
 
   // Ouverture / fermeture de la fiche organisme (réinitialise les filtres internes).
-  const openOrg = (id: string) => { setSelectedOrgId(id); setOrgFolderId(null); setOrgDocSearch(''); };
-  const closeOrg = () => { setSelectedOrgId(null); setOrgFolderId(null); setOrgDocSearch(''); };
+  const openOrg = (id: string) => {
+    setSelectedOrgId(id); setOrgFolderId(null); setOrgDocSearch('');
+    setOrgStatusFilter('all'); setOrgSortBy('date_desc'); clearSelection();
+  };
+  const closeOrg = () => {
+    setSelectedOrgId(null); setOrgFolderId(null); setOrgDocSearch('');
+    setOrgStatusFilter('all'); setOrgSortBy('date_desc'); clearSelection();
+  };
 
   const handleBulkStatus = async (status: SubmissionStatus) => { await applyStatusToFiles(selectedFiles, status); clearSelection(); };
   const handleBulkDownload = async () => { await downloadAsZip(selectedFiles, `documents_${antenneName}_${new Date().toISOString().split('T')[0]}`); };
@@ -848,14 +881,14 @@ export default function AntenneAdminDashboard() {
   };
 
   // --- Export CSV de la liste de documents visible ---
-  const exportCsv = () => {
+  const exportCsv = (exportList: DossierFile[] = orgModalFiles, label: string = antenneName) => {
     const cell = (v: unknown) => {
       let s = String(v ?? '').replace(/[\r\n]+/g, ' ');
       if (/^[=+\-@]/.test(s)) s = "'" + s;
       return `"${s.replace(/"/g, '""')}"`;
     };
     const header = ['Document', 'Organisme', 'Statut', 'Taille (Ko)', 'Date', 'Dépôt'];
-    const rows = visibleFiles.map((f) => [
+    const rows = exportList.map((f) => [
       f.name,
       orgName(f.orgId),
       getStatusMeta(f.submissionStatus).label,
@@ -868,7 +901,7 @@ export default function AntenneAdminDashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `documents_${antenneName}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `documents_${label}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1185,203 +1218,6 @@ export default function AntenneAdminDashboard() {
             </div>
           )}
         </section>
-
-        {/* Documents */}
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
-              <FileText className="w-5 h-5 text-azur" /> Documents
-            </h2>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher…"
-                  className="input-asf pl-10 w-40 sm:w-52"
-                />
-              </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | SubmissionStatus)}
-                className="input-asf w-auto"
-                title="Filtrer par statut"
-              >
-                <option value="all">Tous les statuts</option>
-                {STATUS_ORDER.map((s) => (
-                  <option key={s} value={s}>{getStatusMeta(s).label}</option>
-                ))}
-              </select>
-              <select
-                value={orgFilter}
-                onChange={(e) => setOrgFilter(e.target.value)}
-                className="input-asf w-auto"
-                title="Filtrer par organisme"
-              >
-                <option value="all">Tous les organismes</option>
-                {partnerOrgs.map((o) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="input-asf w-auto"
-                title="Trier"
-              >
-                <option value="date_desc">Plus récents</option>
-                <option value="date_asc">Plus anciens</option>
-                <option value="name">Nom (A→Z)</option>
-                <option value="status">Statut</option>
-                <option value="size">Taille</option>
-              </select>
-              <button
-                onClick={exportCsv}
-                disabled={visibleFiles.length === 0}
-                className="btn-secondary text-sm shrink-0 disabled:opacity-50"
-                title="Exporter la liste en CSV"
-              >
-                <FileDown className="w-4 h-4" />
-                <span className="hidden sm:inline">Export</span>
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  const fs = e.target.files ? Array.from(e.target.files) : [];
-                  if (fs.length) handleUploadFiles(fs as File[]);
-                  if (e.target) (e.target as any).value = '';
-                }}
-              />
-              <button
-                onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                disabled={uploading}
-                className="btn-asf text-sm shrink-0 disabled:opacity-60"
-                title="Déposer des documents dans l'antenne"
-              >
-                <Upload className="w-4 h-4" />
-                <span>{uploading ? `Envoi… ${uploadProgress}%` : 'Déposer'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Dossiers : filtrer / créer */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setActiveFolderId(null)}
-              className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                activeFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" /> Tous ({files.length})
-            </button>
-            {folders.map((fol) => (
-              <span
-                key={fol.id}
-                className={`group/folder text-xs font-bold pl-3 pr-1.5 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                  activeFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
-                }`}
-              >
-                <button onClick={() => setActiveFolderId(fol.id)} className="inline-flex items-center gap-1.5 cursor-pointer">
-                  {activeFolderId === fol.id ? <FolderOpen className="w-3.5 h-3.5" /> : <FolderIcon className="w-3.5 h-3.5" />}
-                  {fol.name} ({folderFileCount(fol.id)})
-                </button>
-                <button
-                  onClick={() => handleDeleteFolder(fol)}
-                  title="Supprimer le dossier"
-                  className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
-                    activeFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 text-slate-400 hover:text-rose-500'
-                  }`}
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-            <button
-              onClick={() => { setFolderName(''); setCreatingFolder(true); }}
-              className="text-xs font-bold px-3 py-1.5 rounded-full border border-dashed border-azur/40 text-azur hover:bg-azur/5 inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
-            </button>
-          </div>
-
-          {activeFolderId && (
-            <p className="text-xs text-slate-500 -mt-1">
-              Les nouveaux dépôts iront dans le dossier <strong>{folders.find((f) => f.id === activeFolderId)?.name}</strong>.
-            </p>
-          )}
-
-          {/* Barre d'actions groupées */}
-          {selectedIds.size > 0 && (
-            <div className="flex flex-wrap items-center gap-2 bg-azur/10 border border-azur/25 rounded-2xl px-4 py-2.5">
-              <span className="text-sm font-bold text-deep">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
-              <div className="flex-1" />
-              <button onClick={() => handleBulkStatus('Validated')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5">
-                <CheckCheck className="w-3.5 h-3.5" /> Valider
-              </button>
-              <select
-                onChange={(e) => { if (e.target.value) { handleBulkStatus(e.target.value as SubmissionStatus); e.target.value = ''; } }}
-                defaultValue=""
-                className="input-asf w-auto text-xs py-1.5"
-                title="Changer le statut"
-              >
-                <option value="" disabled>Changer le statut…</option>
-                {STATUS_ORDER.map((s) => (<option key={s} value={s}>{getStatusMeta(s).label}</option>))}
-              </select>
-              <button onClick={handleBulkDownload} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5">
-                <Download className="w-3.5 h-3.5" /> Télécharger
-              </button>
-              <button onClick={handleBulkDelete} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-1.5">
-                <Trash2 className="w-3.5 h-3.5" /> Supprimer
-              </button>
-              <button onClick={clearSelection} className="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">
-                Annuler
-              </button>
-            </div>
-          )}
-
-          <div
-            className={`card-asf overflow-hidden transition-shadow ${dragOver ? 'ring-2 ring-azur ring-offset-2' : ''}`}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={onDropFiles}
-          >
-            {loading ? (
-              <div className="p-10 text-center text-sm text-slate-500">Chargement des documents…</div>
-            ) : visibleFiles.length === 0 ? (
-              <div className="p-12 text-center text-sm text-slate-400 flex flex-col items-center gap-2">
-                <CloudUpload className="w-8 h-8 text-slate-300" />
-                Aucun document à afficher.
-                <span className="text-xs">Glissez-déposez des fichiers ici pour les déposer.</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-3 px-4 py-2 border-b border-slate-100 bg-slate-50/60">
-                  <input
-                    type="checkbox"
-                    checked={visibleFiles.every((f) => selectedIds.has(f.id))}
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedIds(new Set(visibleFiles.map((f) => f.id)));
-                      else clearSelection();
-                    }}
-                    className="w-4 h-4 accent-azur cursor-pointer"
-                    title="Tout sélectionner"
-                  />
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    {visibleFiles.length} document{visibleFiles.length > 1 ? 's' : ''}
-                  </span>
-                  {dragOver && <span className="text-[11px] font-bold text-azur ml-auto">Déposez pour téléverser…</span>}
-                </div>
-                <div className="divide-y divide-slate-100">
-                  {visibleFiles.map((file) => renderFileRow(file, { selectable: true }))}
-                </div>
-              </>
-            )}
-          </div>
-        </section>
         </>)}
 
         {/* Journal d'activité de l'antenne */}
@@ -1493,13 +1329,13 @@ export default function AntenneAdminDashboard() {
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
-                  onClick={() => handleRemindOrg(selectedOrg)}
-                  disabled={!selectedOrg.email || reminding}
+                  onClick={() => openReminder(selectedOrg)}
+                  disabled={!selectedOrg.email}
                   className="btn-secondary text-sm disabled:opacity-50"
-                  title={selectedOrg.email ? 'Envoyer une relance par e-mail' : 'Aucune adresse e-mail'}
+                  title={selectedOrg.email ? 'Rédiger et envoyer une relance par e-mail' : 'Aucune adresse e-mail'}
                 >
                   <Send className="w-4 h-4" />
-                  <span className="hidden sm:inline">{reminding ? 'Envoi…' : 'Relancer'}</span>
+                  <span className="hidden sm:inline">Relancer</span>
                 </button>
                 <button onClick={closeOrg} className="btn-ghost p-2" title="Fermer">
                   <X className="w-5 h-5" />
@@ -1608,6 +1444,27 @@ export default function AntenneAdminDashboard() {
                   className="input-asf pl-9 py-2 w-full text-sm"
                 />
               </div>
+              <select
+                value={orgStatusFilter}
+                onChange={(e) => setOrgStatusFilter(e.target.value as 'all' | SubmissionStatus)}
+                className="input-asf w-auto py-2 text-sm"
+                title="Filtrer par statut"
+              >
+                <option value="all">Tous les statuts</option>
+                {STATUS_ORDER.map((s) => (<option key={s} value={s}>{getStatusMeta(s).label}</option>))}
+              </select>
+              <select
+                value={orgSortBy}
+                onChange={(e) => setOrgSortBy(e.target.value as any)}
+                className="input-asf w-auto py-2 text-sm"
+                title="Trier"
+              >
+                <option value="date_desc">Plus récents</option>
+                <option value="date_asc">Plus anciens</option>
+                <option value="name">Nom (A→Z)</option>
+                <option value="status">Statut</option>
+                <option value="size">Taille</option>
+              </select>
               <input
                 ref={orgUploadRef}
                 type="file"
@@ -1636,17 +1493,64 @@ export default function AntenneAdminDashboard() {
                 <CheckCheck className="w-3.5 h-3.5" /> Tout valider
               </button>
               <button
+                onClick={() => exportCsv(orgModalFiles, selectedOrg.name)}
+                disabled={orgModalFiles.length === 0}
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+                title="Exporter la liste en CSV"
+              >
+                <FileDown className="w-3.5 h-3.5" /> Export
+              </button>
+              <button
                 onClick={() => downloadAsZip(orgModalFiles, `${selectedOrg.name}_documents`)}
                 disabled={orgModalFiles.length === 0 || zipping}
                 className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
               >
-                <Archive className="w-3.5 h-3.5" /> {zipping ? 'Archivage…' : 'Tout télécharger (.zip)'}
+                <Archive className="w-3.5 h-3.5" /> {zipping ? 'Archivage…' : '.zip'}
               </button>
             </div>
 
+            {/* Barre d'actions groupées (sélection multiple) */}
+            {selectedIds.size > 0 && (
+              <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 bg-azur/10 border-b border-azur/25">
+                <span className="text-sm font-bold text-deep">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
+                <div className="flex-1" />
+                <button onClick={() => handleBulkStatus('Validated')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5">
+                  <CheckCheck className="w-3.5 h-3.5" /> Valider
+                </button>
+                <select
+                  onChange={(e) => { if (e.target.value) { handleBulkStatus(e.target.value as SubmissionStatus); e.target.value = ''; } }}
+                  defaultValue=""
+                  className="input-asf w-auto text-xs py-1.5"
+                  title="Changer le statut"
+                >
+                  <option value="" disabled>Statut…</option>
+                  {STATUS_ORDER.map((s) => (<option key={s} value={s}>{getStatusMeta(s).label}</option>))}
+                </select>
+                <button onClick={handleBulkDownload} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5">
+                  <Download className="w-3.5 h-3.5" /> Télécharger
+                </button>
+                <button onClick={handleBulkDelete} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-1.5">
+                  <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                </button>
+                <button onClick={clearSelection} className="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">Annuler</button>
+              </div>
+            )}
+
             {/* Documents de l'organisme */}
             <div className="max-h-[50vh] overflow-y-auto">
-              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap">
+              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100">
+                {orgModalFiles.length > 0 && (
+                  <input
+                    type="checkbox"
+                    checked={orgModalFiles.every((f) => selectedIds.has(f.id))}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(new Set(orgModalFiles.map((f) => f.id)));
+                      else clearSelection();
+                    }}
+                    className="w-4 h-4 accent-azur cursor-pointer"
+                    title="Tout sélectionner"
+                  />
+                )}
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   {orgModalFiles.length} document{orgModalFiles.length > 1 ? 's' : ''}
                 </span>
@@ -1662,15 +1566,15 @@ export default function AntenneAdminDashboard() {
               </div>
               {orgModalFiles.length === 0 ? (
                 <div className="px-5 pb-8 pt-2 text-center text-sm text-slate-400 font-semibold">
-                  {orgDocSearch
+                  {orgDocSearch || orgStatusFilter !== 'all'
                     ? 'Aucun document ne correspond à votre recherche.'
                     : orgFolderId
                       ? 'Ce dossier est vide.'
                       : "Cet organisme n'a déposé aucun document pour le moment."}
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100 border-t border-slate-100">
-                  {orgModalFiles.map((file) => renderFileRow(file))}
+                <div className="divide-y divide-slate-100">
+                  {orgModalFiles.map((file) => renderFileRow(file, { selectable: true }))}
                 </div>
               )}
             </div>
@@ -1708,6 +1612,52 @@ export default function AntenneAdminDashboard() {
             <div className="flex justify-end gap-2">
               <button onClick={() => { setCreatingFolder(false); setFolderTargetOrgId(null); }} className="btn-secondary text-sm">Annuler</button>
               <button onClick={handleCreateFolder} disabled={!folderName.trim()} className="btn-asf text-sm disabled:opacity-60">Créer le dossier</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Éditeur de relance : modifier le texte avant l'envoi */}
+      {reminderOrg && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-overlay-in" onClick={() => !reminding && setReminderOrg(null)}>
+          <div className="bg-white rounded-2xl shadow-asf-lg w-full max-w-lg p-6 space-y-4 animate-panel-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                <Send className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-display text-lg font-bold text-deep">Relancer {reminderOrg.name}</h3>
+                <p className="text-sm text-slate-500 truncate">À : {reminderOrg.email}</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Objet</label>
+              <input
+                value={reminderSubject}
+                onChange={(e) => setReminderSubject(e.target.value)}
+                className="input-asf w-full text-sm"
+                placeholder="Objet de l'e-mail"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Message</label>
+              <textarea
+                value={reminderBody}
+                onChange={(e) => setReminderBody(e.target.value)}
+                rows={10}
+                className="input-asf w-full text-sm leading-relaxed resize-y"
+                placeholder="Texte du message…"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">Vous pouvez modifier librement le texte avant l'envoi.</p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setReminderOrg(null)} disabled={reminding} className="btn-secondary text-sm disabled:opacity-60">Annuler</button>
+              <button onClick={sendReminder} disabled={reminding || !reminderBody.trim()} className="btn-asf text-sm disabled:opacity-60">
+                <Send className="w-4 h-4" />
+                {reminding ? 'Envoi…' : 'Envoyer la relance'}
+              </button>
             </div>
           </div>
         </div>
