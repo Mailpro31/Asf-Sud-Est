@@ -2223,6 +2223,12 @@ export default function AdminPanel() {
                                               {isSuperAdminMode && (
                                                 <option value="super_admin">Super administrateur</option>
                                               )}
+                                              {/* Rôle hérité (déprécié) : affiché uniquement s'il est encore
+                                                  attribué, afin que le <select> reflète la réalité et permette
+                                                  de réaffecter le compte. Jamais proposé pour un nouveau compte. */}
+                                              {org.role === 'admin_delegation' && (
+                                                <option value="admin_delegation">Coordinateur de délégation (hérité)</option>
+                                              )}
                                             </select>
                                             <p className="text-[9.5px] text-slate-400 font-semibold mt-1 leading-snug">
                                               Un <strong>gestionnaire d'antenne</strong> accède au tableau de bord de sa ville : pensez à d'abord renseigner sa <strong>ville / antenne</strong> ci-dessus, puis <strong>Enregistrer</strong>.
