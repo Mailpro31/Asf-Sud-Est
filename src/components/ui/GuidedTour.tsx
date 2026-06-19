@@ -57,10 +57,18 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
   // Recentre la cible puis mesure à chaque changement d'étape / ouverture.
   useLayoutEffect(() => {
     if (!open) return;
-    const step = steps[index];
+    const idx = Math.max(0, Math.min(index, steps.length - 1));
+    const step = steps[idx];
     const el = step ? resolveTarget(step.target) : null;
-    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    const t = setTimeout(measure, el ? 320 : 0);
+    if (!el) {
+      // Cible absente de l'écran : on n'encadre pas le vide, on passe
+      // directement à l'étape suivante affichable (sinon bulle centrée).
+      if (idx < steps.length - 1) { setIndex(idx + 1); return; }
+      setBox(null);
+      return;
+    }
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const t = setTimeout(measure, 320);
     return () => clearTimeout(t);
   }, [open, index, steps, measure]);
 
@@ -148,22 +156,22 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
         </div>
         <h4 className="font-display text-lg font-bold text-deep mb-1.5">{step.title}</h4>
         <p className="text-sm text-slate-600 leading-relaxed">{step.text}</p>
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between gap-2 mt-4">
+          <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
             {steps.map((_, k) => (
               <span
                 key={k}
-                className={`h-1.5 rounded-full transition-all ${k === safeIndex ? 'w-4 bg-sourire' : 'w-1.5 bg-slate-200'}`}
+                className={`h-1.5 rounded-full shrink-0 transition-all ${k === safeIndex ? 'w-4 bg-sourire' : 'w-1.5 bg-slate-200'}`}
               />
             ))}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             {safeIndex > 0 && (
-              <button onClick={() => setIndex(safeIndex - 1)} className="text-sm font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">
+              <button onClick={() => setIndex(safeIndex - 1)} className="text-sm font-bold px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 whitespace-nowrap">
                 Précédent
               </button>
             )}
-            <button onClick={next} className="text-sm font-bold px-4 py-1.5 rounded-lg bg-sourire hover:bg-sourire-dark text-white inline-flex items-center gap-1">
+            <button onClick={next} className="text-sm font-bold px-3.5 py-1.5 rounded-lg bg-sourire hover:bg-sourire-dark text-white inline-flex items-center gap-1 whitespace-nowrap shrink-0">
               {isLast ? 'Terminer' : 'Suivant'} {!isLast && <ChevronRight className="w-4 h-4" />}
             </button>
           </div>

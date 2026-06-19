@@ -148,7 +148,7 @@ service cloud.firestore {
         'folder_create', 'folder_delete',
         'org_create', 'org_delete', 'org_role_change', 'org_status_change', 'org_assign_antenne', 'org_profile_update', 'org_reminder',
         'antenne_create', 'antenne_delete', 'antenne_update', 'antenne_group_change', 'antenne_settings_change',
-        'delegation_create'
+        'delegation_create', 'dossier_submit'
       ];
     }
 
@@ -156,7 +156,7 @@ service cloud.firestore {
     // journaliser pour lui-même : il ne peut pas forger des actions d'admin
     // (changement de rôle, suppression de compte, etc.).
     function isPartnerAuditAction(a) {
-      return a in ['login', 'logout', 'file_upload', 'file_delete', 'folder_create', 'folder_delete', 'file_rename', 'file_move', 'file_download', 'org_profile_update'];
+      return a in ['login', 'logout', 'file_upload', 'file_delete', 'folder_create', 'folder_delete', 'file_rename', 'file_move', 'file_download', 'org_profile_update', 'dossier_submit'];
     }
 
     function isValidAuditLog(data) {
@@ -295,7 +295,7 @@ service cloud.firestore {
                     isSuperAdmin() ||
                     (isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) && incoming().diff(existing()).affectedKeys().hasOnly(['submissionStatus', 'updatedAt'])) ||
                     (isOwner(orgId) && incoming().get('role', '') == 'admin_antenne' && hasMatchingInvite(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'delegation_id', 'antenne_id', 'updatedAt'])) ||
-                    (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt']))
+                    (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt', 'dossierSubmittedAt', 'hasSeenTour']))
                   );
 
       // Suppression d'un compte : réservée au super admin.
