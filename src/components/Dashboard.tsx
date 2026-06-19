@@ -1300,7 +1300,7 @@ export default function Dashboard() {
                         <td className={`px-6 py-4 text-center text-xs font-mono font-medium ${themeConfig.textMuted}`}>-- Répertoire</td>
                         <td className={`px-6 py-4 text-xs ${themeConfig.textMuted}`}>{new Date(folder.createdAt).toLocaleDateString()}</td>
                         <td className="px-6 py-4 text-right">
-                          {folder.orgId === user.uid && (
+                          {folder.orgId === user.uid && folder.createdBy !== 'admin' && (
                             <button
                               onClick={(e) => { e.stopPropagation(); setDeletingFolder(folder); }}
                               className="text-slate-400 hover:text-red-500 transition-colors p-1.5 focus:outline-none cursor-pointer"
@@ -1368,7 +1368,7 @@ export default function Dashboard() {
                             >
                               <Download className="w-3.5 h-3.5" />
                             </button>
-                            {file.orgId === user.uid && (
+                            {file.orgId === user.uid && file.uploadedBy !== 'admin' && (
                               <>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setRenamingFile(file); setRenameInput(file.name); }}
@@ -1385,6 +1385,14 @@ export default function Dashboard() {
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </>
+                            )}
+                            {file.orgId === user.uid && file.uploadedBy === 'admin' && (
+                              <span
+                                className="p-1.5 text-[9px] font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-lg flex items-center"
+                                title="Déposé par un administrateur — non modifiable"
+                              >
+                                Admin
+                              </span>
                             )}
                           </div>
                         </td>

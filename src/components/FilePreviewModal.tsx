@@ -970,7 +970,7 @@ export default function FilePreviewModal({
                 Télécharger original
               </button>
 
-              {onDelete && (
+              {onDelete && (isAdmin || file.uploadedBy !== 'admin') && (
                 <button
                   onClick={() => onDelete(file)}
                   className="btn-danger w-full shrink-0"
