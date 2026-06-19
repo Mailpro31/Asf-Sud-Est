@@ -9,6 +9,7 @@ import { StatusBadge } from './ui';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { updatePassword, updateEmail } from 'firebase/auth';
+import { logAction } from '../lib/auditLog';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -142,6 +143,15 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
       // 3. Save selected avatar in localStorage
       localStorage.setItem(`asf_avatar_${user.uid}`, selectedAvatarId);
+
+      logAction('org_profile_update', {
+        targetType: 'organization',
+        targetId: user.uid,
+        targetName: orgName.trim(),
+        delegation_id: organization.delegation_id,
+        antenne_id: organization.antenne_id,
+        details: 'Profil mis à jour par le titulaire du compte',
+      });
 
       // Refresh contexts
       await refreshOrganization();

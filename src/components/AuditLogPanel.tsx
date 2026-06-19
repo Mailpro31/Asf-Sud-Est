@@ -16,6 +16,7 @@ const ACTION_META: Record<string, { label: string; icon: string; cls: string }> 
   file_status_change: { label: 'Statut de fichier', icon: '🏷️', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
   file_share_toggle: { label: 'Partage de fichier', icon: '🔁', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
   file_rename: { label: 'Renommage de fichier', icon: '✏️', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
+  file_move: { label: 'Déplacement de fichier', icon: '📦', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
   folder_create: { label: 'Création de dossier', icon: '📁', cls: 'bg-azur/10 text-azur border-azur/20' },
   folder_delete: { label: 'Suppression de dossier', icon: '🗂️', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
   org_create: { label: 'Nouveau compte', icon: '✨', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -60,7 +61,7 @@ function formatDate(ts: number): string {
 const CATEGORIES: { id: string; label: string; actions: string[] }[] = [
   { id: 'all', label: 'Toutes les actions', actions: [] },
   { id: 'auth', label: 'Connexions', actions: ['login', 'logout'] },
-  { id: 'files', label: 'Fichiers', actions: ['file_upload', 'file_delete', 'file_status_change', 'file_share_toggle', 'file_rename'] },
+  { id: 'files', label: 'Fichiers', actions: ['file_upload', 'file_delete', 'file_status_change', 'file_share_toggle', 'file_rename', 'file_move'] },
   { id: 'folders', label: 'Dossiers', actions: ['folder_create', 'folder_delete'] },
   { id: 'accounts', label: 'Comptes & rôles', actions: ['org_create', 'org_delete', 'org_role_change', 'org_status_change', 'org_reminder', 'org_assign_antenne', 'org_profile_update'] },
 ];

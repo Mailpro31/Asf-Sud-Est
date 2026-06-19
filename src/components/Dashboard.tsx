@@ -609,15 +609,24 @@ export default function Dashboard() {
   const handleRenameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (renamingFile && renameInput.trim() !== '' && renameInput !== renamingFile.name) {
+      const newName = renameInput.trim();
+      const logIt = () => logAction('file_rename', {
+        targetType: 'file',
+        targetId: renamingFile.id,
+        targetName: newName,
+        details: `Renommé : « ${renamingFile.name} » → « ${newName} »`,
+      });
       if (localDb.isSandboxActive()) {
-        const file = { ...renamingFile, name: renameInput.trim() };
+        const file = { ...renamingFile, name: newName };
         localDb.saveFile(file);
+        logIt();
         refreshLocalState();
         setRenamingFile(null);
         return;
       }
       try {
-        await updateDoc(doc(db, 'files', renamingFile.id), { name: renameInput.trim() });
+        await updateDoc(doc(db, 'files', renamingFile.id), { name: newName });
+        logIt();
       } catch (error) {
         console.error('Error renaming file:', error);
       }
@@ -663,14 +672,21 @@ export default function Dashboard() {
       setDeletingFolder(null);
       return;
     }
+    const logIt = () => logAction('folder_delete', {
+      targetType: 'folder',
+      targetId: deletingFolder.id,
+      targetName: deletingFolder.name,
+    });
     if (localDb.isSandboxActive()) {
       localDb.deleteFolder(deletingFolder.id);
+      logIt();
       refreshLocalState();
       setDeletingFolder(null);
       return;
     }
     try {
       await deleteDoc(doc(db, 'folders', deletingFolder.id));
+      logIt();
     } catch (error) {
       console.error('Error deleting folder:', error);
     } finally {
@@ -689,17 +705,27 @@ export default function Dashboard() {
       try {
         const parsed = JSON.parse(data);
         if (parsed.type === 'move_file' && parsed.fileId) {
+          const moved = files.find(f => f.id === parsed.fileId);
+          const dest = folderId ? (folders.find(f => f.id === folderId)?.name || 'un dossier') : 'la racine';
+          const logIt = () => logAction('file_move', {
+            targetType: 'file',
+            targetId: parsed.fileId,
+            targetName: moved?.name,
+            details: `Déplacé vers ${folderId ? `« ${dest} »` : dest}`,
+          });
           if (localDb.isSandboxActive()) {
             const list = localDb.getFiles();
             const found = list.find(f => f.id === parsed.fileId);
             if (found) {
               found.folderId = folderId;
               localDb.saveFile(found);
+              logIt();
               refreshLocalState();
             }
             return;
           }
           await updateDoc(doc(db, 'files', parsed.fileId), { folderId: folderId });
+          logIt();
         }
       } catch (error) {
         console.error("Error moving file", error);
