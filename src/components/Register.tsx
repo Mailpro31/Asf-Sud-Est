@@ -39,6 +39,18 @@ function validatePasswordStrength(password: string): string | null {
   return null;
 }
 
+/** Adresse e-mail bien formée (format usuel local@domaine.tld). */
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
+/** Numéro de téléphone plausible : 10 à 15 chiffres (formats FR/internationaux). */
+function isValidPhone(phone: string): boolean {
+  const digits = phone.replace(/[^\d]/g, '');
+  // Accepte le préfixe international (+33…) : on borne entre 10 et 15 chiffres.
+  return digits.length >= 10 && digits.length <= 15;
+}
+
 export default function Register({ onNavigateLogin, onNavigateHome }: RegisterProps) {
   // Wizard steps: 1 = Structure, 2 = Antenne, 3 = Connexion & Validation
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -90,6 +102,17 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
     if (!selectedAntenne) {
       setError('Veuillez sélectionner une Antenne régionale / Ville.');
       setStep(2);
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      setError('Veuillez saisir une adresse e-mail valide.');
+      return;
+    }
+
+    if (!isValidPhone(formData.phone)) {
+      setError('Veuillez saisir un numéro de téléphone valide.');
+      setStep(1);
       return;
     }
 
@@ -183,6 +206,10 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
     if (step === 1) {
       if (!formData.name.trim() || !formData.phone.trim()) {
         setError("Veuillez renseigner le nom de l'organisme et son téléphone.");
+        return;
+      }
+      if (!isValidPhone(formData.phone)) {
+        setError('Veuillez saisir un numéro de téléphone valide (ex. 02 40 12 34 56).');
         return;
       }
       setStep(2);

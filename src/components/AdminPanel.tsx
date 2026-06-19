@@ -63,7 +63,7 @@ import { localDb } from '../lib/localDb';
 import { logAction, subscribeAuditLogs, type AuditLog } from '../lib/auditLog';
 import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
-import { formatBytes } from '../lib/utils';
+import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
 import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, type TourStep } from './ui';
 import { STATUS_META } from '../lib/status';
@@ -1983,14 +1983,23 @@ export default function AdminPanel() {
                             {filteredFolders.map((folder) => {
                               const folderDocs = files.filter(f => f.folderId === folder.id);
                               const pendingDocs = folderDocs.filter(f => f.submissionStatus === 'Pending' || !f.submissionStatus).length;
+                              const validatedDocs = folderDocs.filter(f => (f.submissionStatus || 'Pending') === 'Validated').length;
+                              // Couleur déterministe par organisme (sinon par nom de dossier),
+                              // pour différencier les cabinets d'un coup d'œil.
+                              const seed = folder.orgId && folder.orgId !== 'public' && folder.orgId !== 'admin_created'
+                                ? folder.orgId : folder.name;
+                              const sw = swatchFor(seed);
+                              const ownerName = orgProfiles.find(o => o.id === folder.orgId)?.name;
                               return (
                                 <div
                                   key={folder.id}
                                   onClick={() => { setCurrentFolderId(folder.id); setSearchQuery(''); }}
-                                  className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-3xs cursor-pointer group flex flex-col justify-between h-44 transition-all duration-300 relative ${themeAttr.hoverAccent}`}
+                                  className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 pl-6 shadow-3xs cursor-pointer group flex flex-col justify-between h-44 transition-all duration-300 relative overflow-hidden ${themeAttr.hoverAccent}`}
                                 >
+                                  {/* Accent coloré à gauche pour distinguer l'organisme */}
+                                  <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${sw.dot}`} />
                                   <div className="flex justify-between items-start">
-                                    <div className={`w-11 h-11 rounded-2xl ${themeAttr.colorClass} flex items-center justify-center shrink-0 border border-current/10 shadow-3xs`}>
+                                    <div className={`w-11 h-11 rounded-2xl ${sw.icon} flex items-center justify-center shrink-0 border ${sw.border} shadow-3xs`}>
                                       <FolderIcon className="w-5.5 h-5.5 fill-current" />
                                     </div>
                                     <button
@@ -2002,27 +2011,39 @@ export default function AdminPanel() {
                                     </button>
                                   </div>
 
-                                  <div className="mt-4">
+                                  <div className="mt-3">
                                     <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-slate-800 dark:group-hover:text-slate-100 transition-colors truncate">
                                       {folder.name}
                                     </h4>
-                                    <p className="text-[10.5px] text-slate-400 dark:text-slate-500 mt-1 font-mono flex items-center justify-between">
+                                    {ownerName && (
+                                      <p className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate flex items-center gap-1 mt-0.5">
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${sw.dot}`} /> {ownerName}
+                                      </p>
+                                    )}
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono flex items-center justify-between gap-2">
                                       <span>Créé le {new Date(folder.createdAt).toLocaleDateString()}</span>
-                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                                        Par : {folder.createdBy === 'admin' ? 'Admin' : 'Partenaire'}
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 shrink-0">
+                                        {folder.createdBy === 'admin' ? 'Admin' : 'Partenaire'}
                                       </span>
                                     </p>
                                   </div>
 
-                                  <div className="border-t border-slate-100 dark:border-slate-800/80 pt-3.5 mt-3.5 flex justify-between items-center w-full text-[11px] text-slate-500">
-                                    <span className="font-semibold text-slate-400">📄 {folderDocs.length} document{folderDocs.length !== 1 ? 's' : ''}</span>
-                                    {pendingDocs > 0 ? (
-                                      <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/15 border border-amber-100 dark:border-amber-900/35 font-black px-2.5 py-0.5 rounded-lg font-mono">
-                                        🕒 {pendingDocs} attente
-                                      </span>
-                                    ) : (
-                                      <span className={`text-[10px] font-black ${themeAttr.accentText}`}>Cabinet à jour</span>
-                                    )}
+                                  <div className="border-t border-slate-100 dark:border-slate-800/80 pt-3 mt-3 flex justify-between items-center w-full text-[11px] text-slate-500 gap-2">
+                                    <span className="font-semibold text-slate-400 shrink-0">📄 {folderDocs.length}</span>
+                                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                      {validatedDocs > 0 && (
+                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-900/35 font-black px-2 py-0.5 rounded-lg font-mono">
+                                          ✓ {validatedDocs}
+                                        </span>
+                                      )}
+                                      {pendingDocs > 0 ? (
+                                        <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/15 border border-amber-100 dark:border-amber-900/35 font-black px-2 py-0.5 rounded-lg font-mono">
+                                          🕒 {pendingDocs}
+                                        </span>
+                                      ) : (
+                                        <span className={`text-[10px] font-black ${themeAttr.accentText}`}>Cabinet à jour</span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               );
