@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { authErrorMessage } from '../lib/authErrors';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
 
@@ -146,7 +147,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
       localStorage.removeItem('asf_pending_registration');
       await refreshOrganization();
     } catch (err: any) {
-      setError(err.message || "Échec de l'inscription.");
+      setError(authErrorMessage(err, "Échec de l'inscription."));
     } finally {
       setLoading(false);
     }
@@ -164,7 +165,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
       localStorage.removeItem('asf_pending_registration');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Échec de l'inscription avec Google.");
+      setError(authErrorMessage(err, "Échec de l'inscription avec Google."));
     }
   };
 
