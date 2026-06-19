@@ -343,7 +343,7 @@ service cloud.firestore {
                     );
 
       allow delete: if isSignedIn() && (
-                    existing().get('orgId', '') == request.auth.uid ||
+                    (existing().get('orgId', '') == request.auth.uid && existing().get('createdBy', '') != 'admin') ||
                     isSuperAdmin() ||
                     isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (hasUserDoc() && (
@@ -395,7 +395,7 @@ service cloud.firestore {
                   );
 
       allow delete: if isSignedIn() && (
-                    existing().get('orgId', '') == request.auth.uid ||
+                    (existing().get('orgId', '') == request.auth.uid && existing().get('uploadedBy', '') != 'admin') ||
                     isSuperAdmin() ||
                     isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (hasUserDoc() && (
