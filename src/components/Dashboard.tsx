@@ -592,14 +592,27 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organization?.id]);
 
+  // Étapes « documents » détaillées sur un exemple concret (1ère ligne) si des
+  // fichiers existent, sinon une explication générale de la zone.
+  const docSteps: TourStep[] = files.length > 0
+    ? [
+        { target: '[data-tour="doc-row"]', title: 'Une ligne de document', text: "Prenons votre premier document comme exemple. Cliquez sur la ligne pour le prévisualiser à tout moment." },
+        { target: '[data-tour="doc-category"]', title: 'Classer la pièce', text: "Ce menu rattache le document à une pièce réglementaire (assurance, statuts…). C'est ce qui coche la pièce correspondante dans votre checklist." },
+        { target: '[data-tour="doc-status"]', title: 'Le statut du document', text: "En attente, en révision, validé ou incomplet : l'état de validation par votre antenne, document par document." },
+        { target: '[data-tour="doc-actions"]', title: 'Les actions', text: "Au survol de la ligne : télécharger, renommer ou supprimer le document." },
+      ]
+    : [
+        { target: '[data-tour="docs"]', title: 'Vos documents et dossiers', text: "Vos fichiers apparaîtront ici avec leur statut. Vous pourrez créer des dossiers, les classer, les prévisualiser, les renommer ou les télécharger." },
+      ];
+
   const tourSteps: TourStep[] = [
     { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment." },
     { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },
-    { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents ici, ou cliquez pour parcourir. Vous pouvez aussi les déposer directement sur un dossier pour les classer." },
+    { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents dans cette zone, ou cliquez pour parcourir votre ordinateur. Vous pouvez aussi les déposer directement sur un dossier pour les classer." },
     { target: '[data-tour="storage"]', title: 'Votre espace de stockage', text: "Suivez l'espace utilisé sur votre quota. La barre passe au rouge quand vous approchez de la limite." },
     { target: '[data-tour="checklist"]', title: 'Vos pièces obligatoires', text: "La liste des documents réglementaires attendus et leur état. Classez chaque fichier déposé pour cocher la pièce correspondante et viser 100% de complétude." },
     { target: '[data-tour="filters"]', title: 'Rechercher et filtrer', text: "Retrouvez un document par son nom (raccourci ⌘K / Ctrl+K), ou filtrez par type et par statut." },
-    { target: '[data-tour="docs"]', title: 'Vos documents et dossiers', text: "La liste de vos fichiers, avec leur statut de validation. Créez des dossiers, prévisualisez, téléchargez ou renommez vos documents." },
+    ...docSteps,
     { target: '[data-tour="account"]', title: 'Votre compte', text: "Accédez à vos informations, changez votre mot de passe ou déconnectez-vous depuis votre profil." },
   ];
   const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
@@ -1418,15 +1431,15 @@ export default function Dashboard() {
                     ))}
                     
                     {/* Render active Files inside directory */}
-                    {filteredFiles.map((file) => (
-                      <tr 
-                        key={file.id} 
+                    {filteredFiles.map((file, fileIdx) => (
+                      <tr
+                        key={file.id}
                         className="transition-colors group hover:bg-black/5 cursor-pointer"
                         draggable
                         onDragStart={(e) => handleDragStartFile(e, file)}
                         onClick={() => setPreviewingFile(file)}
                       >
-                        <td className="px-6 py-4 flex items-center gap-4">
+                        <td data-tour={fileIdx === 0 ? 'doc-row' : undefined} className="px-6 py-4 flex items-center gap-4">
                           <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg flex items-center justify-center shrink-0">
                             <FileText className="w-4 h-4" />
                           </div>
@@ -1453,6 +1466,7 @@ export default function Dashboard() {
                                 {file.orgId === user.uid && file.uploadedBy !== 'admin' && (
                                   <select
                                     value={file.category || ''}
+                                    data-tour={fileIdx === 0 ? 'doc-category' : undefined}
                                     onClick={(e) => e.stopPropagation()}
                                     onChange={(e) => { e.stopPropagation(); handleSetCategory(file, e.target.value); }}
                                     title="Rattacher ce document à une pièce réglementaire"
@@ -1468,7 +1482,7 @@ export default function Dashboard() {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center whitespace-nowrap">
+                        <td data-tour={fileIdx === 0 ? 'doc-status' : undefined} className="px-6 py-4 text-center whitespace-nowrap">
                           <StatusBadge status={file.submissionStatus || 'Pending'} />
                         </td>
                         <td className={`px-6 py-4 text-center font-mono text-xs font-semibold ${themeConfig.textMuted}`}>
@@ -1477,7 +1491,7 @@ export default function Dashboard() {
                         <td className={`px-6 py-4 text-xs ${themeConfig.textMuted}`}>
                           {new Date(file.uploadDate).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td data-tour={fileIdx === 0 ? 'doc-actions' : undefined} className="px-6 py-4 text-right">
                           <div className="flex justify-end items-center space-x-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}

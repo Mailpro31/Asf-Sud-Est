@@ -360,12 +360,24 @@ export default function AntenneAdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organization?.id]);
 
-  // Visite guidée de la fiche organisme (depuis la modale).
+  // Visite guidée de la fiche organisme (depuis la modale), détaillée sur un
+  // exemple concret de document si l'organisme en a déposé.
+  const selectedOrgAll = selectedOrgId ? files.filter((f) => f.orgId === selectedOrgId) : [];
+  const orgDocStep: TourStep[] = selectedOrgAll.length > 0
+    ? [
+        { target: '[data-tour="org-doc"]', title: 'Un document (exemple)', text: "Prenons le premier document de l'organisme. Le nom est cliquable pour l'aperçu ; à droite, ses actions." },
+        { target: '[data-tour="org-doc-validate"]', title: 'Valider / changer le statut', text: "Ce menu change le statut du document : passez-le en « Validé », « En révision » ou « Incomplet » — c'est ce qui fait avancer la conformité." },
+      ]
+    : [
+        { target: '[data-tour="org-list"]', title: 'Les documents', text: "Les documents déposés par l'organisme apparaîtront ici. Vous pourrez les prévisualiser, télécharger, renommer et changer leur statut." },
+      ];
   const orgModalTour: TourStep[] = [
-    { target: '[data-tour="org-account"]', title: 'La fiche du compte', text: "Coordonnées, conformité, checklist des pièces réglementaires (ce qui manque) et gestion de l'accès (valider ou suspendre le compte)." },
-    { target: '[data-tour="org-folders"]', title: 'Les dossiers', text: "Rangez les documents de l'organisme dans des dossiers. Les nouveaux dépôts iront dans le dossier sélectionné." },
+    { target: '[data-tour="org-email"]', title: "L'e-mail de l'organisme", text: "L'adresse de contact : celle utilisée par l'organisme pour se connecter et recevoir les relances que vous envoyez." },
+    { target: '[data-tour="org-checklist"]', title: 'Les pièces obligatoires', text: "La checklist réglementaire : repérez en un coup d'œil les pièces manquantes avant de valider le compte." },
+    { target: '[data-tour="org-access"]', title: "Gérer l'accès", text: "« Valider le compte » autorise l'organisme à se connecter et déposer ; « Suspendre » bloque tout nouveau dépôt." },
+    { target: '[data-tour="org-folders"]', title: 'Les dossiers', text: "Rangez les documents dans des dossiers. Les nouveaux dépôts iront dans le dossier sélectionné." },
     { target: '[data-tour="org-tools"]', title: 'Recherche et actions', text: "Recherchez, filtrez, déposez un document, validez tout, exportez en CSV ou téléchargez en .zip." },
-    { target: '[data-tour="org-list"]', title: 'Les documents', text: "Cochez des documents pour des actions groupées, ou agissez sur chacun : aperçu, téléchargement, renommage, statut." },
+    ...orgDocStep,
   ];
 
   // Visite guidée des documents internes (depuis la modale).
@@ -1041,8 +1053,8 @@ export default function AntenneAdminDashboard() {
   const statusSelectCls = (s?: SubmissionStatus) => STATUS_SELECT_CLS[s || 'Pending'] || STATUS_SELECT_CLS.Pending;
 
   // Ligne de document réutilisable (liste principale + fiche organisme).
-  const renderFileRow = (file: DossierFile, opts?: { selectable?: boolean }) => (
-    <div key={file.id} className={`flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70'}`}>
+  const renderFileRow = (file: DossierFile, opts?: { selectable?: boolean; tourExample?: boolean }) => (
+    <div key={file.id} data-tour={opts?.tourExample ? 'org-doc' : undefined} className={`flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70'}`}>
       {opts?.selectable && (
         <input
           type="checkbox"
@@ -1068,7 +1080,7 @@ export default function AntenneAdminDashboard() {
       </div>
 
       {/* Sélecteur de statut */}
-      <div className="relative shrink-0">
+      <div data-tour={opts?.tourExample ? 'org-doc-validate' : undefined} className="relative shrink-0">
         <select
           value={file.submissionStatus || 'Pending'}
           onChange={(e) => handleUpdateStatus(file, e.target.value as SubmissionStatus)}
@@ -1549,7 +1561,7 @@ export default function AntenneAdminDashboard() {
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Coordonnées</p>
                     <ul className="space-y-2 text-sm">
                       <li className="flex items-start gap-2 text-slate-700"><User className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 truncate">{selectedOrg.contactName || '—'}</span></li>
-                      <li className="flex items-start gap-2 text-slate-700"><Mail className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 break-all">{selectedOrg.email || '—'}</span></li>
+                      <li data-tour="org-email" className="flex items-start gap-2 text-slate-700"><Mail className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 break-all">{selectedOrg.email || '—'}</span></li>
                       <li className="flex items-start gap-2 text-slate-700"><Phone className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 truncate">{selectedOrg.phone || '—'}</span></li>
                     </ul>
                   </div>
@@ -1570,9 +1582,11 @@ export default function AntenneAdminDashboard() {
                     <ComplianceBar validated={orgValidated} total={orgAll.length} />
                   </div>
 
-                  <ChecklistPanel files={orgAll} compact />
+                  <div data-tour="org-checklist">
+                    <ChecklistPanel files={orgAll} compact />
+                  </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div data-tour="org-access" className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Accès de l'organisme</p>
                     <p className="text-xs text-slate-500 mt-1 leading-snug">
                       {isValidated
@@ -1801,7 +1815,7 @@ export default function AntenneAdminDashboard() {
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {orgModalFiles.map((file) => renderFileRow(file, { selectable: true }))}
+                  {orgModalFiles.map((file, i) => renderFileRow(file, { selectable: true, tourExample: i === 0 }))}
                 </div>
               )}
             </div>
