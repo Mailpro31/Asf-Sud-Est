@@ -1336,40 +1336,34 @@ export default function AntenneAdminDashboard() {
       {/* Fiche détaillée d'un organisme : ses documents + gestion du compte */}
       {selectedOrg && (() => {
         const isValidated = (selectedOrg.submissionStatus || 'Pending') === 'Validated';
+        const orgAll = files.filter((f) => f.orgId === selectedOrg.id);
+        const orgValidated = orgAll.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
         return (
         <div
           className="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-overlay-in"
           onClick={closeOrg}
         >
           <div
-            className="bg-white rounded-2xl shadow-asf-lg w-full max-w-5xl my-auto animate-panel-in"
+            className="bg-white rounded-3xl shadow-asf-lg w-full max-w-6xl my-auto animate-panel-in overflow-hidden flex flex-col max-h-[92vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête */}
-            <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
-                  <Building2 className="w-5 h-5" />
+            <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-azur/5 to-transparent">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                  <Building2 className="w-6 h-6" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-display text-lg font-bold text-deep truncate">{selectedOrg.name}</h3>
+                    <h3 className="font-display text-xl font-bold text-deep truncate">{selectedOrg.name}</h3>
                     <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${isValidated ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${isValidated ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                       {isValidated ? 'Compte validé' : 'Accès suspendu'}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-500 mt-1 space-y-0.5">
-                    {selectedOrg.contactName && (
-                      <p className="flex items-center gap-1.5 truncate"><User className="w-3 h-3" /> {selectedOrg.contactName}</p>
-                    )}
-                    {selectedOrg.email && (
-                      <p className="flex items-center gap-1.5 truncate"><Mail className="w-3 h-3" /> {selectedOrg.email}</p>
-                    )}
-                    {selectedOrg.phone && (
-                      <p className="flex items-center gap-1.5 truncate"><Phone className="w-3 h-3" /> {selectedOrg.phone}</p>
-                    )}
-                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {orgAll.length} document{orgAll.length > 1 ? 's' : ''} · {orgValidated} validé{orgValidated > 1 ? 's' : ''}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -1388,63 +1382,67 @@ export default function AntenneAdminDashboard() {
               </div>
             </div>
 
-            {/* Infos complètes du compte */}
-            <div className="px-5 py-3 border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Contact</p>
-                <p className="font-semibold text-slate-700 truncate">{selectedOrg.contactName || '—'}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Téléphone</p>
-                <p className="font-semibold text-slate-700 truncate">{selectedOrg.phone || '—'}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Créé le</p>
-                <p className="font-semibold text-slate-700">{selectedOrg.createdAt ? new Date(selectedOrg.createdAt).toLocaleDateString('fr-FR') : '—'}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Dernière activité</p>
-                <p className="font-semibold text-slate-700">{selectedOrg.updatedAt ? new Date(selectedOrg.updatedAt).toLocaleDateString('fr-FR') : '—'}</p>
-              </div>
-            </div>
+            {/* Corps : fiche du compte (gauche) + documents (droite) */}
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
 
-            {/* Gestion du compte : validation / suspension (pas un statut de fichier) */}
-            <div className="p-5 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Accès de l'organisme</p>
-                <p className="text-[11px] text-slate-500 mt-1 leading-snug max-w-md">
-                  {isValidated
-                    ? "Le compte est validé : l'organisme peut se connecter et déposer ses documents."
-                    : "Le compte est suspendu : l'organisme ne peut pas déposer tant qu'il n'est pas validé."}
-                </p>
-              </div>
-              {isValidated ? (
-                <button
-                  onClick={() => handleSetOrgValidated(selectedOrg, false)}
-                  disabled={updatingOrgStatus}
-                  className="text-sm font-bold px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-2 disabled:opacity-60 shrink-0"
-                >
-                  <AlertCircle className="w-4 h-4" /> Suspendre le compte
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleSetOrgValidated(selectedOrg, true)}
-                  disabled={updatingOrgStatus}
-                  className="text-sm font-bold px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-2 disabled:opacity-60 shrink-0"
-                >
-                  <CheckCircle2 className="w-4 h-4" /> Valider le compte
-                </button>
-              )}
-            </div>
+              {/* Rail gauche : coordonnées, dates, conformité, accès */}
+              <aside className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
+                <div className="p-5 space-y-5">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Coordonnées</p>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2 text-slate-700"><User className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 truncate">{selectedOrg.contactName || '—'}</span></li>
+                      <li className="flex items-start gap-2 text-slate-700"><Mail className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 break-all">{selectedOrg.email || '—'}</span></li>
+                      <li className="flex items-start gap-2 text-slate-700"><Phone className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 truncate">{selectedOrg.phone || '—'}</span></li>
+                    </ul>
+                  </div>
 
-            {/* Conformité de l'organisme (documents validés / total) */}
-            <div className="px-5 py-3 border-b border-slate-100">
-              {(() => {
-                const all = files.filter((f) => f.orgId === selectedOrg.id);
-                const val = all.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
-                return <ComplianceBar validated={val} total={all.length} />;
-              })()}
-            </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Créé le</p>
+                      <p className="text-sm font-semibold text-slate-700">{selectedOrg.createdAt ? new Date(selectedOrg.createdAt).toLocaleDateString('fr-FR') : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Activité</p>
+                      <p className="text-sm font-semibold text-slate-700">{selectedOrg.updatedAt ? new Date(selectedOrg.updatedAt).toLocaleDateString('fr-FR') : '—'}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Conformité des documents</p>
+                    <ComplianceBar validated={orgValidated} total={orgAll.length} />
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Accès de l'organisme</p>
+                    <p className="text-xs text-slate-500 mt-1 leading-snug">
+                      {isValidated
+                        ? "Validé : l'organisme peut se connecter et déposer ses documents."
+                        : "Suspendu : aucun dépôt possible tant qu'il n'est pas validé."}
+                    </p>
+                    {isValidated ? (
+                      <button
+                        onClick={() => handleSetOrgValidated(selectedOrg, false)}
+                        disabled={updatingOrgStatus}
+                        className="mt-3 w-full text-sm font-bold px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                      >
+                        <AlertCircle className="w-4 h-4" /> Suspendre le compte
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleSetOrgValidated(selectedOrg, true)}
+                        disabled={updatingOrgStatus}
+                        className="mt-3 w-full text-sm font-bold px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                      >
+                        <CheckCircle2 className="w-4 h-4" /> Valider le compte
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </aside>
+
+              {/* Colonne droite : documents de l'organisme */}
+              <section className="flex-1 min-w-0 flex flex-col min-h-0">
 
             {/* Dossiers propres à l'organisme (rangement privé, visible par lui seul) */}
             <div className="px-5 pt-4 pb-2 border-b border-slate-100">
@@ -1498,80 +1496,85 @@ export default function AntenneAdminDashboard() {
               )}
             </div>
 
-            {/* Barre d'actions + recherche + dépôt pour les documents de l'organisme */}
-            <div className="px-5 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100">
-              <div className="relative flex-1 min-w-[160px]">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  value={orgDocSearch}
-                  onChange={(e) => setOrgDocSearch(e.target.value)}
-                  placeholder="Rechercher dans ses documents…"
-                  className="input-asf pl-9 py-2 w-full text-sm"
-                />
+            {/* Recherche, filtres et actions sur les documents de l'organisme */}
+            <div className="px-5 py-3 border-b border-slate-100 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[160px]">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    value={orgDocSearch}
+                    onChange={(e) => setOrgDocSearch(e.target.value)}
+                    placeholder="Rechercher dans ses documents…"
+                    className="input-asf pl-9 py-2 w-full text-sm"
+                  />
+                </div>
+                <select
+                  value={orgStatusFilter}
+                  onChange={(e) => setOrgStatusFilter(e.target.value as 'all' | SubmissionStatus)}
+                  className="input-asf w-auto py-2 text-sm"
+                  title="Filtrer par statut"
+                >
+                  <option value="all">Tous les statuts</option>
+                  {STATUS_ORDER.map((s) => (<option key={s} value={s}>{getStatusMeta(s).label}</option>))}
+                </select>
+                <select
+                  value={orgSortBy}
+                  onChange={(e) => setOrgSortBy(e.target.value as any)}
+                  className="input-asf w-auto py-2 text-sm"
+                  title="Trier"
+                >
+                  <option value="date_desc">Plus récents</option>
+                  <option value="date_asc">Plus anciens</option>
+                  <option value="name">Nom (A→Z)</option>
+                  <option value="status">Statut</option>
+                  <option value="size">Taille</option>
+                </select>
               </div>
-              <select
-                value={orgStatusFilter}
-                onChange={(e) => setOrgStatusFilter(e.target.value as 'all' | SubmissionStatus)}
-                className="input-asf w-auto py-2 text-sm"
-                title="Filtrer par statut"
-              >
-                <option value="all">Tous les statuts</option>
-                {STATUS_ORDER.map((s) => (<option key={s} value={s}>{getStatusMeta(s).label}</option>))}
-              </select>
-              <select
-                value={orgSortBy}
-                onChange={(e) => setOrgSortBy(e.target.value as any)}
-                className="input-asf w-auto py-2 text-sm"
-                title="Trier"
-              >
-                <option value="date_desc">Plus récents</option>
-                <option value="date_asc">Plus anciens</option>
-                <option value="name">Nom (A→Z)</option>
-                <option value="status">Statut</option>
-                <option value="size">Taille</option>
-              </select>
-              <input
-                ref={orgUploadRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  const fs = e.target.files ? Array.from(e.target.files) : [];
-                  if (fs.length) handleUploadFiles(fs as File[], selectedOrg.id, orgFolderId);
-                  if (e.target) (e.target as any).value = '';
-                }}
-              />
-              <button
-                onClick={() => orgUploadRef.current && orgUploadRef.current.click()}
-                disabled={uploading}
-                className="btn-asf text-sm shrink-0 disabled:opacity-60"
-                title="Déposer un document pour cet organisme"
-              >
-                <Upload className="w-4 h-4" />
-                <span>{uploading ? `Envoi… ${uploadProgress}%` : 'Déposer'}</span>
-              </button>
-              <button
-                onClick={() => applyStatusToFiles(orgModalFiles, 'Validated')}
-                disabled={orgModalFiles.length === 0}
-                className="text-xs font-bold px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5 disabled:opacity-50"
-              >
-                <CheckCheck className="w-3.5 h-3.5" /> Tout valider
-              </button>
-              <button
-                onClick={() => exportCsv(orgModalFiles, selectedOrg.name)}
-                disabled={orgModalFiles.length === 0}
-                className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
-                title="Exporter la liste en CSV"
-              >
-                <FileDown className="w-3.5 h-3.5" /> Export
-              </button>
-              <button
-                onClick={() => downloadAsZip(orgModalFiles, `${selectedOrg.name}_documents`)}
-                disabled={orgModalFiles.length === 0 || zipping}
-                className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
-              >
-                <Archive className="w-3.5 h-3.5" /> {zipping ? 'Archivage…' : '.zip'}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={orgUploadRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const fs = e.target.files ? Array.from(e.target.files) : [];
+                    if (fs.length) handleUploadFiles(fs as File[], selectedOrg.id, orgFolderId);
+                    if (e.target) (e.target as any).value = '';
+                  }}
+                />
+                <button
+                  onClick={() => orgUploadRef.current && orgUploadRef.current.click()}
+                  disabled={uploading}
+                  className="btn-asf text-sm shrink-0 disabled:opacity-60"
+                  title="Déposer un document pour cet organisme"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{uploading ? `Envoi… ${uploadProgress}%` : 'Déposer'}</span>
+                </button>
+                <button
+                  onClick={() => applyStatusToFiles(orgModalFiles, 'Validated')}
+                  disabled={orgModalFiles.length === 0}
+                  className="text-xs font-bold px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" /> Tout valider
+                </button>
+                <div className="flex-1" />
+                <button
+                  onClick={() => exportCsv(orgModalFiles, selectedOrg.name)}
+                  disabled={orgModalFiles.length === 0}
+                  className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+                  title="Exporter la liste en CSV"
+                >
+                  <FileDown className="w-3.5 h-3.5" /> Export
+                </button>
+                <button
+                  onClick={() => downloadAsZip(orgModalFiles, `${selectedOrg.name}_documents`)}
+                  disabled={orgModalFiles.length === 0 || zipping}
+                  className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Archive className="w-3.5 h-3.5" /> {zipping ? 'Archivage…' : '.zip'}
+                </button>
+              </div>
             </div>
 
             {/* Barre d'actions groupées (sélection multiple) */}
@@ -1602,8 +1605,8 @@ export default function AntenneAdminDashboard() {
             )}
 
             {/* Documents de l'organisme */}
-            <div className="max-h-[50vh] overflow-y-auto">
-              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100">
+            <div className="flex-1 min-h-[30vh] overflow-y-auto">
+              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100 sticky top-0 bg-white z-10">
                 {orgModalFiles.length > 0 && (
                   <input
                     type="checkbox"
@@ -1642,6 +1645,8 @@ export default function AntenneAdminDashboard() {
                   {orgModalFiles.map((file) => renderFileRow(file, { selectable: true }))}
                 </div>
               )}
+            </div>
+              </section>
             </div>
           </div>
         </div>
