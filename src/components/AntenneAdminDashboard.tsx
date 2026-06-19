@@ -27,6 +27,7 @@ import {
   Search,
   Eye,
   ChevronDown,
+  ChevronRight,
   Upload,
   Trash2,
   Download,
@@ -531,6 +532,15 @@ export default function AntenneAdminDashboard() {
     setPreviewFile(null);
   };
 
+  // Couleur de la pastille de statut (lecture en un coup d'œil).
+  const STATUS_SELECT_CLS: Record<SubmissionStatus, string> = {
+    Pending: 'border-amber-300 bg-amber-50 text-amber-700',
+    'Under review': 'border-azur/40 bg-azur/10 text-azur',
+    Validated: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+    Incomplete: 'border-rose-300 bg-rose-50 text-rose-700',
+  };
+  const statusSelectCls = (s?: SubmissionStatus) => STATUS_SELECT_CLS[s || 'Pending'] || STATUS_SELECT_CLS.Pending;
+
   // Ligne de document réutilisable (liste principale + fiche organisme).
   const renderFileRow = (file: DossierFile) => (
     <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/70 transition-colors">
@@ -554,14 +564,14 @@ export default function AntenneAdminDashboard() {
         <select
           value={file.submissionStatus || 'Pending'}
           onChange={(e) => handleUpdateStatus(file, e.target.value as SubmissionStatus)}
-          className="appearance-none cursor-pointer text-xs font-semibold rounded-full border border-slate-200 bg-white pl-3 pr-7 py-1.5 text-slate-700 focus:outline-none focus:border-azur"
-          title="Changer le statut"
+          className={`appearance-none cursor-pointer text-xs font-bold rounded-full border pl-3 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-azur/30 ${statusSelectCls(file.submissionStatus)}`}
+          title="Changer le statut du document"
         >
           {STATUS_ORDER.map((s) => (
             <option key={s} value={s}>{getStatusMeta(s).label}</option>
           ))}
         </select>
-        <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
       </div>
 
       {/* Partage avec le partenaire (uniquement pour les dépôts gestionnaire) */}
@@ -748,9 +758,14 @@ export default function AntenneAdminDashboard() {
 
         {/* Organismes */}
         <section className="space-y-3">
-          <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-azur" /> Organismes de l'antenne
-          </h2>
+          <div>
+            <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-azur" /> Organismes de l'antenne
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Cliquez sur un organisme pour voir ses documents et gérer son compte.
+            </p>
+          </div>
           {partnerOrgs.length === 0 ? (
             <div className="card-asf p-6 text-center text-sm text-slate-500">
               Aucun organisme rattaché à cette antenne pour le moment.
@@ -773,9 +788,11 @@ export default function AntenneAdminDashboard() {
                       </div>
                       <StatusBadge status={org.submissionStatus} />
                     </div>
-                    <p className="text-xs text-slate-500 mt-3 flex items-center justify-between">
-                      <span>{orgFiles.length} document{orgFiles.length > 1 ? 's' : ''}</span>
-                      <span className="text-azur font-bold opacity-0 group-hover:opacity-100 transition-opacity">Gérer →</span>
+                    <p className="text-xs mt-3 flex items-center justify-between">
+                      <span className="text-slate-500">{orgFiles.length} document{orgFiles.length > 1 ? 's' : ''}</span>
+                      <span className="inline-flex items-center gap-1 text-azur font-bold group-hover:translate-x-0.5 transition-transform">
+                        Gérer <ChevronRight className="w-3.5 h-3.5" />
+                      </span>
                     </p>
                   </button>
                 );
@@ -962,7 +979,7 @@ export default function AntenneAdminDashboard() {
                     value={selectedOrg.submissionStatus || 'Pending'}
                     onChange={(e) => handleUpdateOrgStatus(selectedOrg, e.target.value as SubmissionStatus)}
                     disabled={updatingOrgStatus}
-                    className="appearance-none cursor-pointer text-sm font-semibold rounded-xl border border-slate-200 bg-white pl-3 pr-9 py-2 text-slate-700 focus:outline-none focus:border-azur disabled:opacity-60 w-full sm:w-auto"
+                    className={`appearance-none cursor-pointer text-sm font-bold rounded-xl border pl-3 pr-9 py-2 focus:outline-none focus:ring-2 focus:ring-azur/30 disabled:opacity-60 w-full sm:w-auto ${statusSelectCls(selectedOrg.submissionStatus)}`}
                   >
                     {STATUS_ORDER.map((s) => (
                       <option key={s} value={s}>{getStatusMeta(s).label}</option>
