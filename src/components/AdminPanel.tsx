@@ -261,6 +261,12 @@ export default function AdminPanel() {
       await setDoc(doc(db, 'delegations', cleanId), {
         name: newDelegationName.trim()
       });
+      logAction('delegation_create', {
+        targetType: 'delegation',
+        targetId: cleanId,
+        targetName: newDelegationName.trim(),
+        delegation_id: cleanId,
+      });
       setNewDelegationName('');
       setNewDelegationId('');
     } catch (err: any) {
@@ -387,6 +393,14 @@ export default function AdminPanel() {
         y: editingAntenne.y,
         updatedAt: Date.now()
       }, { merge: true });
+      logAction('antenne_update', {
+        targetType: 'antenne',
+        targetId: editingAntenne.id,
+        targetName: editingAntenne.name.trim(),
+        antenne_id: editingAntenne.id,
+        delegation_id: delegationFilterId || '',
+        details: "Modification des informations de l'antenne",
+      });
       setEditingAntenne(null);
     } catch (err: any) {
       console.error("Error updating antenne:", err);
@@ -438,6 +452,13 @@ export default function AdminPanel() {
       const parts = [`${updated} antenne(s) replacée(s)`];
       if (already) parts.push(`${already} déjà correcte(s)`);
       if (notFound) parts.push(`${notFound} ville(s) introuvable(s)${missing.length ? ' : ' + missing.join(', ') : ''}`);
+      if (updated > 0) {
+        logAction('antenne_update', {
+          targetType: 'antenne',
+          targetName: 'Recalage géographique',
+          details: `${updated} antenne(s) repositionnée(s) sur la carte`,
+        });
+      }
       toast(parts.join(' · '), notFound ? 'warning' : 'success');
     } catch (err: any) {
       console.error("Error recalibrating antennes:", err);
@@ -2525,6 +2546,14 @@ export default function AdminPanel() {
                                               submissionStatus: 'Validated',
                                               updatedAt: Date.now()
                                             });
+                                            logAction('org_assign_antenne', {
+                                              targetType: 'organization',
+                                              targetId: org.id,
+                                              targetName: org.name,
+                                              delegation_id: delegationFilterId,
+                                              antenne_id: defaultCity,
+                                              details: 'Compte associé à la délégation et activé',
+                                            });
                                           } catch (err) {
                                             console.error("Error direct approving:", err);
                                           }
@@ -2861,6 +2890,14 @@ export default function AdminPanel() {
                                       onClick={async () => {
                                         try {
                                           await toggleAntenneInGroup(grp, editingAntenne.id, !member);
+                                          logAction('antenne_group_change', {
+                                            targetType: 'antenne',
+                                            targetId: editingAntenne.id,
+                                            targetName: editingAntenne.name,
+                                            antenne_id: editingAntenne.id,
+                                            delegation_id: delegationFilterId || '',
+                                            details: `${!member ? 'Ajoutée au' : 'Retirée du'} groupe « ${grp.name} »`,
+                                          });
                                         } catch (err: any) {
                                           toast("Erreur lors de la mise à jour des groupes : " + (err?.message || err), 'error');
                                         }

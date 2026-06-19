@@ -47,7 +47,10 @@ export type AuditAction =
   | 'org_profile_update'
   | 'antenne_create'
   | 'antenne_delete'
-  | 'antenne_settings_change';
+  | 'antenne_update'
+  | 'antenne_group_change'
+  | 'antenne_settings_change'
+  | 'delegation_create';
 
 export interface AuditActor {
   uid: string;
