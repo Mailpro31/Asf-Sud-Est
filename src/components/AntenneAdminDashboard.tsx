@@ -57,7 +57,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, ComplianceBar, GuidedTour, type TourStep } from './ui';
+import { StatusBadge, ComplianceBar, ChecklistPanel, GuidedTour, type TourStep } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -358,7 +358,7 @@ export default function AntenneAdminDashboard() {
 
   // Visite guidée de la fiche organisme (depuis la modale).
   const orgModalTour: TourStep[] = [
-    { target: '[data-tour="org-account"]', title: 'La fiche du compte', text: "Coordonnées, dates, conformité et gestion de l'accès (valider ou suspendre le compte) de l'organisme." },
+    { target: '[data-tour="org-account"]', title: 'La fiche du compte', text: "Coordonnées, conformité, checklist des pièces réglementaires (ce qui manque) et gestion de l'accès (valider ou suspendre le compte)." },
     { target: '[data-tour="org-folders"]', title: 'Les dossiers', text: "Rangez les documents de l'organisme dans des dossiers. Les nouveaux dépôts iront dans le dossier sélectionné." },
     { target: '[data-tour="org-tools"]', title: 'Recherche et actions', text: "Recherchez, filtrez, déposez un document, validez tout, exportez en CSV ou téléchargez en .zip." },
     { target: '[data-tour="org-list"]', title: 'Les documents', text: "Cochez des documents pour des actions groupées, ou agissez sur chacun : aperçu, téléchargement, renommage, statut." },
@@ -1565,6 +1565,8 @@ export default function AntenneAdminDashboard() {
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Conformité des documents</p>
                     <ComplianceBar validated={orgValidated} total={orgAll.length} />
                   </div>
+
+                  <ChecklistPanel files={orgAll} compact />
 
                   <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Accès de l'organisme</p>
