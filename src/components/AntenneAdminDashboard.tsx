@@ -59,8 +59,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, ComplianceBar, ChecklistPanel, GuidedTour, StatusFilterChips, type TourStep } from './ui';
-import { computeChecklist } from '../lib/requiredDocuments';
+import { StatusBadge, ComplianceBar, GuidedTour, StatusFilterChips, type TourStep } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -355,7 +354,6 @@ export default function AntenneAdminDashboard() {
       ];
   const orgModalTour: TourStep[] = [
     { target: '[data-tour="org-email"]', title: "L'e-mail de l'organisme", text: "L'adresse de contact : celle utilisée par l'organisme pour se connecter et recevoir les relances que vous envoyez." },
-    { target: '[data-tour="org-checklist"]', title: 'Les pièces obligatoires', text: "La checklist réglementaire : repérez en un coup d'œil les pièces manquantes avant de valider le compte." },
     { target: '[data-tour="org-access"]', title: "Gérer l'accès", text: "« Valider le compte » autorise l'organisme à se connecter et déposer ; « Suspendre » bloque tout nouveau dépôt." },
     { target: '[data-tour="org-folders"]', title: 'Les dossiers', text: "Rangez les documents dans des dossiers. Les nouveaux dépôts iront dans le dossier sélectionné." },
     { target: '[data-tour="org-tools"]', title: 'Recherche et actions', text: "Recherchez, filtrez, déposez un document, validez tout, exportez en CSV ou téléchargez en .zip." },
@@ -1339,7 +1337,6 @@ export default function AntenneAdminDashboard() {
               {filteredPartnerOrgs.map((org) => {
                 const orgFiles = files.filter((f) => f.orgId === org.id);
                 const validated = orgFiles.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
-                const dossierToFix = !!org.dossierSubmittedAt && !computeChecklist(orgFiles).submittable;
                 return (
                   <button
                     key={org.id}
@@ -1355,15 +1352,9 @@ export default function AntenneAdminDashboard() {
                       <StatusBadge status={org.submissionStatus} />
                     </div>
                     {org.dossierSubmittedAt && (
-                      dossierToFix ? (
-                        <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                          <AlertCircle className="w-3 h-3" /> Soumis · à corriger
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
-                          <CheckCircle2 className="w-3 h-3" /> Dossier soumis
-                        </span>
-                      )
+                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                        <CheckCircle2 className="w-3 h-3" /> Dossier soumis
+                      </span>
                     )}
                     <div className="mt-3">
                       <ComplianceBar validated={validated} total={orgFiles.length} />
@@ -1564,28 +1555,14 @@ export default function AntenneAdminDashboard() {
                     <ComplianceBar validated={orgValidated} total={orgAll.length} />
                   </div>
 
-                  <div data-tour="org-checklist">
-                    <ChecklistPanel files={orgAll} compact />
-                  </div>
-
                   {selectedOrg.dossierSubmittedAt && (
-                    computeChecklist(orgAll).submittable ? (
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-emerald-800">Dossier soumis pour revue</p>
-                          <p className="text-[11px] text-emerald-700">Le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')} par l'organisme.</p>
-                        </div>
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-emerald-800">Dossier soumis pour revue</p>
+                        <p className="text-[11px] text-emerald-700">Le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')} par l'organisme.</p>
                       </div>
-                    ) : (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-amber-800">Dossier soumis · à corriger</p>
-                          <p className="text-[11px] text-amber-700">Soumis le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')}, mais une pièce est manquante ou rejetée depuis.</p>
-                        </div>
-                      </div>
-                    )
+                    </div>
                   )}
 
                   <div data-tour="org-access" className="rounded-2xl border border-slate-200 bg-white p-4">
