@@ -45,6 +45,7 @@ export type AuditAction =
   | 'org_reminder'
   | 'org_assign_antenne'
   | 'org_profile_update'
+  | 'dossier_submit'
   | 'antenne_create'
   | 'antenne_delete'
   | 'antenne_update'

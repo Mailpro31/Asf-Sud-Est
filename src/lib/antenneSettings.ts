@@ -149,3 +149,37 @@ export async function notifyAntenneOnUpload(
     console.warn('notifyAntenneOnUpload échec (non bloquant) :', err);
   }
 }
+
+/**
+ * Notifie l'antenne qu'un organisme a soumis son dossier complet pour revue.
+ * Sans effet si les notifications de l'antenne sont désactivées.
+ */
+export async function notifyAntenneOnSubmission(
+  antenneId: string | undefined | null,
+  context: { partnerName?: string; antenneName?: string } = {},
+): Promise<void> {
+  if (!antenneId) return;
+  try {
+    const settings = await getAntenneSettings(antenneId);
+    if (!settings.notifyEnabled || !settings.notifyEmail) return;
+
+    const partner = context.partnerName || 'Un organisme';
+    const antenne = context.antenneName || antenneId;
+    const subject = `ASF · Dossier soumis pour revue — ${antenne}`;
+    const text =
+      `Bonjour,\n\n${partner} a soumis son dossier complet (toutes les pièces obligatoires sont déposées) ` +
+      `sur l'antenne ${antenne} et attend votre revue.\n\nConnectez-vous au portail ASF pour le contrôler et le valider.\n\n— Portail ASF`;
+    const html =
+      `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
+      `<p>Bonjour,</p>` +
+      `<p><strong>${partner}</strong> a soumis son <strong>dossier complet</strong> ` +
+      `sur l'antenne <strong>${antenne}</strong> et attend votre revue.</p>` +
+      `<p style="background:#ecfdf5;padding:10px 14px;border-radius:8px;font-weight:600;color:#047857">✓ Toutes les pièces obligatoires sont déposées</p>` +
+      `<p>Connectez-vous au portail ASF pour le contrôler et le valider.</p>` +
+      `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
+      `</div>`;
+    await queueEmail(settings.notifyEmail, subject, text, html);
+  } catch (err) {
+    console.warn('notifyAntenneOnSubmission échec (non bloquant) :', err);
+  }
+}
