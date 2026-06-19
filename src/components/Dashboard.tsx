@@ -41,8 +41,9 @@ import { notifyAntenneOnUpload } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
-import { StatusBadge, GuidedTour, type TourStep } from './ui';
+import { StatusBadge, GuidedTour, ChecklistPanel, type TourStep } from './ui';
 import { getStatusMeta, STATUS_ORDER } from '../lib/status';
+import { categoryOptions } from '../lib/requiredDocuments';
 
 
 export default function Dashboard() {
@@ -593,6 +594,7 @@ export default function Dashboard() {
     { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },
     { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents ici, ou cliquez pour parcourir. Vous pouvez aussi les déposer directement sur un dossier pour les classer." },
     { target: '[data-tour="storage"]', title: 'Votre espace de stockage', text: "Suivez l'espace utilisé sur votre quota. La barre passe au rouge quand vous approchez de la limite." },
+    { target: '[data-tour="checklist"]', title: 'Vos pièces obligatoires', text: "La liste des documents réglementaires attendus et leur état. Classez chaque fichier déposé pour cocher la pièce correspondante et viser 100% de complétude." },
     { target: '[data-tour="filters"]', title: 'Rechercher et filtrer', text: "Retrouvez un document par son nom (raccourci ⌘K / Ctrl+K), ou filtrez par type et par statut." },
     { target: '[data-tour="docs"]', title: 'Vos documents et dossiers', text: "La liste de vos fichiers, avec leur statut de validation. Créez des dossiers, prévisualisez, téléchargez ou renommez vos documents." },
     { target: '[data-tour="account"]', title: 'Votre compte', text: "Accédez à vos informations, changez votre mot de passe ou déconnectez-vous depuis votre profil." },
@@ -669,6 +671,22 @@ export default function Dashboard() {
       }
     }
     setRenamingFile(null);
+  };
+
+  // Rattache un document à une pièce réglementaire (ou le déclasse).
+  const handleSetCategory = async (file: DossierFile, category: string) => {
+    const value = category || '';
+    if ((file.category || '') === value) return;
+    if (localDb.isSandboxActive()) {
+      localDb.saveFile({ ...file, category: value });
+      refreshLocalState();
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'files', file.id), { category: value });
+    } catch (error) {
+      console.error('Error setting file category:', error);
+    }
   };
 
   const confirmDeleteFile = async () => {
@@ -1188,6 +1206,11 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Checklist des pièces réglementaires obligatoires */}
+        <div data-tour="checklist" className="mb-6 shrink-0">
+          <ChecklistPanel files={files} />
+        </div>
+
         {/* Search, Filter & Sort Panel combined */}
         <div data-tour="filters" className={`mb-4 px-5 py-4.5 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 shadow-xs`}>
 
@@ -1424,6 +1447,20 @@ export default function Dashboard() {
                                 <span className="text-[9px] text-slate-400 font-mono tracking-tight flex items-center gap-1 mt-1">
                                   ID : {file.id.substring(0, 8)} | Type : {file.type.split('/').pop()?.toUpperCase()}
                                 </span>
+                                {file.orgId === user.uid && file.uploadedBy !== 'admin' && (
+                                  <select
+                                    value={file.category || ''}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => { e.stopPropagation(); handleSetCategory(file, e.target.value); }}
+                                    title="Rattacher ce document à une pièce réglementaire"
+                                    className={`mt-1.5 w-fit max-w-[200px] text-[10px] font-semibold rounded-md border px-1.5 py-0.5 bg-white dark:bg-slate-900 ${file.category ? 'border-azur/40 text-azur' : 'border-slate-200 dark:border-slate-700 text-slate-400'} focus:outline-none focus:ring-1 focus:ring-azur/30 cursor-pointer`}
+                                  >
+                                    <option value="">Classer la pièce…</option>
+                                    {categoryOptions().map((o) => (
+                                      <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
+                                  </select>
+                                )}
                               </div>
                             )}
                           </div>
