@@ -363,6 +363,16 @@
 .asf-float        { animation: asf-float 4s ease-in-out infinite; }
 .cessna-prop      { animation: cessna-prop-spin 0.16s linear infinite; }
 
+/* Scène 3D : léger basculement en perspective (parallaxe de profondeur) */
+@keyframes asf-tilt3d {
+  0%, 100% { transform: rotateX(7deg) rotateY(-12deg); }
+  50%      { transform: rotateX(-4deg) rotateY(12deg); }
+}
+.asf-scene-3d {
+  transform-style: preserve-3d;
+  animation: asf-tilt3d 16s ease-in-out infinite;
+}
+
 /* Respect des préférences d'accessibilité : on coupe le mouvement. */
 @media (prefers-reduced-motion: reduce) {
   *,
