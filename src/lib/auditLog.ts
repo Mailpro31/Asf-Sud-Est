@@ -35,6 +35,7 @@ export type AuditAction =
   | 'file_share_toggle'
   | 'file_rename'
   | 'file_move'
+  | 'file_download'
   | 'folder_create'
   | 'folder_delete'
   | 'org_create'

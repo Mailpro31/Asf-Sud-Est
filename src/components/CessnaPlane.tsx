@@ -22,10 +22,12 @@ export default function CessnaPlane({
 }) {
   const [imgFailed, setImgFailed] = useState(false);
 
-  // La photo (fond clair) n'est utilisée que sur les fonds clairs.
-  // La photo fournie regarde vers la GAUCHE → on la retourne (-scale-x-100)
-  // pour qu'elle « regarde » dans le sens du vol (vers la droite).
-  if (variant === 'color' && !imgFailed) {
+  // On affiche TOUJOURS la vraie photo du Cessna (fini les silhouettes SVG
+  // « cartoon »), quel que soit le fond — y compris les bannières foncées.
+  // La photo regarde vers la GAUCHE → on la retourne (-scale-x-100) pour
+  // qu'elle « regarde » dans le sens du vol (vers la droite). Le dessin
+  // vectoriel ne sert plus que de repli si l'image est introuvable.
+  if (!imgFailed) {
     return (
       <img
         src="/cessna.png"
