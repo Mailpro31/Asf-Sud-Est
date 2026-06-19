@@ -120,6 +120,17 @@ async function fetchBytes(file: DossierFile): Promise<Uint8Array | null> {
   return new Uint8Array(await res.arrayBuffer());
 }
 
+/**
+ * Réduit un nom de fichier à son seul nom de base, sans séparateur de chemin ni
+ * séquence « .. » : empêche le « Zip Slip » (un nom comme « ../../evil » qui, à
+ * l'extraction, écrirait hors du dossier cible). Le nom est saisi par les
+ * partenaires (donnée non fiable), on l'assainit donc avant archivage.
+ */
+function safeEntryName(name: string): string {
+  const base = (name || 'document').split(/[\\/]/).pop() || 'document';
+  return base.replace(/^\.+/, '').replace(/[\x00-\x1f]/g, '_').trim() || 'document';
+}
+
 /** Dé-doublonne les noms de fichiers dans une archive (« a.pdf », « a (1).pdf »). */
 function uniqueName(name: string, used: Set<string>): string {
   if (!used.has(name)) { used.add(name); return name; }
@@ -152,7 +163,7 @@ export async function downloadFilesAsZip(
     try {
       const bytes = await fetchBytes(f);
       if (!bytes) { failed.push(f); continue; }
-      entries.push({ name: uniqueName(f.name || 'document', used), data: bytes });
+      entries.push({ name: uniqueName(safeEntryName(f.name), used), data: bytes });
     } catch (e) {
       console.warn('ZIP: fichier ignoré', f.name, e);
       failed.push(f);
