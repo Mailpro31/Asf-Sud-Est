@@ -1360,8 +1360,8 @@ export default function AdminPanel() {
               </button>
               )}
 
-              {/* Card 4: Journal d'activité (super admin : tous les logs) */}
-              {isSuperAdminMode && (
+              {/* Card 4: Journal d'activité (super admin : tous les logs ;
+                  coordinateur : les logs de sa délégation). */}
               <button
                 onClick={() => {
                   setNavigationView('logs');
@@ -1389,7 +1389,6 @@ export default function AdminPanel() {
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </button>
-              )}
 
             </div>
 
@@ -1417,8 +1416,11 @@ export default function AdminPanel() {
               <span>Retour au tableau de bord</span>
             </button>
             <AuditLogPanel
-              title="Journal d'activité — Vue nationale"
-              subtitle="Toutes les actions de tous les comptes (super admin, coordinateurs, partenaires)."
+              delegationId={organization?.role === 'admin_delegation' ? delegationFilterId : undefined}
+              title={isSuperAdminMode ? "Journal d'activité — Vue nationale" : "Journal d'activité de ma délégation"}
+              subtitle={isSuperAdminMode
+                ? "Toutes les actions de tous les comptes (super admin, coordinateurs, partenaires)."
+                : "Toutes les actions des comptes de votre délégation (coordinateurs et partenaires)."}
             />
           </div>
         )}

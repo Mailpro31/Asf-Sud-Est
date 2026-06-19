@@ -276,10 +276,16 @@ service cloud.firestore {
                        );
 
       allow get, list: if isSuperAdmin() ||
+                          // Gestionnaire d'antenne : logs de SON antenne.
                           (isSignedIn() && hasUserDoc() &&
-                           (getUser().get('role', '') == 'admin_antenne' || getUser().get('role', '') == 'admin_delegation') &&
+                           getUser().get('role', '') == 'admin_antenne' &&
                            getUser().get('antenne_id', '') != '' &&
-                           resource.data.get('antenne_id', '') == getUser().get('antenne_id', ''));
+                           resource.data.get('antenne_id', '') == getUser().get('antenne_id', '')) ||
+                          // Coordinateur de délégation : logs de SA délégation.
+                          (isSignedIn() && hasUserDoc() &&
+                           getUser().get('role', '') == 'admin_delegation' &&
+                           getUser().get('delegation_id', '') != '' &&
+                           resource.data.get('delegation_id', '') == getUser().get('delegation_id', ''));
 
       allow update, delete: if false;
     }
