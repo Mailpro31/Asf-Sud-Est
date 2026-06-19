@@ -45,7 +45,7 @@ import {
   Send,
   Archive,
 } from 'lucide-react';
-import { Bell } from 'lucide-react';
+import { Bell, GraduationCap } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { queueEmail } from '../lib/antenneAdmins';
@@ -57,7 +57,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, ComplianceBar } from './ui';
+import { StatusBadge, ComplianceBar, GuidedTour, type TourStep } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -120,6 +120,10 @@ export default function AntenneAdminDashboard() {
   const [orgSortBy, setOrgSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc');
   const [previewFile, setPreviewFile] = useState<DossierFile | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [orgSearch, setOrgSearch] = useState('');
+  const [orgQuickStatus, setOrgQuickStatus] = useState<'all' | SubmissionStatus>('all');
+  const orgSearchRef = useRef<HTMLInputElement | null>(null);
   // Fiche détaillée d'un organisme (ses fichiers + gestion de son compte).
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [updatingOrgStatus, setUpdatingOrgStatus] = useState(false);
@@ -278,6 +282,52 @@ export default function AntenneAdminDashboard() {
       compliance: total > 0 ? Math.round((validated / total) * 100) : 0,
     };
   }, [files, partnerOrgs]);
+
+  // Recherche + filtre rapide par statut sur la liste des organismes.
+  const orgStatusCounts = useMemo(() => {
+    const c: Record<string, number> = { all: partnerOrgs.length };
+    for (const s of STATUS_ORDER) c[s] = 0;
+    for (const o of partnerOrgs) {
+      const st = (o.submissionStatus || 'Pending') as SubmissionStatus;
+      c[st] = (c[st] || 0) + 1;
+    }
+    return c;
+  }, [partnerOrgs]);
+
+  const filteredPartnerOrgs = useMemo(() => {
+    const q = orgSearch.trim().toLowerCase();
+    return partnerOrgs.filter(
+      (o) =>
+        (orgQuickStatus === 'all' || (o.submissionStatus || 'Pending') === orgQuickStatus) &&
+        (!q ||
+          (o.name || '').toLowerCase().includes(q) ||
+          (o.email || '').toLowerCase().includes(q) ||
+          (o.contactName || '').toLowerCase().includes(q)),
+    );
+  }, [partnerOrgs, orgSearch, orgQuickStatus]);
+
+  // Raccourci clavier ⌘K / Ctrl+K : focus la recherche d'organismes.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setView('workspace');
+        setTimeout(() => orgSearchRef.current && orgSearchRef.current.focus(), 60);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const tourSteps: TourStep[] = [
+    { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment — pratique pour prendre en main l'outil." },
+    { target: '[data-tour="kpi"]', title: 'Vos chiffres clés', text: "Taux de conformité, documents déposés et organismes rattachés, en un coup d'œil." },
+    { target: '[data-tour="tabs"]', title: 'Navigation', text: "Basculez entre l'espace de travail, le journal d'activité et les réglages de l'antenne." },
+    { target: '[data-tour="filters"]', title: 'Recherche et filtres', text: "Retrouvez un organisme par son nom (raccourci ⌘K / Ctrl+K) ou filtrez la liste par statut." },
+    { target: '[data-tour="orgs"]', title: 'Vos organismes', text: "Chaque carte affiche la conformité du dossier. Cliquez dessus pour gérer ses dossiers et valider ses documents." },
+    { target: '[data-tour="internal"]', title: 'Documents internes', text: "L'espace de l'antenne pour les documents qui ne concernent aucun organisme en particulier." },
+  ];
+  const startTour = () => { setView('workspace'); setTourOpen(true); };
 
   const orgModalFiles = useMemo(() => {
     if (!selectedOrgId) return [];
@@ -1071,6 +1121,15 @@ export default function AntenneAdminDashboard() {
             </p>
           </div>
           <button
+            onClick={startTour}
+            data-tour="tutoriel"
+            className="btn-sourire text-sm"
+            title="Visite guidée du tableau de bord"
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span className="hidden sm:inline">Tutoriel</span>
+          </button>
+          <button
             onClick={() => setIsProfileOpen(true)}
             className="btn-ghost text-sm"
             title="Mon profil"
@@ -1111,7 +1170,7 @@ export default function AntenneAdminDashboard() {
         </div>
 
         {/* Cartes de stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div data-tour="kpi" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {STAT_CARDS.map((c) => (
             <div key={c.label} className="card-asf p-4">
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 ${c.tone}`}>
@@ -1124,7 +1183,7 @@ export default function AntenneAdminDashboard() {
         </div>
 
         {/* Navigation par onglets : évite une page trop longue */}
-        <div className="flex items-center gap-1.5 bg-white border border-slate-200/70 rounded-2xl p-1.5 shadow-asf-sm w-full sm:w-fit overflow-x-auto">
+        <div data-tour="tabs" className="flex items-center gap-1.5 bg-white border border-slate-200/70 rounded-2xl p-1.5 shadow-asf-sm w-full sm:w-fit overflow-x-auto">
           {([
             { id: 'workspace', label: 'Espace de travail', icon: Building2 },
             { id: 'activity', label: 'Journal', icon: Clock },
@@ -1199,13 +1258,57 @@ export default function AntenneAdminDashboard() {
             <Building2 className="w-5 h-5 text-azur" /> Organismes
             <span className="text-xs font-normal text-slate-400">· cliquez pour gérer</span>
           </h2>
+
+          {/* Recherche + filtres rapides par statut */}
+          {partnerOrgs.length > 0 && (
+            <div data-tour="filters" className="space-y-2.5">
+              <div className="relative max-w-md">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  ref={orgSearchRef}
+                  value={orgSearch}
+                  onChange={(e) => setOrgSearch(e.target.value)}
+                  placeholder="Rechercher un organisme…"
+                  className="input-asf pl-9 pr-14 py-2 w-full text-sm"
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 border border-slate-200 rounded-md px-1.5 py-0.5 bg-slate-50 hidden sm:block">⌘K</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setOrgQuickStatus('all')}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${orgQuickStatus === 'all' ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'}`}
+                >
+                  Tous ({orgStatusCounts.all})
+                </button>
+                {STATUS_ORDER.map((s) => {
+                  const meta = getStatusMeta(s);
+                  const active = orgQuickStatus === s;
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setOrgQuickStatus(s)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${active ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'}`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : meta.dot}`} />
+                      {meta.label} ({orgStatusCounts[s] || 0})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {partnerOrgs.length === 0 ? (
             <div className="card-asf p-6 text-center text-sm text-slate-500">
               Aucun organisme rattaché à cette antenne pour le moment.
             </div>
+          ) : filteredPartnerOrgs.length === 0 ? (
+            <div className="card-asf p-6 text-center text-sm text-slate-500">
+              Aucun organisme ne correspond à votre recherche.
+            </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {partnerOrgs.map((org) => {
+            <div data-tour="orgs" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredPartnerOrgs.map((org) => {
                 const orgFiles = files.filter((f) => f.orgId === org.id);
                 const validated = orgFiles.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
                 return (
@@ -1246,6 +1349,7 @@ export default function AntenneAdminDashboard() {
           </h2>
           <button
             onClick={openInternal}
+            data-tour="internal"
             className="card-asf p-4 text-left hover:border-azur hover:shadow-md transition-all cursor-pointer group w-full sm:max-w-sm"
             title="Documents de l'antenne non rattachés à un organisme"
           >
@@ -1938,6 +2042,8 @@ export default function AntenneAdminDashboard() {
       )}
 
       <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+
+      <GuidedTour open={tourOpen} steps={tourSteps} onClose={() => setTourOpen(false)} />
     </div>
   );
 }

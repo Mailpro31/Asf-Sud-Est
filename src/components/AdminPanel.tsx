@@ -43,6 +43,7 @@ import {
   CornerLeftUp,
   Search,
   X,
+  GraduationCap,
   Compass
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -64,8 +65,8 @@ import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
-import { StatusBadge, ComplianceBar } from './ui';
-import { STATUS_META } from '../lib/status';
+import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, type TourStep } from './ui';
+import { STATUS_META, STATUS_ORDER, getStatusMeta } from '../lib/status';
 import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
 
 // Libellé + style de badge pour chaque rôle de compte.
@@ -197,6 +198,8 @@ export default function AdminPanel() {
   // Search, sorting, filters states
   const [searchQuery, setSearchQuery] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState('all');
+  const [fileStatusFilter, setFileStatusFilter] = useState<'all' | SubmissionStatus>('all');
+  const [tourOpen, setTourOpen] = useState(false);
   const [sortBy, setSortBy] = useState('date-desc');
 
   // Multi-tab support: workspaces for dossiers, members for validation and user access, plus config for superadmin
@@ -1183,7 +1186,8 @@ export default function AdminPanel() {
     } else if (fileTypeFilter === 'images') {
       matchesType = f.type.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(f.name);
     }
-    return matchesSearch && matchesType;
+    const matchesStatus = fileStatusFilter === 'all' || (f.submissionStatus || 'Pending') === fileStatusFilter;
+    return matchesSearch && matchesType && matchesStatus;
   }).sort((a, b) => {
     if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
     if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
@@ -1239,6 +1243,30 @@ export default function AdminPanel() {
     return unsub;
   }, [isSuperAdminMode]);
 
+  // Raccourci clavier ⌘K / Ctrl+K : focus la première barre de recherche visible.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const el = document.querySelector('[data-admin-search]') as HTMLInputElement | null;
+        if (el) el.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Conformité globale (tous documents) pour l'anneau du hub.
+  const globalValidated = files.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
+
+  const tourSteps: TourStep[] = [
+    { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment." },
+    { target: '[data-tour="kpi"]', title: 'Vos indicateurs', text: "Documents et organismes en attente, justificatifs et organismes rattachés : l'essentiel en un coup d'œil." },
+    { target: '[data-tour="conformity"]', title: 'Conformité par antenne', text: "Le taux de conformité global (anneau) et le détail par antenne, pour repérer les dossiers à relancer." },
+    { target: '[data-tour="nav"]', title: 'Vos espaces de travail', text: "Accédez aux Ailes du Sourire, aux membres, aux implantations et au journal d'activité." },
+  ];
+  const startTour = () => { setNavigationView('hub'); setTourOpen(true); };
+
   return (
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>
       
@@ -1288,6 +1316,16 @@ export default function AdminPanel() {
           </div>
 
           <button
+            onClick={startTour}
+            data-tour="tutoriel"
+            className="btn-sourire text-sm shrink-0"
+            title="Visite guidée du portail"
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span className="hidden sm:inline">Tutoriel</span>
+          </button>
+
+          <button
             onClick={signOut}
             className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-100 transition-colors cursor-pointer shrink-0"
             title="Se déconnecter de la session"
@@ -1317,7 +1355,7 @@ export default function AdminPanel() {
             </div>
 
             {/* KPI strip */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div data-tour="kpi" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
                 { label: 'Documents en attente', value: pendingFilesCount, tone: 'text-amber-600 bg-amber-50', accent: pendingFilesCount > 0 },
                 { label: 'Organismes en attente', value: pendingOrgsCount, tone: 'text-orange-600 bg-orange-50', accent: pendingOrgsCount > 0 },
@@ -1332,11 +1370,17 @@ export default function AdminPanel() {
             </div>
 
             {/* Tableau de bord chiffré : conformité par antenne + activité récente */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div data-tour="conformity" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Conformité par antenne */}
               <div className="card-asf p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Conformité par antenne</h3>
+                  <div className="flex items-center gap-3">
+                    <ComplianceRing validated={globalValidated} total={files.length} size={48} />
+                    <div>
+                      <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Conformité par antenne</h3>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">conformité globale</p>
+                    </div>
+                  </div>
                   <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">validés / total</span>
                 </div>
                 {antenneStats.length === 0 ? (
@@ -1399,8 +1443,8 @@ export default function AdminPanel() {
             </div>
 
             {/* Hub Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
+            <div data-tour="nav" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
               {/* Card 1: Ailes du Sourire */}
               <button
                 onClick={() => {
@@ -2016,8 +2060,9 @@ export default function AdminPanel() {
                       <div className="relative max-w-xs w-full">
                         <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                         <input
+                          data-admin-search
                           type="text"
-                          placeholder="Rechercher un fichier de vol..."
+                          placeholder="Rechercher un fichier de vol... (⌘K)"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className={`w-full pl-10 pr-4 py-2.5 text-xs border rounded-2xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-1 ${themeAttr.ringColor}`}
@@ -2057,6 +2102,31 @@ export default function AdminPanel() {
                           >
                             Images
                           </button>
+                        </div>
+
+                        {/* Status quick filters */}
+                        <div className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl">
+                          <button
+                            onClick={() => setFileStatusFilter('all')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${fileStatusFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
+                          >
+                            Tous statuts
+                          </button>
+                          {STATUS_ORDER.map((s) => {
+                            const meta = getStatusMeta(s);
+                            const active = fileStatusFilter === s;
+                            return (
+                              <button
+                                key={s}
+                                onClick={() => setFileStatusFilter(s)}
+                                title={meta.label}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${active ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                                {meta.label}
+                              </button>
+                            );
+                          })}
                         </div>
 
                         {/* Sorting Selection */}
@@ -3288,6 +3358,8 @@ export default function AdminPanel() {
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
       />
+
+      <GuidedTour open={tourOpen} steps={tourSteps} onClose={() => setTourOpen(false)} />
 
       {/* --- REAL-TIME DOCUMENT CABINET FOR INDIVIDUAL PROFILES --- */}
       <AnimatePresence>
