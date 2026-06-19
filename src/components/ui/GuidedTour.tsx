@@ -90,8 +90,11 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
 
   if (!open || steps.length === 0) return null;
 
-  const step = steps[index];
-  const isLast = index === steps.length - 1;
+  // L'ordre des étapes peut changer pendant la visite (ex. liste de documents
+  // qui se vide) : on borne l'index pour ne jamais déréférencer un step absent.
+  const safeIndex = Math.max(0, Math.min(index, steps.length - 1));
+  const step = steps[safeIndex];
+  const isLast = safeIndex === steps.length - 1;
 
   // Position de la bulle : sous la cible, sinon au-dessus, sinon centrée.
   let popStyle: any;
@@ -106,7 +109,7 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
     popStyle = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
   }
 
-  const next = () => { if (isLast) onClose(); else setIndex((i) => i + 1); };
+  const next = () => { if (isLast) onClose(); else setIndex(safeIndex + 1); };
 
   return (
     <div className="fixed inset-0 z-[80]">
@@ -137,7 +140,7 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
       >
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-sourire-dark inline-flex items-center gap-1.5">
-            <GraduationCap className="w-3.5 h-3.5" /> Étape {index + 1} / {steps.length}
+            <GraduationCap className="w-3.5 h-3.5" /> Étape {safeIndex + 1} / {steps.length}
           </span>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600" title="Fermer">
             <X className="w-4 h-4" />
@@ -150,13 +153,13 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
             {steps.map((_, k) => (
               <span
                 key={k}
-                className={`h-1.5 rounded-full transition-all ${k === index ? 'w-4 bg-sourire' : 'w-1.5 bg-slate-200'}`}
+                className={`h-1.5 rounded-full transition-all ${k === safeIndex ? 'w-4 bg-sourire' : 'w-1.5 bg-slate-200'}`}
               />
             ))}
           </div>
           <div className="flex items-center gap-1">
-            {index > 0 && (
-              <button onClick={() => setIndex((i) => i - 1)} className="text-sm font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">
+            {safeIndex > 0 && (
+              <button onClick={() => setIndex(safeIndex - 1)} className="text-sm font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">
                 Précédent
               </button>
             )}

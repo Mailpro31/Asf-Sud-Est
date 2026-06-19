@@ -47,7 +47,7 @@ export function matchFiles(files: DossierFile[], item: RequiredDoc): DossierFile
   });
 }
 
-export type ChecklistItemState = 'missing' | 'pending' | 'validated';
+export type ChecklistItemState = 'missing' | 'pending' | 'incomplete' | 'validated';
 
 export interface ChecklistEntry {
   item: RequiredDoc;
@@ -68,6 +68,10 @@ export interface ChecklistResult {
   percent: number;
   /** Vrai si toutes les pièces obligatoires ont au moins un document déposé. */
   allDeposited: boolean;
+  /** Pièces prêtes (déposées et non rejetées : validées ou en attente). */
+  readyCount: number;
+  /** Vrai si toutes les pièces sont prêtes (présentes et aucune rejetée). */
+  submittable: boolean;
 }
 
 const RANK: Record<SubmissionStatus, number> = { Pending: 0, 'Under review': 1, Incomplete: 0, Validated: 2 };
@@ -84,30 +88,34 @@ export function computeChecklist(files: DossierFile[]): ChecklistResult {
       const s = f.submissionStatus || 'Pending';
       if (RANK[s] > RANK[best]) best = s;
     }
-    return {
-      item,
-      state: best === 'Validated' ? 'validated' : 'pending',
-      status: best,
-      count: matches.length,
-    };
+    // Une pièce validée reste valide même si un autre document a été rejeté.
+    // Sinon, un document rejeté (Incomplete) prime pour signaler la correction.
+    const hasIncomplete = matches.some((f) => (f.submissionStatus || 'Pending') === 'Incomplete');
+    const state: ChecklistItemState =
+      best === 'Validated' ? 'validated' : hasIncomplete ? 'incomplete' : 'pending';
+    return { item, state, status: best, count: matches.length };
   });
 
   const total = REQUIRED_DOCS.length;
   const validatedCount = entries.filter((e) => e.state === 'validated').length;
   const depositedCount = entries.filter((e) => e.count > 0).length;
+  const readyCount = entries.filter((e) => e.state === 'validated' || e.state === 'pending').length;
   return {
     entries,
     validatedCount,
     depositedCount,
+    readyCount,
     total,
     percent: total > 0 ? Math.round((validatedCount / total) * 100) : 0,
     allDeposited: total > 0 && depositedCount === total,
+    submittable: total > 0 && readyCount === total,
   };
 }
 
-/** Options pour un menu de classement d'un document. */
+/** Options (constantes) pour un menu de classement d'un document. */
+const CATEGORY_OPTIONS: { value: string; label: string }[] = REQUIRED_DOCS.map((d) => ({ value: d.id, label: d.label }));
 export function categoryOptions(): { value: string; label: string }[] {
-  return REQUIRED_DOCS.map((d) => ({ value: d.id, label: d.label }));
+  return CATEGORY_OPTIONS;
 }
 
 /** Libellé d'une catégorie (ou repli sur la valeur brute). */

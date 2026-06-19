@@ -47,15 +47,18 @@ export default function ChooseAntenne() {
     setLoading(true);
     const now = Date.now();
 
-    // Mise à jour locale (sandbox) au cas où Firestore serait indisponible.
-    try {
-      const existing = localDb.getOrganizations().find((o) => o.id === user.uid);
-      if (existing) {
-        localDb.saveOrganization({ ...existing, delegation_id: 'france', antenne_id: selectedAntenne, updatedAt: now });
+    // Mise à jour locale (sandbox), en fusionnant avec le profil courant si
+    // aucun enregistrement local n'existe encore (cas d'une inscription Google).
+    const persistLocal = () => {
+      try {
+        const existing = localDb.getOrganizations().find((o) => o.id === user.uid);
+        const base = existing || (organization ? { ...organization } : { id: user.uid });
+        localDb.saveOrganization({ ...base, id: user.uid, delegation_id: 'france', antenne_id: selectedAntenne, updatedAt: now } as any);
+      } catch (err) {
+        console.warn('Could not update local organization', err);
       }
-    } catch (err) {
-      console.warn('Could not update local organization', err);
-    }
+    };
+    persistLocal();
 
     try {
       await setDoc(
@@ -69,11 +72,15 @@ export default function ChooseAntenne() {
       const msg = (err?.message || '').toLowerCase();
       if (msg.includes('quota') || msg.includes('limit exceeded') || msg.includes('permission') || msg.includes('insufficient')) {
         localDb.setSandboxActive(true);
+        persistLocal();
         await refreshOrganization();
       } else {
         setError("Impossible d'enregistrer votre antenne. Veuillez réessayer.");
-        setLoading(false);
       }
+    } finally {
+      // Toujours réarmer le bouton : si l'enregistrement a réussi, App démonte
+      // cet écran ; sinon l'utilisateur peut réessayer sans rester bloqué.
+      setLoading(false);
     }
   };
 

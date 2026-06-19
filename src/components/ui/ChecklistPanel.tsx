@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { CheckCircle2, Clock, Circle } from 'lucide-react';
+import { CheckCircle2, Clock, Circle, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { computeChecklist } from '../../lib/requiredDocuments';
 import type { DossierFile } from '../../types';
@@ -40,13 +40,19 @@ export function ChecklistPanel({ files, className, compact }: ChecklistPanelProp
         {entries.map(({ item, state, count }) => {
           const tone =
             state === 'validated' ? 'text-emerald-600'
-              : state === 'pending' ? 'text-amber-600'
-                : 'text-slate-400';
-          const Icon = state === 'validated' ? CheckCircle2 : state === 'pending' ? Clock : Circle;
+              : state === 'incomplete' ? 'text-rose-600'
+                : state === 'pending' ? 'text-amber-600'
+                  : 'text-slate-400';
+          const Icon =
+            state === 'validated' ? CheckCircle2
+              : state === 'incomplete' ? AlertCircle
+                : state === 'pending' ? Clock
+                  : Circle;
           const badge =
             state === 'validated' ? 'Validé'
-              : state === 'pending' ? 'En attente'
-                : 'Manquant';
+              : state === 'incomplete' ? 'À corriger'
+                : state === 'pending' ? 'En attente'
+                  : 'Manquant';
           return (
             <li
               key={item.id}
