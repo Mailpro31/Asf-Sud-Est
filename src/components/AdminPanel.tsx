@@ -56,6 +56,7 @@ import { LogoASF } from './LandingPage';
 import AilesDuSourireDashboard from './AilesDuSourireDashboard';
 import AntenneGroupsManager from './AntenneGroupsManager';
 import AntenneAdminsManager from './AntenneAdminsManager';
+import AuditLogPanel from './AuditLogPanel';
 import { localDb } from '../lib/localDb';
 import { logAction } from '../lib/auditLog';
 import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
