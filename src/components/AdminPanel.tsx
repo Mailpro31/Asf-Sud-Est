@@ -2227,25 +2227,25 @@ export default function AdminPanel() {
                                           <div>
                                             <label className="text-[9.5px] uppercase tracking-wider text-slate-400 font-black block">Rôle du compte</label>
                                             <select
-                                              value={org.role === 'admin_antenne' ? 'admin_antenne' : (org.role || 'organization')}
+                                              value={org.role || 'organization'}
                                               onChange={(e) => handleUpdateOrgRole(org.id, e.target.value)}
                                               className="text-xs p-1.5 border rounded-lg w-full bg-white font-bold text-slate-800"
                                               title="Définir le rôle du compte"
                                             >
                                               <option value="organization">Partenaire / Organisme</option>
-                                              {/* Seul le super admin peut désigner un coordinateur de délégation
-                                                  (un coordinateur ne peut pas créer d'autres coordinateurs). */}
-                                              {(isSuperAdminMode || org.role === 'admin_delegation') && (
-                                                <option value="admin_delegation">Coordinateur de délégation</option>
+                                              <option value="admin_antenne">Gestionnaire d'antenne</option>
+                                              {/* Seul le super admin peut désigner un autre super administrateur. */}
+                                              {isSuperAdminMode && (
+                                                <option value="super_admin">Super administrateur</option>
                                               )}
-                                              {/* admin_antenne se gère via le panneau « Gestionnaires d'antennes »
-                                                  (invitation + e-mail). On l'affiche en lecture seule si déjà défini. */}
-                                              {org.role === 'admin_antenne' && (
-                                                <option value="admin_antenne">Gestionnaire d'antenne</option>
+                                              {/* Rôle hérité : affiché uniquement s'il est déjà attribué, plus proposé
+                                                  par défaut (on s'en tient à Partenaire / Gestionnaire d'antenne / Super admin). */}
+                                              {org.role === 'admin_delegation' && (
+                                                <option value="admin_delegation">Coordinateur de délégation</option>
                                               )}
                                             </select>
                                             <p className="text-[9.5px] text-slate-400 font-semibold mt-1 leading-snug">
-                                              Pour désigner un <strong>gestionnaire d'antenne</strong>, utilisez le panneau « Gestionnaires d'antennes » (section Implantations) — attribution par e-mail.
+                                              Un <strong>gestionnaire d'antenne</strong> accède au tableau de bord de sa ville : pensez à d'abord renseigner sa <strong>ville / antenne</strong> ci-dessus, puis <strong>Enregistrer</strong>.
                                             </p>
                                           </div>
                                         )}
