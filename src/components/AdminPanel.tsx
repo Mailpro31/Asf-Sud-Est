@@ -1497,7 +1497,7 @@ export default function AdminPanel() {
         )}
 
         {/* --- SCENARIO B: ACTIVE DELEGATION WORKSPACE --- */}
-        {navigationView !== 'hub' && activeDelegationId && (() => {
+        {navigationView !== 'hub' && navigationView !== 'logs' && activeDelegationId && (() => {
           const themeAttr = DELEGATION_THEMES[delegationFilterId] || DELEGATION_THEMES['ouest'];
           return (
             <div className="space-y-6">

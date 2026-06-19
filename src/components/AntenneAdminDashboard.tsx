@@ -36,6 +36,9 @@ import {
   Mail,
   Phone,
   User,
+  Folder as FolderIcon,
+  FolderPlus,
+  FolderOpen,
 } from 'lucide-react';
 import { Bell } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
@@ -65,7 +68,7 @@ import CessnaPlane from './CessnaPlane';
  */
 export default function AntenneAdminDashboard() {
   const { user, organization, signOut, antennes, delegations } = useAuth();
-  const { toast } = useFeedback();
+  const { toast, confirm } = useFeedback();
 
   const delegationId = organization?.delegation_id || '';
   const antenneId = organization?.antenne_id || '';
@@ -86,6 +89,10 @@ export default function AntenneAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | SubmissionStatus>('all');
+  // Dossiers
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [folderName, setFolderName] = useState('');
   const [previewFile, setPreviewFile] = useState<DossierFile | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   // Fiche détaillée d'un organisme (ses fichiers + gestion de son compte).
@@ -244,9 +251,12 @@ export default function AntenneAdminDashboard() {
     return files.filter((f) => {
       const matchesSearch = !q || f.name.toLowerCase().includes(q);
       const matchesStatus = statusFilter === 'all' || (f.submissionStatus || 'Pending') === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesFolder = !activeFolderId || (f.folderId || null) === activeFolderId;
+      return matchesSearch && matchesStatus && matchesFolder;
     });
-  }, [files, searchQuery, statusFilter]);
+  }, [files, searchQuery, statusFilter, activeFolderId]);
+
+  const folderFileCount = (folderId: string) => files.filter((f) => (f.folderId || null) === folderId).length;
 
   const orgName = (orgId: string) =>
     orgProfiles.find((o) => o.id === orgId)?.name ||
@@ -330,7 +340,7 @@ export default function AntenneAdminDashboard() {
       for (const f of selected) {
         const meta = {
           orgId: targetOrgId || 'admin_created',
-          folderId: null as string | null,
+          folderId: (targetOrgId ? null : activeFolderId) as string | null,
           delegation_id: delegationId,
           antenne_id: antenneId,
           name: f.name,
@@ -419,6 +429,77 @@ export default function AntenneAdminDashboard() {
     );
     all.sort((a, b) => b.uploadDate - a.uploadDate);
     setFiles(all);
+  };
+
+  // --- Dossiers ---
+  const reloadFoldersLocal = () => {
+    setFolders(
+      localDb.getFolders().filter((f) => f.antenne_id === antenneId && (!delegationId || f.delegation_id === delegationId)),
+    );
+  };
+
+  const handleCreateFolder = async () => {
+    const name = folderName.trim();
+    if (!name || !antenneId) return;
+    const meta = {
+      orgId: 'admin_created',
+      name,
+      createdAt: Date.now(),
+      createdBy: 'admin' as const,
+      delegation_id: delegationId,
+      antenne_id: antenneId,
+    };
+    const logIt = () => logAction('folder_create', {
+      targetType: 'folder',
+      targetName: name,
+      antenne_id: antenneId,
+      delegation_id: delegationId,
+    });
+    if (localDb.isSandboxActive()) {
+      localDb.saveFolder({ id: `mock_folder_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, ...meta } as Folder);
+      logIt();
+      reloadFoldersLocal();
+      setFolderName('');
+      setCreatingFolder(false);
+      return;
+    }
+    try {
+      await addDoc(collection(db, 'folders'), meta);
+      logIt();
+      toast('Dossier créé.', 'success');
+    } catch (err: any) {
+      console.error('Create folder failed:', err);
+      toast('Échec de la création du dossier : ' + (err?.message || 'erreur'), 'error');
+    }
+    setFolderName('');
+    setCreatingFolder(false);
+  };
+
+  const handleDeleteFolder = async (folder: Folder) => {
+    const ok = await confirm(`Supprimer le dossier « ${folder.name} » ? Les documents qu'il contient ne sont pas supprimés (ils reviennent à la racine).`);
+    if (!ok) return;
+    const logIt = () => logAction('folder_delete', {
+      targetType: 'folder',
+      targetId: folder.id,
+      targetName: folder.name,
+      antenne_id: folder.antenne_id || antenneId,
+      delegation_id: folder.delegation_id || delegationId,
+    });
+    if (activeFolderId === folder.id) setActiveFolderId(null);
+    if (localDb.isSandboxActive()) {
+      localDb.deleteFolder(folder.id);
+      logIt();
+      reloadFoldersLocal();
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, 'folders', folder.id));
+      logIt();
+      toast('Dossier supprimé.', 'success');
+    } catch (err: any) {
+      console.error('Delete folder failed:', err);
+      toast('Échec de la suppression du dossier : ' + (err?.message || 'erreur'), 'error');
+    }
   };
 
   // --- Téléchargement ---
@@ -855,6 +936,52 @@ export default function AntenneAdminDashboard() {
             </div>
           </div>
 
+          {/* Dossiers : filtrer / créer */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setActiveFolderId(null)}
+              className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
+                activeFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" /> Tous ({files.length})
+            </button>
+            {folders.map((fol) => (
+              <span
+                key={fol.id}
+                className={`group/folder text-xs font-bold pl-3 pr-1.5 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
+                  activeFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                }`}
+              >
+                <button onClick={() => setActiveFolderId(fol.id)} className="inline-flex items-center gap-1.5 cursor-pointer">
+                  {activeFolderId === fol.id ? <FolderOpen className="w-3.5 h-3.5" /> : <FolderIcon className="w-3.5 h-3.5" />}
+                  {fol.name} ({folderFileCount(fol.id)})
+                </button>
+                <button
+                  onClick={() => handleDeleteFolder(fol)}
+                  title="Supprimer le dossier"
+                  className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
+                    activeFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 text-slate-400 hover:text-rose-500'
+                  }`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            <button
+              onClick={() => { setFolderName(''); setCreatingFolder(true); }}
+              className="text-xs font-bold px-3 py-1.5 rounded-full border border-dashed border-azur/40 text-azur hover:bg-azur/5 inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
+            </button>
+          </div>
+
+          {activeFolderId && (
+            <p className="text-xs text-slate-500 -mt-1">
+              Les nouveaux dépôts iront dans le dossier <strong>{folders.find((f) => f.id === activeFolderId)?.name}</strong>.
+            </p>
+          )}
+
           <div className="card-asf overflow-hidden">
             {loading ? (
               <div className="p-10 text-center text-sm text-slate-500">Chargement des documents…</div>
@@ -937,7 +1064,7 @@ export default function AntenneAdminDashboard() {
       {/* Fiche détaillée d'un organisme : ses documents + gestion du compte */}
       {selectedOrg && (
         <div
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-overlay-in"
+          className="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-overlay-in"
           onClick={() => setSelectedOrgId(null)}
         >
           <div
@@ -1034,6 +1161,36 @@ export default function AntenneAdminDashboard() {
                   {selectedOrgFiles.map((file) => renderFileRow(file))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale de création de dossier */}
+      {creatingFolder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-overlay-in" onClick={() => setCreatingFolder(false)}>
+          <div className="bg-white rounded-2xl shadow-asf-lg w-full max-w-md p-6 space-y-4 animate-panel-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                <FolderPlus className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold text-deep">Nouveau dossier</h3>
+                <p className="text-sm text-slate-500">Pour organiser les documents de l'antenne.</p>
+              </div>
+            </div>
+            <input
+              autoFocus
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); }}
+              className="input-asf w-full"
+              placeholder="Nom du dossier (ex. Masse & centrage)"
+              maxLength={200}
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setCreatingFolder(false)} className="btn-secondary text-sm">Annuler</button>
+              <button onClick={handleCreateFolder} disabled={!folderName.trim()} className="btn-asf text-sm disabled:opacity-60">Créer le dossier</button>
             </div>
           </div>
         </div>
