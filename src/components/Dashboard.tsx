@@ -44,6 +44,7 @@ import { firebaseConfig } from '../lib/firebaseConfig';
 import { StatusBadge, GuidedTour, ChecklistPanel, type TourStep } from './ui';
 import { getStatusMeta, STATUS_ORDER } from '../lib/status';
 import { categoryOptions } from '../lib/requiredDocuments';
+import { markTourSeen } from '../lib/tour';
 
 
 export default function Dashboard() {
@@ -578,16 +579,18 @@ export default function Dashboard() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Lance automatiquement la visite à la première connexion (puis mémorise).
+  // Lance automatiquement la visite à la TOUTE première connexion du compte
+  // (mémorisé sur le profil, donc pas de relance au rechargement de page).
+  const autoTourRef = useRef(false);
   useEffect(() => {
-    const key = `asf_tour_seen_org_${user?.uid || 'anon'}`;
-    if (localStorage.getItem(key)) return;
-    const t = setTimeout(() => {
-      setTourOpen(true);
-      localStorage.setItem(key, '1');
-    }, 800);
+    if (autoTourRef.current || !organization) return;
+    autoTourRef.current = true;
+    if (organization.hasSeenTour) return;
+    markTourSeen(organization.id);
+    const t = setTimeout(() => setTourOpen(true), 900);
     return () => clearTimeout(t);
-  }, [user?.uid]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.id]);
 
   const tourSteps: TourStep[] = [
     { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment." },

@@ -12,6 +12,8 @@ export interface Organization {
   antenne_id?: string;
   createdAt: number;
   updatedAt: number;
+  /** Vrai une fois la visite guidée affichée automatiquement (1ʳᵉ connexion). */
+  hasSeenTour?: boolean;
 }
 
 export interface DossierFile {

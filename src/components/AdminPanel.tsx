@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   collection,
@@ -67,6 +67,7 @@ import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
 import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, type TourStep } from './ui';
 import { STATUS_META, STATUS_ORDER, getStatusMeta } from '../lib/status';
+import { markTourSeen } from '../lib/tour';
 import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
 
 // Libellé + style de badge pour chaque rôle de compte.
@@ -153,7 +154,7 @@ const DELEGATION_THEMES: Record<string, {
 };
 
 export default function AdminPanel() {
-  const { user, organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION, antenneGroups } = useAuth();
+  const { organization, signOut, delegations: DELEGATIONS, antennes: ANTENNES_BY_DELEGATION, antenneGroups } = useAuth();
   const { themeConfig } = useTheme();
   const { toast, confirm } = useFeedback();
 
@@ -1269,32 +1270,45 @@ export default function AdminPanel() {
       return [tourIntro, { target: '[data-tour="admin-ailes"]', title: 'Les délégations nationales', text: "Vue d'ensemble des délégations. Cliquez sur l'une d'elles pour entrer dans son espace de travail dédié." }];
     }
     if (navigationView !== 'hub' && activeDelegationId) {
+      // Onglet « Membres » : visite détaillée, élément par élément, sur un
+      // exemple concret (le premier compte de la liste).
+      if (activeTab === 'members') {
+        return [
+          tourIntro,
+          { target: '[data-tour="members-table"]', title: 'La liste des membres', text: "Tous les comptes rattachés à cette délégation : organismes partenaires, gestionnaires d'antenne et personnel. Prenons le premier comme exemple." },
+          { target: '[data-tour="member-contact"]', title: "1 · L'identité et l'e-mail", text: "Le point de contact et son adresse e-mail. C'est l'adresse avec laquelle ce membre se connecte et reçoit les notifications de l'application." },
+          { target: '[data-tour="member-role"]', title: '2 · Son rôle (permission)', text: "Ce badge indique le niveau d'accès du compte : Partenaire / Organisme, Gestionnaire d'antenne, ou Super administrateur." },
+          { target: '[data-tour="member-manage"]', title: '3 · Changer la permission', text: "Cliquez sur « ✏️ Modifier la ville » pour ouvrir l'éditeur : vous y trouvez le menu « Rôle du compte » (pour changer la permission) et l'antenne de rattachement. Cliquez ensuite sur « Enregistrer »." },
+          { target: '[data-tour="member-decision"]', title: '4 · Décision d\'accès', text: "« ✓ Approuver » ouvre l'accès au membre, « ✗ Suspendre » bloque un compte validé, et « Supprimer » efface définitivement le compte." },
+        ];
+      }
       return [
         tourIntro,
-        { target: '[data-tour="admin-detail"]', title: "L'espace de la délégation", text: "Gérez ici les documents, les membres et les implantations de la délégation sélectionnée." },
+        { target: '[data-tour="admin-detail"]', title: "L'espace de la délégation", text: "Gérez ici les documents (Espaces), les membres et leurs permissions (Membres) et les implantations de la délégation sélectionnée." },
         { target: '[data-admin-search]', title: 'Recherche et filtres', text: "Retrouvez un document (raccourci ⌘K / Ctrl+K) et filtrez par type ou par statut." },
       ];
     }
     return [
       tourIntro,
-      { target: '[data-tour="kpi"]', title: 'Vos indicateurs', text: "Documents et organismes en attente, justificatifs et organismes rattachés : l'essentiel en un coup d'œil." },
-      { target: '[data-tour="conformity"]', title: 'Conformité par antenne', text: "Le taux de conformité global (anneau) et le détail par antenne, pour repérer les dossiers à relancer." },
-      { target: '[data-tour="nav"]', title: 'Vos espaces de travail', text: "Accédez aux Ailes du Sourire, aux membres, aux implantations et au journal d'activité." },
+      { target: '[data-tour="kpi"]', title: 'Vos indicateurs clés', text: "De gauche à droite : documents en attente de validation, organismes en attente, total des justificatifs reçus et nombre d'organismes rattachés. Les cartes en attente sont surlignées." },
+      { target: '[data-tour="conformity"]', title: 'Conformité par antenne', text: "L'anneau donne le taux de conformité global (documents validés / total). En dessous, le détail antenne par antenne pour repérer les dossiers à relancer." },
+      { target: '[data-tour="nav"]', title: 'Vos espaces de travail', text: "Entrez dans les Ailes du Sourire (délégations), les Membres (comptes et permissions), les Implantations, ou le Journal d'activité national." },
     ];
   };
   const startTour = () => setActiveTour(buildTour());
 
-  // Lance automatiquement la visite à la première connexion (puis mémorise).
+  // Lance automatiquement la visite à la TOUTE première connexion du compte
+  // (mémorisé sur le profil, donc pas de relance au rechargement de page).
+  const autoTourRef = useRef(false);
   useEffect(() => {
-    const key = `asf_tour_seen_admin_${user?.uid || 'anon'}`;
-    if (localStorage.getItem(key)) return;
-    const t = setTimeout(() => {
-      setActiveTour(buildTour());
-      localStorage.setItem(key, '1');
-    }, 800);
+    if (autoTourRef.current || !organization) return;
+    autoTourRef.current = true;
+    if (organization.hasSeenTour) return;
+    markTourSeen(organization.id);
+    const t = setTimeout(() => setActiveTour(buildTour()), 900);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+  }, [organization?.id]);
 
   return (
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>
@@ -2395,7 +2409,7 @@ export default function AdminPanel() {
                         Aucun partenaire enregistré sous cette délégation actuellement.
                       </div>
                     ) : (
-                      <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
+                      <div data-tour="members-table" className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50/80 text-slate-500">
@@ -2408,8 +2422,9 @@ export default function AdminPanel() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
-                            {orgProfiles.filter(p => p.delegation_id === delegationFilterId).map((org) => {
+                            {orgProfiles.filter(p => p.delegation_id === delegationFilterId).map((org, _rowIdx) => {
                               const st = org.submissionStatus || 'Pending';
+                              const isExample = _rowIdx === 0;
                               // Le super admin gère tous les comptes. Un coordinateur de
                               // délégation gère les comptes de sa délégation, mais PAS les
                               // comptes du personnel (super admin / admin / autres coordinateurs).
@@ -2435,13 +2450,13 @@ export default function AdminPanel() {
                                     </button>
                                   </td>
 
-                                  <td className="px-5 py-4">
+                                  <td data-tour={isExample ? 'member-contact' : undefined} className="px-5 py-4">
                                     <p className="font-bold text-slate-800">{org.contactName}</p>
                                     <p className="text-[11px] text-azur font-semibold">{org.email}</p>
                                     <p className="text-[11.5px] text-slate-500 font-mono">{org.phone}</p>
                                   </td>
 
-                                  <td className="px-5 py-4">
+                                  <td data-tour={isExample ? 'member-role' : undefined} className="px-5 py-4">
                                     {(() => {
                                       const rm = roleMeta(org.role);
                                       return (
@@ -2456,7 +2471,7 @@ export default function AdminPanel() {
                                     })()}
                                   </td>
 
-                                  <td className="px-5 py-4">
+                                  <td data-tour={isExample ? 'member-manage' : undefined} className="px-5 py-4">
                                     {editingOrgId === org.id ? (
                                       <div className="space-y-2 p-3 bg-slate-100 border border-slate-200 rounded-xl max-w-xs">
                                         <div>
@@ -2563,7 +2578,7 @@ export default function AdminPanel() {
                                     <StatusBadge status={st} />
                                   </td>
 
-                                  <td className="px-5 py-4 text-right">
+                                  <td data-tour={isExample ? 'member-decision' : undefined} className="px-5 py-4 text-right">
                                     <div className="flex justify-end gap-1.5">
                                       {manageable && org.submissionStatus !== 'Validated' && (
                                         <button

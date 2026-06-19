@@ -50,6 +50,7 @@ import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { queueEmail } from '../lib/antenneAdmins';
 import { logAction } from '../lib/auditLog';
+import { markTourSeen } from '../lib/tour';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
 import { useAuth } from '../context/AuthContext';
@@ -343,18 +344,21 @@ export default function AntenneAdminDashboard() {
   };
   const startTour = () => setActiveTour(tourByView[view]);
 
-  // Lance automatiquement la visite à la première connexion (puis mémorise).
+  // Lance automatiquement la visite à la TOUTE première connexion du compte
+  // (mémorisé sur le profil, donc pas de relance au rechargement de page).
+  const autoTourRef = useRef(false);
   useEffect(() => {
-    const key = `asf_tour_seen_antenne_${user?.uid || 'anon'}`;
-    if (localStorage.getItem(key)) return;
+    if (autoTourRef.current || !organization) return;
+    autoTourRef.current = true;
+    if (organization.hasSeenTour) return;
+    markTourSeen(organization.id);
     const t = setTimeout(() => {
       setView('workspace');
       setActiveTour(tourByView.workspace);
-      localStorage.setItem(key, '1');
-    }, 800);
+    }, 900);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+  }, [organization?.id]);
 
   // Visite guidée de la fiche organisme (depuis la modale).
   const orgModalTour: TourStep[] = [
