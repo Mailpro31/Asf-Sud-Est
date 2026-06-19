@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { markTourSeen } from '../lib/tour';
+import { markTourSeen, hasSeenTourLocal } from '../lib/tour';
 import type { Organization } from '../types';
 
 export function useFirstRunTour(organization: Organization | null, start: () => void) {
@@ -17,7 +17,9 @@ export function useFirstRunTour(organization: Organization | null, start: () => 
   useEffect(() => {
     if (triggered.current || !organization) return;
     triggered.current = true;
-    if (organization.hasSeenTour) return;
+    // Déjà vue ? (profil OU localStorage — résilient même si l'écriture
+    // Firestore du flag est refusée par les règles).
+    if (organization.hasSeenTour || hasSeenTourLocal(organization.id)) return;
     markTourSeen(organization.id);
     const t = setTimeout(() => startRef.current(), 900);
     return () => clearTimeout(t);

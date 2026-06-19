@@ -37,7 +37,7 @@ import CreateFolderModal from './CreateFolderModal';
 import UserProfileModal from './UserProfileModal';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
-import { notifyAntenneOnUpload, notifyAntenneOnSubmission } from '../lib/antenneSettings';
+import { notifyAntenneOnUpload } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
@@ -589,7 +589,7 @@ export default function Dashboard() {
     { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },
     { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents dans cette zone, ou cliquez pour parcourir votre ordinateur. Vous pouvez aussi les déposer directement sur un dossier pour les classer." },
     { target: '[data-tour="storage"]', title: 'Votre espace de stockage', text: "Suivez l'espace utilisé sur votre quota. La barre passe au rouge quand vous approchez de la limite." },
-    { target: '[data-tour="submit"]', title: 'Soumettre votre dossier', text: "Quand vous estimez que votre dossier est complet, cliquez sur « Soumettre mon dossier » : votre antenne est prévenue (sur son tableau de bord et par e-mail) et procède à la revue." },
+    { target: '[data-tour="submit"]', title: 'Soumettre votre dossier', text: "Quand vous estimez que votre dossier est complet, cliquez sur « Soumettre mon dossier » : votre antenne est prévenue sur son tableau de bord et procède à la revue." },
     { target: '[data-tour="filters"]', title: 'Rechercher et filtrer', text: "Retrouvez un document par son nom (raccourci ⌘K / Ctrl+K), ou filtrez par type et par statut." },
     ...docSteps,
     { target: '[data-tour="account"]', title: 'Votre compte', text: "Accédez à vos informations, changez votre mot de passe ou déconnectez-vous depuis votre profil." },
@@ -681,19 +681,15 @@ export default function Dashboard() {
         if (found) localDb.saveOrganization({ ...found, dossierSubmittedAt: now, updatedAt: now });
         refreshLocalState();
       } else {
+        // Marque le dossier comme soumis (badge « Dossier soumis » côté antenne).
         await updateDoc(doc(db, 'organizations', organization.id), { dossierSubmittedAt: now, updatedAt: now });
       }
-      notifyAntenneOnSubmission(organization.antenne_id, {
-        partnerName: organization.name,
-        antenneName: organization.delegation_id && organization.antenne_id
-          ? getAntenneName(organization.delegation_id, organization.antenne_id)
-          : undefined,
-      });
-      logAction('dossier_submit', {
+      // Notification au tableau de bord de l'antenne (journal d'activité).
+      await logAction('dossier_submit', {
         targetType: 'organization',
         targetId: organization.id,
         targetName: organization.name,
-        details: 'Dossier soumis pour revue',
+        details: "Dossier soumis pour revue par l'organisme",
       });
       toast('Dossier soumis à votre antenne ✓', 'success');
     } catch (err) {
@@ -1233,7 +1229,7 @@ export default function Dashboard() {
                 </p>
               ) : (
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Quand vous estimez que votre dossier est complet, soumettez-le : votre antenne en est informée (tableau de bord + e-mail) et procède à la revue.
+                  Quand vous estimez que votre dossier est complet, soumettez-le : votre antenne en est informée sur son tableau de bord et procède à la revue.
                 </p>
               )}
             </div>
