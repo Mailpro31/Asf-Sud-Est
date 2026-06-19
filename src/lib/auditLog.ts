@@ -40,6 +40,7 @@ export type AuditAction =
   | 'org_delete'
   | 'org_role_change'
   | 'org_status_change'
+  | 'org_reminder'
   | 'org_assign_antenne'
   | 'org_profile_update'
   | 'antenne_create'

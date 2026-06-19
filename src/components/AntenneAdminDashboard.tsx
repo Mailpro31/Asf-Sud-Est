@@ -42,12 +42,15 @@ import {
   FileDown,
   CheckCheck,
   CloudUpload,
+  Send,
+  Archive,
 } from 'lucide-react';
 import { Bell } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
+import { downloadFilesAsZip } from '../lib/zip';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
@@ -96,6 +99,12 @@ export default function AntenneAdminDashboard() {
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
+  // Organisme cible d'un nouveau dossier (null = dossier interne d'antenne).
+  const [folderTargetOrgId, setFolderTargetOrgId] = useState<string | null>(null);
+  // Dossier actif DANS la fiche d'un organisme (rangement par organisme).
+  const [orgFolderId, setOrgFolderId] = useState<string | null>(null);
+  // Téléchargement groupé en .zip en cours.
+  const [zipping, setZipping] = useState(false);
   // Tri, filtre par organisme, sélection multiple, glisser-déposer
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc');
   const [orgFilter, setOrgFilter] = useState<string>('all');
@@ -280,8 +289,19 @@ export default function AntenneAdminDashboard() {
   const orgModalFiles = useMemo(() => {
     if (!selectedOrgId) return [];
     const q = orgDocSearch.trim().toLowerCase();
-    return files.filter((f) => f.orgId === selectedOrgId && (!q || f.name.toLowerCase().includes(q)));
-  }, [files, selectedOrgId, orgDocSearch]);
+    return files.filter(
+      (f) =>
+        f.orgId === selectedOrgId &&
+        (!orgFolderId || (f.folderId || null) === orgFolderId) &&
+        (!q || f.name.toLowerCase().includes(q)),
+    );
+  }, [files, selectedOrgId, orgDocSearch, orgFolderId]);
+
+  // Dossiers propres à l'organisme affiché (rangement privé par organisme).
+  const orgFolders = useMemo(
+    () => (selectedOrgId ? folders.filter((f) => f.orgId === selectedOrgId) : []),
+    [folders, selectedOrgId],
+  );
 
   const folderFileCount = (folderId: string) => files.filter((f) => (f.folderId || null) === folderId).length;
 
@@ -358,7 +378,7 @@ export default function AntenneAdminDashboard() {
   // --- Dépôt de fichiers dans l'antenne (par le gestionnaire) ---
   // `targetOrgId` : si fourni, le document est rattaché à cet organisme
   // (dépôt depuis sa fiche) ; sinon document interne de l'antenne.
-  const handleUploadFiles = async (selected: File[], targetOrgId?: string) => {
+  const handleUploadFiles = async (selected: File[], targetOrgId?: string, targetFolderId?: string | null) => {
     if (!selected.length || !antenneId) return;
     setUploading(true);
     setUploadProgress(0);
@@ -367,7 +387,7 @@ export default function AntenneAdminDashboard() {
       for (const f of selected) {
         const meta = {
           orgId: targetOrgId || 'admin_created',
-          folderId: (targetOrgId ? null : activeFolderId) as string | null,
+          folderId: (targetOrgId ? (targetFolderId ?? null) : activeFolderId) as string | null,
           delegation_id: delegationId,
           antenne_id: antenneId,
           name: f.name,
@@ -468,8 +488,11 @@ export default function AntenneAdminDashboard() {
   const handleCreateFolder = async () => {
     const name = folderName.trim();
     if (!name || !antenneId) return;
+    // Dossier rattaché à un organisme précis (visible uniquement par lui) ou
+    // dossier interne d'antenne (orgId = 'admin_created').
+    const orgTarget = folderTargetOrgId || 'admin_created';
     const meta = {
-      orgId: 'admin_created',
+      orgId: orgTarget,
       name,
       createdAt: Date.now(),
       createdBy: 'admin' as const,
@@ -481,6 +504,7 @@ export default function AntenneAdminDashboard() {
       targetName: name,
       antenne_id: antenneId,
       delegation_id: delegationId,
+      details: folderTargetOrgId ? `Dossier pour « ${orgName(folderTargetOrgId)} »` : undefined,
     });
     if (localDb.isSandboxActive()) {
       localDb.saveFolder({ id: `mock_folder_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, ...meta } as Folder);
@@ -488,6 +512,7 @@ export default function AntenneAdminDashboard() {
       reloadFoldersLocal();
       setFolderName('');
       setCreatingFolder(false);
+      setFolderTargetOrgId(null);
       return;
     }
     try {
@@ -500,6 +525,7 @@ export default function AntenneAdminDashboard() {
     }
     setFolderName('');
     setCreatingFolder(false);
+    setFolderTargetOrgId(null);
   };
 
   const handleDeleteFolder = async (folder: Folder) => {
@@ -678,12 +704,6 @@ export default function AntenneAdminDashboard() {
     toast(`${ok} document(s) → ${getStatusMeta(status).label}`, ok ? 'success' : 'error');
   };
 
-  const downloadFiles = async (targets: DossierFile[]) => {
-    for (const f of targets) {
-      try { await downloadFile(f); } catch (e) { console.error('download failed', e); }
-    }
-  };
-
   const deleteFiles = async (targets: DossierFile[]) => {
     if (!targets.length) return;
     const log = (f: DossierFile) => logAction('file_delete', {
@@ -704,8 +724,71 @@ export default function AntenneAdminDashboard() {
     toast(`${ok} document(s) supprimé(s).`, ok ? 'success' : 'error');
   };
 
+  // --- Téléchargement groupé en archive .zip ---
+  const downloadAsZip = async (targets: DossierFile[], zipName: string) => {
+    if (!targets.length) return;
+    if (targets.length === 1) { await downloadFile(targets[0]); return; }
+    setZipping(true);
+    try {
+      const { zipped, failed } = await downloadFilesAsZip(targets, zipName);
+      if (zipped > 0 && failed.length === 0) {
+        toast(`Archive de ${zipped} document(s) téléchargée ✓`, 'success');
+      } else if (zipped > 0 && failed.length > 0) {
+        toast(`${zipped} document(s) dans l'archive · ${failed.length} téléchargé(s) séparément.`, 'warning');
+      } else {
+        toast('Aucun document n\'a pu être archivé ; téléchargement séparé.', 'warning');
+      }
+    } catch (e) {
+      console.error('zip failed', e);
+      toast('Échec de la création de l\'archive.', 'error');
+    } finally {
+      setZipping(false);
+    }
+  };
+
+  // --- Relance d'un organisme par e-mail ---
+  // Ouvre le client e-mail prérempli (aucun service tiers requis) et journalise
+  // la relance pour garder une trace dans l'historique de l'antenne.
+  const handleRemindOrg = (org: Organization) => {
+    if (!org.email) {
+      toast('Cet organisme n\'a pas d\'adresse e-mail renseignée.', 'warning');
+      return;
+    }
+    const orgFiles = files.filter((f) => f.orgId === org.id);
+    const missing = orgFiles.filter((f) => (f.submissionStatus || 'Pending') !== 'Validated').length;
+    const subject = `Aviation Sans Frontières — Suivi de votre dossier (antenne ${antenneName})`;
+    const body =
+      `Bonjour ${org.contactName || ''},\n\n` +
+      `Dans le cadre du suivi de votre dossier auprès de l'antenne ${antenneName} (${delegationName}), ` +
+      (orgFiles.length === 0
+        ? `nous vous invitons à déposer vos documents sur votre espace en ligne.`
+        : missing > 0
+          ? `il reste ${missing} document(s) à compléter ou à valider. Merci de vous connecter à votre espace pour les régulariser.`
+          : `nous vous remercions pour les documents transmis.`) +
+      `\n\nVous pouvez accéder à votre espace ici : https://asf-sud-est.vercel.app\n\n` +
+      `Bien cordialement,\nL'équipe de l'antenne ${antenneName}`;
+    window.location.href = `mailto:${encodeURIComponent(org.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    logAction('org_reminder', {
+      targetType: 'organization',
+      targetId: org.id,
+      targetName: org.name,
+      antenne_id: org.antenne_id || antenneId,
+      delegation_id: org.delegation_id || delegationId,
+      details: missing > 0 ? `Relance — ${missing} document(s) en attente` : 'Relance par e-mail',
+    });
+    toast(`Relance préparée pour ${org.name}.`, 'success');
+  };
+
+  // --- Validation / suspension du COMPTE (booléen, pas un statut de fichier) ---
+  const handleSetOrgValidated = (org: Organization, validated: boolean) =>
+    handleUpdateOrgStatus(org, validated ? 'Validated' : 'Pending');
+
+  // Ouverture / fermeture de la fiche organisme (réinitialise les filtres internes).
+  const openOrg = (id: string) => { setSelectedOrgId(id); setOrgFolderId(null); setOrgDocSearch(''); };
+  const closeOrg = () => { setSelectedOrgId(null); setOrgFolderId(null); setOrgDocSearch(''); };
+
   const handleBulkStatus = async (status: SubmissionStatus) => { await applyStatusToFiles(selectedFiles, status); clearSelection(); };
-  const handleBulkDownload = async () => { await downloadFiles(selectedFiles); };
+  const handleBulkDownload = async () => { await downloadAsZip(selectedFiles, `documents_${antenneName}_${new Date().toISOString().split('T')[0]}`); };
   const handleBulkDelete = async () => {
     const n = selectedFiles.length;
     if (!n) return;
@@ -1008,7 +1091,7 @@ export default function AntenneAdminDashboard() {
                 return (
                   <button
                     key={org.id}
-                    onClick={() => setSelectedOrgId(org.id)}
+                    onClick={() => openOrg(org.id)}
                     className="card-asf p-4 text-left hover:border-azur hover:shadow-md transition-all cursor-pointer group"
                     title="Voir les documents et gérer ce compte"
                   >
@@ -1296,13 +1379,15 @@ export default function AntenneAdminDashboard() {
       )}
 
       {/* Fiche détaillée d'un organisme : ses documents + gestion du compte */}
-      {selectedOrg && (
+      {selectedOrg && (() => {
+        const isValidated = (selectedOrg.submissionStatus || 'Pending') === 'Validated';
+        return (
         <div
           className="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-overlay-in"
-          onClick={() => setSelectedOrgId(null)}
+          onClick={closeOrg}
         >
           <div
-            className="bg-white rounded-2xl shadow-asf-lg w-full max-w-3xl my-auto animate-panel-in"
+            className="bg-white rounded-2xl shadow-asf-lg w-full max-w-5xl my-auto animate-panel-in"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête */}
@@ -1314,7 +1399,10 @@ export default function AntenneAdminDashboard() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-display text-lg font-bold text-deep truncate">{selectedOrg.name}</h3>
-                    <StatusBadge status={selectedOrg.submissionStatus} />
+                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${isValidated ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isValidated ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                      {isValidated ? 'Compte validé' : 'Accès suspendu'}
+                    </span>
                   </div>
                   <div className="text-xs text-slate-500 mt-1 space-y-0.5">
                     {selectedOrg.contactName && (
@@ -1329,57 +1417,104 @@ export default function AntenneAdminDashboard() {
                   </div>
                 </div>
               </div>
-              <button onClick={() => setSelectedOrgId(null)} className="btn-ghost p-2 shrink-0" title="Fermer">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => handleRemindOrg(selectedOrg)}
+                  disabled={!selectedOrg.email}
+                  className="btn-secondary text-sm disabled:opacity-50"
+                  title={selectedOrg.email ? 'Envoyer une relance par e-mail' : 'Aucune adresse e-mail'}
+                >
+                  <Send className="w-4 h-4" />
+                  <span className="hidden sm:inline">Relancer</span>
+                </button>
+                <button onClick={closeOrg} className="btn-ghost p-2" title="Fermer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            {/* Gestion du compte */}
-            <div className="p-5 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-end gap-3">
-              <div className="flex-1">
-                <label className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
-                  Statut du compte
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedOrg.submissionStatus || 'Pending'}
-                    onChange={(e) => handleUpdateOrgStatus(selectedOrg, e.target.value as SubmissionStatus)}
-                    disabled={updatingOrgStatus}
-                    className={`appearance-none cursor-pointer text-sm font-bold rounded-xl border pl-3 pr-9 py-2 focus:outline-none focus:ring-2 focus:ring-azur/30 disabled:opacity-60 w-full sm:w-auto ${statusSelectCls(selectedOrg.submissionStatus)}`}
-                  >
-                    {STATUS_ORDER.map((s) => (
-                      <option key={s} value={s}>{getStatusMeta(s).label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1.5 leading-snug max-w-md">
-                  L'organisme doit être <strong>Validé</strong> pour pouvoir déposer lui-même des documents.
+            {/* Gestion du compte : validation / suspension (pas un statut de fichier) */}
+            <div className="p-5 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Accès de l'organisme</p>
+                <p className="text-[11px] text-slate-500 mt-1 leading-snug max-w-md">
+                  {isValidated
+                    ? "Le compte est validé : l'organisme peut se connecter et déposer ses documents."
+                    : "Le compte est suspendu : l'organisme ne peut pas déposer tant qu'il n'est pas validé."}
                 </p>
               </div>
-              <input
-                ref={orgUploadRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  const fs = e.target.files ? Array.from(e.target.files) : [];
-                  if (fs.length) handleUploadFiles(fs as File[], selectedOrg.id);
-                  if (e.target) (e.target as any).value = '';
-                }}
-              />
-              <button
-                onClick={() => orgUploadRef.current && orgUploadRef.current.click()}
-                disabled={uploading}
-                className="btn-asf text-sm shrink-0 disabled:opacity-60"
-                title="Déposer un document pour cet organisme"
-              >
-                <Upload className="w-4 h-4" />
-                <span>{uploading ? `Envoi… ${uploadProgress}%` : 'Déposer pour cet organisme'}</span>
-              </button>
+              {isValidated ? (
+                <button
+                  onClick={() => handleSetOrgValidated(selectedOrg, false)}
+                  disabled={updatingOrgStatus}
+                  className="text-sm font-bold px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-2 disabled:opacity-60 shrink-0"
+                >
+                  <AlertCircle className="w-4 h-4" /> Suspendre le compte
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleSetOrgValidated(selectedOrg, true)}
+                  disabled={updatingOrgStatus}
+                  className="text-sm font-bold px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-2 disabled:opacity-60 shrink-0"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Valider le compte
+                </button>
+              )}
             </div>
 
-            {/* Barre d'actions + recherche pour les documents de l'organisme */}
+            {/* Dossiers propres à l'organisme (rangement privé, visible par lui seul) */}
+            <div className="px-5 pt-4 pb-2 border-b border-slate-100">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+                  <FolderIcon className="w-3.5 h-3.5" /> Dossiers de l'organisme
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setOrgFolderId(null)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
+                    orgFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" /> Tous ({files.filter((f) => f.orgId === selectedOrg.id).length})
+                </button>
+                {orgFolders.map((fol) => (
+                  <span
+                    key={fol.id}
+                    className={`text-xs font-bold pl-3 pr-1.5 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
+                      orgFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                    }`}
+                  >
+                    <button onClick={() => setOrgFolderId(fol.id)} className="inline-flex items-center gap-1.5 cursor-pointer">
+                      {orgFolderId === fol.id ? <FolderOpen className="w-3.5 h-3.5" /> : <FolderIcon className="w-3.5 h-3.5" />}
+                      {fol.name} ({folderFileCount(fol.id)})
+                    </button>
+                    <button
+                      onClick={() => handleDeleteFolder(fol)}
+                      title="Supprimer le dossier"
+                      className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
+                        orgFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 text-slate-400 hover:text-rose-500'
+                      }`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                <button
+                  onClick={() => { setFolderName(''); setFolderTargetOrgId(selectedOrg.id); setCreatingFolder(true); }}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full border border-dashed border-azur/40 text-azur hover:bg-azur/5 inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
+                </button>
+              </div>
+              {orgFolderId && (
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Les nouveaux dépôts iront dans le dossier <strong>{orgFolders.find((f) => f.id === orgFolderId)?.name}</strong>.
+                </p>
+              )}
+            </div>
+
+            {/* Barre d'actions + recherche + dépôt pour les documents de l'organisme */}
             <div className="px-5 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100">
               <div className="relative flex-1 min-w-[160px]">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -1390,6 +1525,26 @@ export default function AntenneAdminDashboard() {
                   className="input-asf pl-9 py-2 w-full text-sm"
                 />
               </div>
+              <input
+                ref={orgUploadRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const fs = e.target.files ? Array.from(e.target.files) : [];
+                  if (fs.length) handleUploadFiles(fs as File[], selectedOrg.id, orgFolderId);
+                  if (e.target) (e.target as any).value = '';
+                }}
+              />
+              <button
+                onClick={() => orgUploadRef.current && orgUploadRef.current.click()}
+                disabled={uploading}
+                className="btn-asf text-sm shrink-0 disabled:opacity-60"
+                title="Déposer un document pour cet organisme"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{uploading ? `Envoi… ${uploadProgress}%` : 'Déposer'}</span>
+              </button>
               <button
                 onClick={() => applyStatusToFiles(orgModalFiles, 'Validated')}
                 disabled={orgModalFiles.length === 0}
@@ -1398,11 +1553,11 @@ export default function AntenneAdminDashboard() {
                 <CheckCheck className="w-3.5 h-3.5" /> Tout valider
               </button>
               <button
-                onClick={() => downloadFiles(orgModalFiles)}
-                disabled={orgModalFiles.length === 0}
+                onClick={() => downloadAsZip(orgModalFiles, `${selectedOrg.name}_documents`)}
+                disabled={orgModalFiles.length === 0 || zipping}
                 className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
               >
-                <Download className="w-3.5 h-3.5" /> Tout télécharger
+                <Archive className="w-3.5 h-3.5" /> {zipping ? 'Archivage…' : 'Tout télécharger (.zip)'}
               </button>
             </div>
 
@@ -1424,7 +1579,11 @@ export default function AntenneAdminDashboard() {
               </div>
               {orgModalFiles.length === 0 ? (
                 <div className="px-5 pb-8 pt-2 text-center text-sm text-slate-400 font-semibold">
-                  {orgDocSearch ? 'Aucun document ne correspond à votre recherche.' : "Cet organisme n'a déposé aucun document pour le moment."}
+                  {orgDocSearch
+                    ? 'Aucun document ne correspond à votre recherche.'
+                    : orgFolderId
+                      ? 'Ce dossier est vide.'
+                      : "Cet organisme n'a déposé aucun document pour le moment."}
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 border-t border-slate-100">
@@ -1434,11 +1593,12 @@ export default function AntenneAdminDashboard() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Modale de création de dossier */}
       {creatingFolder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-overlay-in" onClick={() => setCreatingFolder(false)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-overlay-in" onClick={() => { setCreatingFolder(false); setFolderTargetOrgId(null); }}>
           <div className="bg-white rounded-2xl shadow-asf-lg w-full max-w-md p-6 space-y-4 animate-panel-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
@@ -1446,7 +1606,11 @@ export default function AntenneAdminDashboard() {
               </div>
               <div>
                 <h3 className="font-display text-lg font-bold text-deep">Nouveau dossier</h3>
-                <p className="text-sm text-slate-500">Pour organiser les documents de l'antenne.</p>
+                <p className="text-sm text-slate-500">
+                  {folderTargetOrgId
+                    ? <>Privé à <strong>{orgName(folderTargetOrgId)}</strong> — visible par cet organisme uniquement.</>
+                    : "Pour organiser les documents internes de l'antenne."}
+                </p>
               </div>
             </div>
             <input
@@ -1459,7 +1623,7 @@ export default function AntenneAdminDashboard() {
               maxLength={200}
             />
             <div className="flex justify-end gap-2">
-              <button onClick={() => setCreatingFolder(false)} className="btn-secondary text-sm">Annuler</button>
+              <button onClick={() => { setCreatingFolder(false); setFolderTargetOrgId(null); }} className="btn-secondary text-sm">Annuler</button>
               <button onClick={handleCreateFolder} disabled={!folderName.trim()} className="btn-asf text-sm disabled:opacity-60">Créer le dossier</button>
             </div>
           </div>
