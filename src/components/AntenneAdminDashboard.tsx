@@ -1383,6 +1383,11 @@ export default function AntenneAdminDashboard() {
                       </div>
                       <StatusBadge status={org.submissionStatus} />
                     </div>
+                    {org.dossierSubmittedAt && (
+                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                        <CheckCircle2 className="w-3 h-3" /> Dossier soumis
+                      </span>
+                    )}
                     <div className="mt-3">
                       <ComplianceBar validated={validated} total={orgFiles.length} />
                     </div>
@@ -1585,6 +1590,16 @@ export default function AntenneAdminDashboard() {
                   <div data-tour="org-checklist">
                     <ChecklistPanel files={orgAll} compact />
                   </div>
+
+                  {selectedOrg.dossierSubmittedAt && (
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-emerald-800">Dossier soumis pour revue</p>
+                        <p className="text-[11px] text-emerald-700">Le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')} par l'organisme.</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div data-tour="org-access" className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Accès de l'organisme</p>

@@ -61,9 +61,13 @@ export interface ChecklistResult {
   entries: ChecklistEntry[];
   /** Pièces avec au moins un document validé. */
   validatedCount: number;
+  /** Pièces avec au moins un document déposé (quel que soit le statut). */
+  depositedCount: number;
   total: number;
   /** Pourcentage de complétude (pièces validées / total). */
   percent: number;
+  /** Vrai si toutes les pièces obligatoires ont au moins un document déposé. */
+  allDeposited: boolean;
 }
 
 const RANK: Record<SubmissionStatus, number> = { Pending: 0, 'Under review': 1, Incomplete: 0, Validated: 2 };
@@ -90,11 +94,14 @@ export function computeChecklist(files: DossierFile[]): ChecklistResult {
 
   const total = REQUIRED_DOCS.length;
   const validatedCount = entries.filter((e) => e.state === 'validated').length;
+  const depositedCount = entries.filter((e) => e.count > 0).length;
   return {
     entries,
     validatedCount,
+    depositedCount,
     total,
     percent: total > 0 ? Math.round((validatedCount / total) * 100) : 0,
+    allDeposited: total > 0 && depositedCount === total,
   };
 }
 

@@ -37,13 +37,13 @@ import CreateFolderModal from './CreateFolderModal';
 import UserProfileModal from './UserProfileModal';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
-import { notifyAntenneOnUpload } from '../lib/antenneSettings';
+import { notifyAntenneOnUpload, notifyAntenneOnSubmission } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
 import { StatusBadge, GuidedTour, ChecklistPanel, type TourStep } from './ui';
 import { getStatusMeta, STATUS_ORDER } from '../lib/status';
-import { categoryOptions } from '../lib/requiredDocuments';
+import { categoryOptions, computeChecklist } from '../lib/requiredDocuments';
 import { markTourSeen } from '../lib/tour';
 
 
@@ -610,7 +610,7 @@ export default function Dashboard() {
     { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },
     { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents dans cette zone, ou cliquez pour parcourir votre ordinateur. Vous pouvez aussi les déposer directement sur un dossier pour les classer." },
     { target: '[data-tour="storage"]', title: 'Votre espace de stockage', text: "Suivez l'espace utilisé sur votre quota. La barre passe au rouge quand vous approchez de la limite." },
-    { target: '[data-tour="checklist"]', title: 'Vos pièces obligatoires', text: "La liste des documents réglementaires attendus et leur état. Classez chaque fichier déposé pour cocher la pièce correspondante et viser 100% de complétude." },
+    { target: '[data-tour="checklist"]', title: 'Pièces obligatoires & soumission', text: "À gauche, les pièces réglementaires attendues : classez chaque fichier pour les cocher. À droite, le bouton « Soumettre mon dossier » s'active dès que toutes les pièces sont déposées et prévient votre antenne." },
     { target: '[data-tour="filters"]', title: 'Rechercher et filtrer', text: "Retrouvez un document par son nom (raccourci ⌘K / Ctrl+K), ou filtrez par type et par statut." },
     ...docSteps,
     { target: '[data-tour="account"]', title: 'Votre compte', text: "Accédez à vos informations, changez votre mot de passe ou déconnectez-vous depuis votre profil." },
@@ -687,6 +687,42 @@ export default function Dashboard() {
       }
     }
     setRenamingFile(null);
+  };
+
+  // Soumission du dossier complet pour revue par l'antenne.
+  const dossierChecklist = computeChecklist(files);
+  const [submittingDossier, setSubmittingDossier] = useState(false);
+  const handleSubmitDossier = async () => {
+    if (!organization || !dossierChecklist.allDeposited || submittingDossier) return;
+    setSubmittingDossier(true);
+    const now = Date.now();
+    try {
+      if (localDb.isSandboxActive()) {
+        const found = localDb.getOrganizations().find((o) => o.id === organization.id);
+        if (found) localDb.saveOrganization({ ...found, dossierSubmittedAt: now, updatedAt: now });
+        refreshLocalState();
+      } else {
+        await updateDoc(doc(db, 'organizations', organization.id), { dossierSubmittedAt: now, updatedAt: now });
+      }
+      notifyAntenneOnSubmission(organization.antenne_id, {
+        partnerName: organization.name,
+        antenneName: organization.delegation_id && organization.antenne_id
+          ? getAntenneName(organization.delegation_id, organization.antenne_id)
+          : undefined,
+      });
+      logAction('dossier_submit', {
+        targetType: 'organization',
+        targetId: organization.id,
+        targetName: organization.name,
+        details: 'Dossier complet soumis pour revue',
+      });
+      toast('Dossier soumis à votre antenne ✓', 'success');
+    } catch (err) {
+      console.error('Error submitting dossier:', err);
+      toast('La soumission a échoué, réessayez.', 'error');
+    } finally {
+      setSubmittingDossier(false);
+    }
   };
 
   // Rattache un document à une pièce réglementaire (ou le déclasse).
@@ -1222,9 +1258,56 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Checklist des pièces réglementaires obligatoires */}
-        <div data-tour="checklist" className="mb-6 shrink-0">
-          <ChecklistPanel files={files} />
+        {/* Checklist des pièces réglementaires obligatoires + soumission */}
+        <div data-tour="checklist" className="mb-6 shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+          <div className="lg:col-span-2">
+            <ChecklistPanel files={files} />
+          </div>
+
+          {/* Carte de soumission du dossier */}
+          <div className={`card-asf p-5 flex flex-col ${dossierChecklist.allDeposited ? 'ring-1 ring-emerald-200' : ''}`}>
+            <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Soumettre mon dossier</h3>
+            {organization.dossierSubmittedAt ? (
+              <>
+                <div className="mt-2 flex items-center gap-2 text-emerald-600">
+                  <Check className="w-5 h-5 shrink-0" />
+                  <p className="text-sm font-semibold">Dossier soumis</p>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Le {new Date(organization.dossierSubmittedAt).toLocaleDateString('fr-FR')} · en cours de revue par votre antenne.
+                </p>
+                <button
+                  onClick={handleSubmitDossier}
+                  disabled={!dossierChecklist.allDeposited || submittingDossier}
+                  className="btn-secondary text-sm justify-center mt-4 disabled:opacity-50"
+                  title="Renvoyer le dossier après modification"
+                >
+                  {submittingDossier ? 'Envoi…' : 'Soumettre à nouveau'}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  {dossierChecklist.allDeposited
+                    ? 'Toutes les pièces obligatoires sont déposées. Soumettez votre dossier pour qu\'il soit revu par votre antenne.'
+                    : `Déposez et classez les ${dossierChecklist.total} pièces obligatoires pour pouvoir soumettre votre dossier.`}
+                </p>
+                <div className="mt-3 flex items-center justify-between text-xs">
+                  <span className="font-bold uppercase tracking-wider text-slate-400">Pièces déposées</span>
+                  <span className={`font-bold ${dossierChecklist.allDeposited ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {dossierChecklist.depositedCount}/{dossierChecklist.total}
+                  </span>
+                </div>
+                <button
+                  onClick={handleSubmitDossier}
+                  disabled={!dossierChecklist.allDeposited || submittingDossier}
+                  className="btn-asf text-sm justify-center mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submittingDossier ? 'Envoi…' : 'Soumettre mon dossier'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Search, Filter & Sort Panel combined */}

@@ -14,6 +14,8 @@ export interface Organization {
   updatedAt: number;
   /** Vrai une fois la visite guidée affichée automatiquement (1ʳᵉ connexion). */
   hasSeenTour?: boolean;
+  /** Date à laquelle l'organisme a soumis son dossier complet pour revue. */
+  dossierSubmittedAt?: number;
 }
 
 export interface DossierFile {
