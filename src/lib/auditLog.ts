@@ -159,9 +159,16 @@ export function subscribeAuditLogs(
   try {
     if (field && value) {
       const coll = collection(db, 'audit_logs');
+      // Filtre défensif : même si la requête (ou des règles trop permissives)
+      // renvoyait des entrées d'une autre antenne, le gestionnaire d'antenne ne
+      // voit JAMAIS que les logs de SON antenne. L'isolation ne dépend donc pas
+      // uniquement de la clause `where` ni de l'état des règles déployées.
       const emit = (snap: any) => {
         const list: AuditLog[] = [];
-        snap.forEach((d: any) => list.push({ id: d.id, ...d.data() } as AuditLog));
+        snap.forEach((d: any) => {
+          const entry = { id: d.id, ...d.data() } as AuditLog;
+          if ((entry as any)[field] === value) list.push(entry);
+        });
         list.sort((a, b) => b.timestamp - a.timestamp);
         cb(list.slice(0, max));
       };
@@ -188,19 +195,33 @@ export function subscribeAuditLogs(
       return () => inner();
     }
 
-    const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(max));
-    return onSnapshot(
-      q,
-      (snap) => {
-        const list: AuditLog[] = [];
-        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as AuditLog));
-        cb(list);
-      },
+    // Vue super admin : TOUS les logs. Tri serveur, puis repli sans `orderBy`
+    // (les entrées dépourvues de `timestamp` sont exclues d'un orderBy serveur :
+    // le repli garantit qu'aucun log n'est perdu) trié côté client.
+    const coll = collection(db, 'audit_logs');
+    const emitAll = (snap: any) => {
+      const list: AuditLog[] = [];
+      snap.forEach((d: any) => list.push({ id: d.id, ...d.data() } as AuditLog));
+      list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      cb(list.slice(0, max));
+    };
+    let outer = () => {};
+    outer = onSnapshot(
+      query(coll, orderBy('timestamp', 'desc'), limit(max)),
+      emitAll,
       (err) => {
-        console.warn('subscribeAuditLogs (global) échec :', err);
-        cb([]);
+        console.warn('subscribeAuditLogs (global) : repli sans tri serveur :', err);
+        outer = onSnapshot(
+          query(coll, limit(1000)),
+          emitAll,
+          (e2) => {
+            console.warn('subscribeAuditLogs (global) échec :', e2);
+            cb([]);
+          },
+        );
       },
     );
+    return () => outer();
   } catch (e) {
     console.warn('subscribeAuditLogs exception :', e);
     cb([]);
