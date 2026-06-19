@@ -153,11 +153,9 @@ export default function AdminPanel() {
   const { themeConfig } = useTheme();
   const { toast, confirm } = useFeedback();
 
-  // Active Simulated Role State (For easy local testing of Admin roles)
-  // Seul le super_admin (et l'admin national) accède au mode national. Un
-  // coordinateur de délégation (admin_delegation) est cantonné à sa délégation.
+  // Mode d'affichage : super_admin (national complet) ou admin (national HQ).
   const [simulationRole, setSimulationRole] = useState<'super_admin' | 'admin'>(() => {
-    if (organization?.role === 'admin' || organization?.role === 'admin_delegation') {
+    if (organization?.role === 'admin') {
       return 'admin';
     }
     return 'super_admin';
@@ -166,11 +164,7 @@ export default function AdminPanel() {
   const isSuperAdminMode = simulationRole === 'super_admin';
 
   const [activeDelegationId, setActiveDelegationId] = useState<string | null>(
-    // Un coordinateur est cantonné à SA délégation (jamais le repli national
-    // « france », qui exposerait/mélangerait les comptes d'une autre délégation).
-    organization?.role === 'admin_delegation'
-      ? (organization?.delegation_id || '')
-      : (organization?.role === 'admin' && organization?.delegation_id ? organization.delegation_id : 'france'),
+    organization?.role === 'admin' && organization?.delegation_id ? organization.delegation_id : 'france',
   );
   const delegationFilterId = activeDelegationId ?? 'france';
   const [tempCoords, setTempCoords] = useState<{ x: number; y: number } | null>(null);
@@ -181,15 +175,11 @@ export default function AdminPanel() {
   // Selected Town (onglet de ville)
   const [activeAntenneId, setActiveAntenneId] = useState<string | null>(null);
 
-  // Auto-select antenna for local antenna coordinators
+  // Auto-select antenna for a national admin scoped to a single antenne.
   useEffect(() => {
     if (organization?.role === 'admin' && organization?.antenne_id) {
       setSimulationRole('admin');
       setActiveAntenneId(organization.antenne_id);
-    } else if (organization?.role === 'admin_delegation') {
-      // Coordinateur de délégation : mode scoped, cantonné à sa délégation.
-      setSimulationRole('admin');
-      if (organization?.delegation_id) setActiveDelegationId(organization.delegation_id);
     }
   }, [organization]);
 
@@ -753,11 +743,9 @@ export default function AdminPanel() {
         window.removeEventListener('localdb-update', handleLocalDbUpdate);
       };
     } else {
-      // Le super admin lit tout ; un coordinateur de délégation ne lit QUE les
-      // données de sa délégation (les règles Firestore l'imposent : une requête
-      // non filtrée serait refusée pour lui, et exposerait sinon les autres
-      // délégations). On filtre donc la requête côté client en conséquence.
-      const scopeDelegation = organization?.role === 'admin_delegation' ? delegationFilterId : null;
+      // Le panneau d'administration est réservé au siège (super admin / admin
+      // national), qui lit l'ensemble des données.
+      const scopeDelegation: string | null = null;
       const scoped = (col: string) =>
         scopeDelegation
           ? query(collection(db, col), where('delegation_id', '==', scopeDelegation))
@@ -1416,11 +1404,8 @@ export default function AdminPanel() {
               <span>Retour au tableau de bord</span>
             </button>
             <AuditLogPanel
-              delegationId={organization?.role === 'admin_delegation' ? delegationFilterId : undefined}
-              title={isSuperAdminMode ? "Journal d'activité — Vue nationale" : "Journal d'activité de ma délégation"}
-              subtitle={isSuperAdminMode
-                ? "Toutes les actions de tous les comptes (super admin, coordinateurs, partenaires)."
-                : "Toutes les actions des comptes de votre délégation (coordinateurs et partenaires)."}
+              title="Journal d'activité — Vue nationale"
+              subtitle="Toutes les actions de tous les comptes (super admin, gestionnaires d'antenne, partenaires)."
             />
           </div>
         )}
@@ -2237,11 +2222,6 @@ export default function AdminPanel() {
                                               {/* Seul le super admin peut désigner un autre super administrateur. */}
                                               {isSuperAdminMode && (
                                                 <option value="super_admin">Super administrateur</option>
-                                              )}
-                                              {/* Rôle hérité : affiché uniquement s'il est déjà attribué, plus proposé
-                                                  par défaut (on s'en tient à Partenaire / Gestionnaire d'antenne / Super admin). */}
-                                              {org.role === 'admin_delegation' && (
-                                                <option value="admin_delegation">Coordinateur de délégation</option>
                                               )}
                                             </select>
                                             <p className="text-[9.5px] text-slate-400 font-semibold mt-1 leading-snug">

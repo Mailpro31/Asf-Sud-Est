@@ -91,13 +91,10 @@ function MainApp() {
       );
     }
     // Super admin / admin national : panneau national complet.
-    // Coordinateur de délégation : MÊME panneau mais en mode « scoupé » à sa
-    // délégation (il gère pleinement les utilisateurs de sa délégation, sans
-    // les fonctions nationales réservées au super admin).
-    if (organization.role === 'super_admin' || organization.role === 'admin' || organization.role === 'admin_delegation') {
+    if (organization.role === 'super_admin' || organization.role === 'admin') {
       return <AdminPanel />;
     }
-    // Un gestionnaire d'antenne reste sur l'interface simplifiée de son antenne.
+    // Un gestionnaire d'antenne accède à l'interface simplifiée de son antenne.
     if (organization.role === 'admin_antenne') {
       return <AntenneAdminDashboard />;
     }
