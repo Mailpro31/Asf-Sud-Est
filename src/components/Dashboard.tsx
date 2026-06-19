@@ -657,7 +657,11 @@ export default function Dashboard() {
   const handleDownloadFile = async (file: DossierFile) => {
     try {
       const ok = await downloadFile(file);
-      if (!ok) toast('Téléchargement indisponible pour ce fichier.', 'warning');
+      if (ok) {
+        logAction('file_download', { targetType: 'file', targetId: file.id, targetName: file.name });
+      } else {
+        toast('Téléchargement indisponible pour ce fichier.', 'warning');
+      }
     } catch (error) {
       console.error('Failed to get download URL', error);
       toast('Échec du téléchargement du fichier. Il se peut qu\'il ait été supprimé ou que les règles de stockage n\'autorisent pas l\'accès.', 'error');
@@ -1323,19 +1327,7 @@ export default function Dashboard() {
                             <FileText className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            {renamingFile?.id === file.id ? (
-                              <form onSubmit={handleRenameSubmit} className="flex items-center gap-1.5 max-w-xs" onClick={e => e.stopPropagation()}>
-                                <input
-                                  type="text"
-                                  value={renameInput}
-                                  onChange={(e) => setRenameInput(e.target.value)}
-                                  className="input-asf text-xs py-1"
-                                  autoFocus
-                                />
-                                <button type="submit" className="btn-asf text-[10px] px-2 py-1">Enregistrer</button>
-                                <button type="button" onClick={() => setRenamingFile(null)} className="btn-secondary text-[10px] px-1.5 py-1">X</button>
-                              </form>
-                            ) : (
+                            {(
                               <div className="flex flex-col min-w-0 font-sans">
                                 <div className="flex items-center gap-2">
                                   <span className={`text-xs font-bold truncate ${themeConfig.textColor}`} title={file.name}>
@@ -1446,6 +1438,42 @@ export default function Dashboard() {
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
       />
+
+      {/* Modale de renommage de fichier */}
+      {renamingFile && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+          onClick={() => setRenamingFile(null)}
+        >
+          <form
+            onSubmit={handleRenameSubmit}
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                <Edit2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold text-deep dark:text-white">Renommer le document</h3>
+                <p className="text-sm text-slate-500">Saisissez un nouveau nom de fichier.</p>
+              </div>
+            </div>
+            <input
+              autoFocus
+              type="text"
+              value={renameInput}
+              onChange={(e) => setRenameInput(e.target.value)}
+              className="input-asf w-full"
+              placeholder="Nouveau nom du fichier"
+            />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setRenamingFile(null)} className="btn-secondary text-sm">Annuler</button>
+              <button type="submit" disabled={!renameInput.trim()} className="btn-asf text-sm disabled:opacity-60">Enregistrer</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

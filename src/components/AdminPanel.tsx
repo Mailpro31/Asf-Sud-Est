@@ -16,10 +16,11 @@ import { db, storage } from '../lib/firebase';
 import { Organization, DossierFile, Folder, SubmissionStatus, AntenneGroup } from '../types';
 import { 
   ShieldAlert, 
-  LogOut, 
-  FileText, 
-  Download, 
-  Trash2, 
+  LogOut,
+  FileText,
+  Download,
+  Archive,
+  Trash2,
   Users, 
   Layers,
   MapPin,
@@ -60,9 +61,10 @@ import AuditLogPanel from './AuditLogPanel';
 import { localDb } from '../lib/localDb';
 import { logAction } from '../lib/auditLog';
 import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
+import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
-import { StatusBadge } from './ui';
+import { StatusBadge, ComplianceBar } from './ui';
 import { STATUS_META } from '../lib/status';
 import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
 
@@ -297,6 +299,13 @@ export default function AdminPanel() {
           console.error("Error assigning antenne groups:", groupErr);
         }
       }
+      logAction('antenne_create', {
+        targetType: 'antenne',
+        targetId: cleanId,
+        targetName: newAntenneName.trim(),
+        delegation_id: delegationFilterId || 'france',
+        antenne_id: cleanId,
+      });
       setNewAntenneName('');
       setNewAntenneId('');
       setNewAntenneGroupIds([]);
@@ -345,6 +354,13 @@ export default function AdminPanel() {
       } catch (groupErr) {
         console.error("Error cleaning antenne from groups:", groupErr);
       }
+      logAction('antenne_delete', {
+        targetType: 'antenne',
+        targetId: antId,
+        targetName: antData?.name || antId,
+        delegation_id: antDelegationId,
+        antenne_id: antId,
+      });
       if (editingAntenne?.id === antId) {
         setEditingAntenne(null);
       }
@@ -496,6 +512,25 @@ export default function AdminPanel() {
         </div>
       </div>
     );
+  };
+
+  // Téléchargement groupé en archive .zip (documents affichés).
+  const [zipping, setZipping] = useState(false);
+  const handleExportZip = async (targets: DossierFile[]) => {
+    if (!targets.length) return;
+    setZipping(true);
+    try {
+      const name = `documents_${delegationFilterId || 'asf'}_${new Date().toISOString().split('T')[0]}`;
+      const { zipped, failed } = await downloadFilesAsZip(targets, name);
+      if (zipped > 0 && failed.length === 0) toast(`Archive de ${zipped} document(s) téléchargée ✓`, 'success');
+      else if (zipped > 0) toast(`${zipped} document(s) archivé(s) · ${failed.length} téléchargé(s) à part.`, 'warning');
+      else toast("Aucun document n'a pu être archivé ; téléchargement séparé.", 'warning');
+    } catch (e) {
+      console.error('zip failed', e);
+      toast("Échec de la création de l'archive.", 'error');
+    } finally {
+      setZipping(false);
+    }
   };
 
   const handleExportComplianceReport = () => {
@@ -995,21 +1030,32 @@ export default function AdminPanel() {
       setRenamingFile(null);
       return;
     }
+    const newName = renameInput.trim();
+    const logIt = () => logAction('file_rename', {
+      targetType: 'file',
+      targetId: renamingFile.id,
+      targetName: newName,
+      antenne_id: renamingFile.antenne_id,
+      delegation_id: renamingFile.delegation_id,
+      details: `Renommé : « ${renamingFile.name} » → « ${newName} »`,
+    });
     if (localDb.isSandboxActive()) {
       const filesList = localDb.getFiles();
       const target = filesList.find(f => f.id === renamingFile.id);
       if (target) {
-        target.name = renameInput.trim();
+        target.name = newName;
         localDb.saveFile(target);
       }
       setFiles(localDb.getFiles());
+      logIt();
       setRenamingFile(null);
       return;
     }
     try {
       await updateDoc(doc(db, 'files', renamingFile.id), {
-        name: renameInput.trim()
+        name: newName
       });
+      logIt();
       setRenamingFile(null);
     } catch (err) {
       console.error("Error renaming file:", err);
@@ -1047,10 +1093,18 @@ export default function AdminPanel() {
 
   const confirmDeleteFolder = async () => {
     if (!folderToDelete) return;
+    const logIt = () => logAction('folder_delete', {
+      targetType: 'folder',
+      targetId: folderToDelete.id,
+      targetName: folderToDelete.name,
+      antenne_id: folderToDelete.antenne_id,
+      delegation_id: folderToDelete.delegation_id,
+    });
     if (localDb.isSandboxActive()) {
       localDb.deleteFolder(folderToDelete.id);
       setFiles(localDb.getFiles());
       setFolders(localDb.getFolders());
+      logIt();
       setFolderToDelete(null);
       setCurrentFolderId(null);
       return;
@@ -1063,6 +1117,7 @@ export default function AdminPanel() {
       }
       // 2. Delete folder metadata
       await deleteDoc(doc(db, 'folders', folderToDelete.id));
+      logIt();
       setFolderToDelete(null);
       setCurrentFolderId(null);
     } catch (err) {
@@ -1820,6 +1875,15 @@ export default function AdminPanel() {
 
                       {/* Drop File Input buttons */}
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleExportZip(filteredFiles)}
+                          disabled={filteredFiles.length === 0 || zipping}
+                          className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-400 px-4 py-2.5 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                          title="Télécharger tous les documents affichés dans une archive .zip"
+                        >
+                          <Archive className="w-4 h-4 text-azur" />
+                          <span>{zipping ? 'Archivage…' : 'Tout télécharger (.zip)'}</span>
+                        </button>
                         <label className={`flex items-center gap-1.5 text-xs font-black text-white px-4.5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer ${
                           delegationFilterId === 'ouest' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10' :
                           delegationFilterId === 'occitanie' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/10' :
@@ -2040,6 +2104,13 @@ export default function AdminPanel() {
                                           download={file.name}
                                           target="_blank"
                                           rel="noreferrer"
+                                          onClick={() => logAction('file_download', {
+                                            targetType: 'file',
+                                            targetId: file.id,
+                                            targetName: file.name,
+                                            antenne_id: file.antenne_id,
+                                            delegation_id: file.delegation_id,
+                                          })}
                                           className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-800 cursor-pointer"
                                           title="Télécharger ou Ouvrir"
                                         >
@@ -2143,6 +2214,11 @@ export default function AdminPanel() {
                                   <td className="px-5 py-4 font-bold text-slate-900">
                                     <p className="font-extrabold text-slate-900">{org.name || "Néant"}</p>
                                     <p className="text-[9.5px] text-slate-400 font-mono">UID : {org.id.substring(0, 10)}</p>
+                                    {org.role === 'organization' && (() => {
+                                      const of = files.filter(f => f.orgId === org.id);
+                                      const val = of.filter(f => (f.submissionStatus || 'Pending') === 'Validated').length;
+                                      return <div className="mt-2.5 max-w-[200px]"><ComplianceBar validated={val} total={of.length} /></div>;
+                                    })()}
                                     <button
                                       onClick={() => {
                                         setSelectedOrgForFiles(org);

@@ -144,7 +144,7 @@ service cloud.firestore {
     function isKnownAuditAction(a) {
       return a in [
         'login', 'logout',
-        'file_upload', 'file_delete', 'file_status_change', 'file_share_toggle', 'file_rename', 'file_move',
+        'file_upload', 'file_delete', 'file_status_change', 'file_share_toggle', 'file_rename', 'file_move', 'file_download',
         'folder_create', 'folder_delete',
         'org_create', 'org_delete', 'org_role_change', 'org_status_change', 'org_assign_antenne', 'org_profile_update', 'org_reminder',
         'antenne_create', 'antenne_delete', 'antenne_settings_change'
@@ -155,7 +155,7 @@ service cloud.firestore {
     // journaliser pour lui-même : il ne peut pas forger des actions d'admin
     // (changement de rôle, suppression de compte, etc.).
     function isPartnerAuditAction(a) {
-      return a in ['login', 'logout', 'file_upload', 'file_delete', 'folder_create', 'folder_delete', 'file_rename', 'file_move', 'org_profile_update'];
+      return a in ['login', 'logout', 'file_upload', 'file_delete', 'folder_create', 'folder_delete', 'file_rename', 'file_move', 'file_download', 'org_profile_update'];
     }
 
     function isValidAuditLog(data) {

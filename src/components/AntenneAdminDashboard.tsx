@@ -48,6 +48,7 @@ import {
 import { Bell } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
+import { queueEmail } from '../lib/antenneAdmins';
 import { logAction } from '../lib/auditLog';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
@@ -56,7 +57,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge } from './ui';
+import { StatusBadge, ComplianceBar } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -150,6 +151,14 @@ export default function AntenneAdminDashboard() {
     setSavingSettings(true);
     try {
       await saveAntenneSettings(antenneId, { notifyEnabled, notifyEmail: email });
+      logAction('antenne_settings_change', {
+        targetType: 'antenne',
+        targetId: antenneId,
+        targetName: antenneName,
+        antenne_id: antenneId,
+        delegation_id: delegationId,
+        details: notifyEnabled ? `Notifications activées vers ${email}` : 'Notifications désactivées',
+      });
       toast(
         notifyEnabled
           ? `Notifications activées vers ${email}.`
@@ -559,7 +568,17 @@ export default function AntenneAdminDashboard() {
   const handleDownload = async (file: DossierFile) => {
     try {
       const ok = await downloadFile(file);
-      if (!ok) toast('Téléchargement indisponible pour ce fichier.', 'warning');
+      if (ok) {
+        logAction('file_download', {
+          targetType: 'file',
+          targetId: file.id,
+          targetName: file.name,
+          antenne_id: file.antenne_id || antenneId,
+          delegation_id: file.delegation_id || delegationId,
+        });
+      } else {
+        toast('Téléchargement indisponible pour ce fichier.', 'warning');
+      }
     } catch (err) {
       console.error('Download failed:', err);
       toast('Échec du téléchargement.', 'error');
@@ -747,36 +766,64 @@ export default function AntenneAdminDashboard() {
   };
 
   // --- Relance d'un organisme par e-mail ---
-  // Ouvre le client e-mail prérempli (aucun service tiers requis) et journalise
-  // la relance pour garder une trace dans l'historique de l'antenne.
-  const handleRemindOrg = (org: Organization) => {
+  // Envoi réel via EmailJS / extension Firebase (queueEmail) ; si l'envoi
+  // n'aboutit pas (non configuré, mode sandbox), repli sur le client e-mail.
+  // Journalise la relance dans l'historique de l'antenne dans tous les cas.
+  const [reminding, setReminding] = useState(false);
+  const handleRemindOrg = async (org: Organization) => {
     if (!org.email) {
       toast('Cet organisme n\'a pas d\'adresse e-mail renseignée.', 'warning');
       return;
     }
+    setReminding(true);
     const orgFiles = files.filter((f) => f.orgId === org.id);
     const missing = orgFiles.filter((f) => (f.submissionStatus || 'Pending') !== 'Validated').length;
     const subject = `Aviation Sans Frontières — Suivi de votre dossier (antenne ${antenneName})`;
-    const body =
+    const intro = orgFiles.length === 0
+      ? `nous vous invitons à déposer vos documents sur votre espace en ligne.`
+      : missing > 0
+        ? `il reste ${missing} document(s) à compléter ou à valider. Merci de vous connecter à votre espace pour les régulariser.`
+        : `nous vous remercions pour les documents transmis.`;
+    const portal = 'https://asf-sud-est.vercel.app';
+    const text =
       `Bonjour ${org.contactName || ''},\n\n` +
-      `Dans le cadre du suivi de votre dossier auprès de l'antenne ${antenneName} (${delegationName}), ` +
-      (orgFiles.length === 0
-        ? `nous vous invitons à déposer vos documents sur votre espace en ligne.`
-        : missing > 0
-          ? `il reste ${missing} document(s) à compléter ou à valider. Merci de vous connecter à votre espace pour les régulariser.`
-          : `nous vous remercions pour les documents transmis.`) +
-      `\n\nVous pouvez accéder à votre espace ici : https://asf-sud-est.vercel.app\n\n` +
+      `Dans le cadre du suivi de votre dossier auprès de l'antenne ${antenneName} (${delegationName}), ${intro}` +
+      `\n\nVous pouvez accéder à votre espace ici : ${portal}\n\n` +
       `Bien cordialement,\nL'équipe de l'antenne ${antenneName}`;
-    window.location.href = `mailto:${encodeURIComponent(org.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    logAction('org_reminder', {
+    const html =
+      `<p>Bonjour ${org.contactName || ''},</p>` +
+      `<p>Dans le cadre du suivi de votre dossier auprès de l'antenne <strong>${antenneName}</strong> (${delegationName}), ${intro}</p>` +
+      `<p><a href="${portal}">Accéder à mon espace</a></p>` +
+      `<p>Bien cordialement,<br/>L'équipe de l'antenne ${antenneName}</p>`;
+
+    const logIt = (sent: boolean) => logAction('org_reminder', {
       targetType: 'organization',
       targetId: org.id,
       targetName: org.name,
       antenne_id: org.antenne_id || antenneId,
       delegation_id: org.delegation_id || delegationId,
-      details: missing > 0 ? `Relance — ${missing} document(s) en attente` : 'Relance par e-mail',
+      details: (missing > 0 ? `Relance — ${missing} document(s) en attente` : 'Relance')
+        + (sent ? ' (e-mail envoyé)' : ' (client e-mail ouvert)'),
     });
-    toast(`Relance préparée pour ${org.name}.`, 'success');
+
+    try {
+      const sent = await queueEmail(org.email, subject, text, html);
+      if (sent) {
+        logIt(true);
+        toast(`E-mail de relance envoyé à ${org.name}.`, 'success');
+      } else {
+        // Repli : ouverture du client e-mail prérempli.
+        window.location.href = `mailto:${encodeURIComponent(org.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+        logIt(false);
+        toast(`Relance préparée pour ${org.name}.`, 'success');
+      }
+    } catch (e) {
+      console.error('reminder failed', e);
+      window.location.href = `mailto:${encodeURIComponent(org.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+      logIt(false);
+    } finally {
+      setReminding(false);
+    }
   };
 
   // --- Validation / suspension du COMPTE (booléen, pas un statut de fichier) ---
@@ -1088,6 +1135,7 @@ export default function AntenneAdminDashboard() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {partnerOrgs.map((org) => {
                 const orgFiles = files.filter((f) => f.orgId === org.id);
+                const validated = orgFiles.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
                 return (
                   <button
                     key={org.id}
@@ -1102,7 +1150,10 @@ export default function AntenneAdminDashboard() {
                       </div>
                       <StatusBadge status={org.submissionStatus} />
                     </div>
-                    <p className="text-xs mt-3 flex items-center justify-between">
+                    <div className="mt-3">
+                      <ComplianceBar validated={validated} total={orgFiles.length} />
+                    </div>
+                    <p className="text-xs mt-2.5 flex items-center justify-between">
                       <span className="text-slate-500">{orgFiles.length} document{orgFiles.length > 1 ? 's' : ''}</span>
                       <span className="inline-flex items-center gap-1 text-azur font-bold group-hover:translate-x-0.5 transition-transform">
                         Gérer <ChevronRight className="w-3.5 h-3.5" />
@@ -1420,12 +1471,12 @@ export default function AntenneAdminDashboard() {
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => handleRemindOrg(selectedOrg)}
-                  disabled={!selectedOrg.email}
+                  disabled={!selectedOrg.email || reminding}
                   className="btn-secondary text-sm disabled:opacity-50"
                   title={selectedOrg.email ? 'Envoyer une relance par e-mail' : 'Aucune adresse e-mail'}
                 >
                   <Send className="w-4 h-4" />
-                  <span className="hidden sm:inline">Relancer</span>
+                  <span className="hidden sm:inline">{reminding ? 'Envoi…' : 'Relancer'}</span>
                 </button>
                 <button onClick={closeOrg} className="btn-ghost p-2" title="Fermer">
                   <X className="w-5 h-5" />
@@ -1460,6 +1511,15 @@ export default function AntenneAdminDashboard() {
                   <CheckCircle2 className="w-4 h-4" /> Valider le compte
                 </button>
               )}
+            </div>
+
+            {/* Conformité de l'organisme (documents validés / total) */}
+            <div className="px-5 py-3 border-b border-slate-100">
+              {(() => {
+                const all = files.filter((f) => f.orgId === selectedOrg.id);
+                const val = all.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
+                return <ComplianceBar validated={val} total={all.length} />;
+              })()}
             </div>
 
             {/* Dossiers propres à l'organisme (rangement privé, visible par lui seul) */}
