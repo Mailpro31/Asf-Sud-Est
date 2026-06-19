@@ -199,7 +199,7 @@ export default function AdminPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState('all');
   const [fileStatusFilter, setFileStatusFilter] = useState<'all' | SubmissionStatus>('all');
-  const [tourOpen, setTourOpen] = useState(false);
+  const [activeTour, setActiveTour] = useState<TourStep[] | null>(null);
   const [sortBy, setSortBy] = useState('date-desc');
 
   // Multi-tab support: workspaces for dossiers, members for validation and user access, plus config for superadmin
@@ -1259,13 +1259,30 @@ export default function AdminPanel() {
   // Conformité globale (tous documents) pour l'anneau du hub.
   const globalValidated = files.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
 
-  const tourSteps: TourStep[] = [
-    { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment." },
-    { target: '[data-tour="kpi"]', title: 'Vos indicateurs', text: "Documents et organismes en attente, justificatifs et organismes rattachés : l'essentiel en un coup d'œil." },
-    { target: '[data-tour="conformity"]', title: 'Conformité par antenne', text: "Le taux de conformité global (anneau) et le détail par antenne, pour repérer les dossiers à relancer." },
-    { target: '[data-tour="nav"]', title: 'Vos espaces de travail', text: "Accédez aux Ailes du Sourire, aux membres, aux implantations et au journal d'activité." },
-  ];
-  const startTour = () => { setNavigationView('hub'); setTourOpen(true); };
+  // Visite guidée contextuelle : les étapes s'adaptent à la page affichée.
+  const tourIntro: TourStep = { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Il s'adapte à la page affichée : relancez-le sur chaque espace pour en découvrir les options." };
+  const buildTour = (): TourStep[] => {
+    if (navigationView === 'logs') {
+      return [tourIntro, { target: '[data-tour="admin-journal"]', title: "Journal d'activité national", text: "L'historique précis de toutes les actions de tous les comptes. Filtrez par catégorie pour enquêter." }];
+    }
+    if (navigationView === 'ailes' && isSuperAdminMode && !activeDelegationId) {
+      return [tourIntro, { target: '[data-tour="admin-ailes"]', title: 'Les délégations nationales', text: "Vue d'ensemble des délégations. Cliquez sur l'une d'elles pour entrer dans son espace de travail dédié." }];
+    }
+    if (navigationView !== 'hub' && activeDelegationId) {
+      return [
+        tourIntro,
+        { target: '[data-tour="admin-detail"]', title: "L'espace de la délégation", text: "Gérez ici les documents, les membres et les implantations de la délégation sélectionnée." },
+        { target: '[data-admin-search]', title: 'Recherche et filtres', text: "Retrouvez un document (raccourci ⌘K / Ctrl+K) et filtrez par type ou par statut." },
+      ];
+    }
+    return [
+      tourIntro,
+      { target: '[data-tour="kpi"]', title: 'Vos indicateurs', text: "Documents et organismes en attente, justificatifs et organismes rattachés : l'essentiel en un coup d'œil." },
+      { target: '[data-tour="conformity"]', title: 'Conformité par antenne', text: "Le taux de conformité global (anneau) et le détail par antenne, pour repérer les dossiers à relancer." },
+      { target: '[data-tour="nav"]', title: 'Vos espaces de travail', text: "Accédez aux Ailes du Sourire, aux membres, aux implantations et au journal d'activité." },
+    ];
+  };
+  const startTour = () => setActiveTour(buildTour());
 
   return (
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>
@@ -1602,7 +1619,7 @@ export default function AdminPanel() {
 
         {/* --- JOURNAL D'ACTIVITÉ (super admin : tous les logs) --- */}
         {navigationView === 'logs' && (
-          <div className="space-y-5">
+          <div data-tour="admin-journal" className="space-y-5">
             <button
               onClick={() => setNavigationView('hub')}
               className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-azur transition-colors"
@@ -1619,7 +1636,7 @@ export default function AdminPanel() {
 
         {/* --- SCENARIO A: PARIS SUPER ADMIN GLOBAL HQ OVERVIEW --- */}
         {navigationView === 'ailes' && isSuperAdminMode && !activeDelegationId && (
-          <div className="space-y-6">
+          <div data-tour="admin-ailes" className="space-y-6">
             {/* National Supervisor Card */}
             <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div className="absolute top-0 right-0 w-96 h-96 bg-azur/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -1706,8 +1723,8 @@ export default function AdminPanel() {
         {navigationView !== 'hub' && navigationView !== 'logs' && activeDelegationId && (() => {
           const themeAttr = DELEGATION_THEMES[delegationFilterId] || DELEGATION_THEMES['ouest'];
           return (
-            <div className="space-y-6">
-              
+            <div data-tour="admin-detail" className="space-y-6">
+
               {/* Back breadcrumb navigation to Admin Hub */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
                 <nav className="flex items-center gap-2.5 flex-wrap" aria-label="Fil d'ariane">
@@ -3359,7 +3376,7 @@ export default function AdminPanel() {
         onClose={() => setIsProfileOpen(false)}
       />
 
-      <GuidedTour open={tourOpen} steps={tourSteps} onClose={() => setTourOpen(false)} />
+      <GuidedTour open={!!activeTour} steps={activeTour || []} onClose={() => setActiveTour(null)} />
 
       {/* --- REAL-TIME DOCUMENT CABINET FOR INDIVIDUAL PROFILES --- */}
       <AnimatePresence>

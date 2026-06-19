@@ -120,7 +120,7 @@ export default function AntenneAdminDashboard() {
   const [orgSortBy, setOrgSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc');
   const [previewFile, setPreviewFile] = useState<DossierFile | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
+  const [activeTour, setActiveTour] = useState<TourStep[] | null>(null);
   const [orgSearch, setOrgSearch] = useState('');
   const [orgQuickStatus, setOrgQuickStatus] = useState<'all' | SubmissionStatus>('all');
   const orgSearchRef = useRef<HTMLInputElement | null>(null);
@@ -319,15 +319,44 @@ export default function AntenneAdminDashboard() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const tourSteps: TourStep[] = [
-    { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment — pratique pour prendre en main l'outil." },
+  // Étapes communes à toutes les pages.
+  const tourIntro: TourStep[] = [
+    { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Il s'adapte à la page affichée : relancez-le sur chaque onglet pour découvrir ses options." },
     { target: '[data-tour="kpi"]', title: 'Vos chiffres clés', text: "Taux de conformité, documents déposés et organismes rattachés, en un coup d'œil." },
     { target: '[data-tour="tabs"]', title: 'Navigation', text: "Basculez entre l'espace de travail, le journal d'activité et les réglages de l'antenne." },
-    { target: '[data-tour="filters"]', title: 'Recherche et filtres', text: "Retrouvez un organisme par son nom (raccourci ⌘K / Ctrl+K) ou filtrez la liste par statut." },
-    { target: '[data-tour="orgs"]', title: 'Vos organismes', text: "Chaque carte affiche la conformité du dossier. Cliquez dessus pour gérer ses dossiers et valider ses documents." },
-    { target: '[data-tour="internal"]', title: 'Documents internes', text: "L'espace de l'antenne pour les documents qui ne concernent aucun organisme en particulier." },
   ];
-  const startTour = () => { setView('workspace'); setTourOpen(true); };
+  const tourByView: Record<typeof view, TourStep[]> = {
+    workspace: [
+      ...tourIntro,
+      { target: '[data-tour="filters"]', title: 'Recherche et filtres', text: "Retrouvez un organisme par son nom (raccourci ⌘K / Ctrl+K) ou filtrez la liste par statut." },
+      { target: '[data-tour="orgs"]', title: 'Vos organismes', text: "Chaque carte affiche la conformité du dossier. Cliquez dessus pour gérer ses dossiers et valider ses documents." },
+      { target: '[data-tour="internal"]', title: 'Documents internes', text: "L'espace de l'antenne pour les documents qui ne concernent aucun organisme en particulier." },
+    ],
+    activity: [
+      ...tourIntro,
+      { target: '[data-tour="journal"]', title: "Journal d'activité", text: "L'historique précis de toutes les actions de l'antenne : dépôts, validations, renommages, suppressions… Filtrez par catégorie pour enquêter rapidement." },
+    ],
+    settings: [
+      ...tourIntro,
+      { target: '[data-tour="settings-notify"]', title: 'Notifications par e-mail', text: "Activez un e-mail automatique à chaque nouveau dépôt d'un organisme et choisissez l'adresse destinataire." },
+    ],
+  };
+  const startTour = () => setActiveTour(tourByView[view]);
+
+  // Visite guidée de la fiche organisme (depuis la modale).
+  const orgModalTour: TourStep[] = [
+    { target: '[data-tour="org-account"]', title: 'La fiche du compte', text: "Coordonnées, dates, conformité et gestion de l'accès (valider ou suspendre le compte) de l'organisme." },
+    { target: '[data-tour="org-folders"]', title: 'Les dossiers', text: "Rangez les documents de l'organisme dans des dossiers. Les nouveaux dépôts iront dans le dossier sélectionné." },
+    { target: '[data-tour="org-tools"]', title: 'Recherche et actions', text: "Recherchez, filtrez, déposez un document, validez tout, exportez en CSV ou téléchargez en .zip." },
+    { target: '[data-tour="org-list"]', title: 'Les documents', text: "Cochez des documents pour des actions groupées, ou agissez sur chacun : aperçu, téléchargement, renommage, statut." },
+  ];
+
+  // Visite guidée des documents internes (depuis la modale).
+  const internalModalTour: TourStep[] = [
+    { target: '[data-tour="int-folders"]', title: 'Les dossiers internes', text: "Organisez les documents de l'antenne dans des dossiers dédiés." },
+    { target: '[data-tour="int-tools"]', title: 'Recherche et actions', text: "Recherchez, filtrez, déposez (ou glissez-déposez), validez tout, exportez ou archivez en .zip." },
+    { target: '[data-tour="int-list"]', title: 'Les documents', text: "La liste des documents internes, avec sélection multiple et actions groupées." },
+  ];
 
   const orgModalFiles = useMemo(() => {
     if (!selectedOrgId) return [];
@@ -1203,7 +1232,7 @@ export default function AntenneAdminDashboard() {
 
         {/* Réglages : notification e-mail à chaque dépôt */}
         {view === 'settings' && (
-        <section className="card-asf p-5 space-y-4">
+        <section data-tour="settings-notify" className="card-asf p-5 space-y-4">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
               <Bell className="w-5 h-5" />
@@ -1371,7 +1400,7 @@ export default function AntenneAdminDashboard() {
 
         {/* Journal d'activité de l'antenne */}
         {view === 'activity' && (
-        <section>
+        <section data-tour="journal">
           <AuditLogPanel
             antenneId={antenneId}
             title="Journal d'activité"
@@ -1472,6 +1501,13 @@ export default function AntenneAdminDashboard() {
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
+                  onClick={() => setActiveTour(orgModalTour)}
+                  className="btn-ghost p-2"
+                  title="Comment utiliser cette fiche ?"
+                >
+                  <GraduationCap className="w-5 h-5" />
+                </button>
+                <button
                   onClick={() => openReminder(selectedOrg)}
                   disabled={!selectedOrg.email}
                   className="btn-secondary text-sm disabled:opacity-50"
@@ -1490,7 +1526,7 @@ export default function AntenneAdminDashboard() {
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
 
               {/* Rail gauche : coordonnées, dates, conformité, accès */}
-              <aside className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
+              <aside data-tour="org-account" className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
                 <div className="p-5 space-y-5">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Coordonnées</p>
@@ -1549,7 +1585,7 @@ export default function AntenneAdminDashboard() {
               <section className="flex-1 min-w-0 flex flex-col min-h-0">
 
             {/* Dossiers propres à l'organisme (rangement privé, visible par lui seul) */}
-            <div className="px-5 pt-4 pb-2 border-b border-slate-100">
+            <div data-tour="org-folders" className="px-5 pt-4 pb-2 border-b border-slate-100">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
                   <FolderIcon className="w-3.5 h-3.5" /> Dossiers de l'organisme
@@ -1601,7 +1637,7 @@ export default function AntenneAdminDashboard() {
             </div>
 
             {/* Recherche, filtres et actions sur les documents de l'organisme */}
-            <div className="px-5 py-3 border-b border-slate-100 space-y-2">
+            <div data-tour="org-tools" className="px-5 py-3 border-b border-slate-100 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1 min-w-[160px]">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -1709,7 +1745,7 @@ export default function AntenneAdminDashboard() {
             )}
 
             {/* Documents de l'organisme */}
-            <div className="flex-1 min-h-[30vh] overflow-y-auto">
+            <div data-tour="org-list" className="flex-1 min-h-[30vh] overflow-y-auto">
               <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100 sticky top-0 bg-white z-10">
                 {orgModalFiles.length > 0 && (
                   <input
@@ -1781,13 +1817,18 @@ export default function AntenneAdminDashboard() {
                   <p className="text-xs text-slate-500">Documents de l'antenne non rattachés à un organisme.</p>
                 </div>
               </div>
-              <button onClick={closeInternal} className="btn-ghost p-2 shrink-0" title="Fermer">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button onClick={() => setActiveTour(internalModalTour)} className="btn-ghost p-2" title="Comment ça marche ?">
+                  <GraduationCap className="w-5 h-5" />
+                </button>
+                <button onClick={closeInternal} className="btn-ghost p-2" title="Fermer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Dossiers internes */}
-            <div className="px-5 pt-4 pb-2 border-b border-slate-100">
+            <div data-tour="int-folders" className="px-5 pt-4 pb-2 border-b border-slate-100">
               <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5 mb-2">
                 <FolderIcon className="w-3.5 h-3.5" /> Dossiers internes
               </p>
@@ -1832,7 +1873,7 @@ export default function AntenneAdminDashboard() {
             </div>
 
             {/* Barre d'actions */}
-            <div className="px-5 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100">
+            <div data-tour="int-tools" className="px-5 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100">
               <div className="relative flex-1 min-w-[160px]">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
@@ -1926,7 +1967,7 @@ export default function AntenneAdminDashboard() {
             )}
 
             {/* Liste */}
-            <div className="max-h-[50vh] overflow-y-auto">
+            <div data-tour="int-list" className="max-h-[50vh] overflow-y-auto">
               <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100">
                 {internalFiles.length > 0 && (
                   <input
@@ -2043,7 +2084,7 @@ export default function AntenneAdminDashboard() {
 
       <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
 
-      <GuidedTour open={tourOpen} steps={tourSteps} onClose={() => setTourOpen(false)} />
+      <GuidedTour open={!!activeTour} steps={activeTour || []} onClose={() => setActiveTour(null)} />
     </div>
   );
 }

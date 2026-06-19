@@ -580,9 +580,11 @@ export default function Dashboard() {
   const tourSteps: TourStep[] = [
     { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment." },
     { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },
-    { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents ici, ou cliquez pour parcourir. Vous pouvez aussi les ranger dans des dossiers." },
+    { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents ici, ou cliquez pour parcourir. Vous pouvez aussi les déposer directement sur un dossier pour les classer." },
+    { target: '[data-tour="storage"]', title: 'Votre espace de stockage', text: "Suivez l'espace utilisé sur votre quota. La barre passe au rouge quand vous approchez de la limite." },
     { target: '[data-tour="filters"]', title: 'Rechercher et filtrer', text: "Retrouvez un document par son nom (raccourci ⌘K / Ctrl+K), ou filtrez par type et par statut." },
-    { target: '[data-tour="docs"]', title: 'Vos documents', text: "La liste de vos fichiers déposés, avec leur statut de validation. Vous pouvez les prévisualiser, télécharger ou renommer." },
+    { target: '[data-tour="docs"]', title: 'Vos documents et dossiers', text: "La liste de vos fichiers, avec leur statut de validation. Créez des dossiers, prévisualisez, téléchargez ou renommez vos documents." },
+    { target: '[data-tour="account"]', title: 'Votre compte', text: "Accédez à vos informations, changez votre mot de passe ou déconnectez-vous depuis votre profil." },
   ];
   const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
   const [deletingFolder, setDeletingFolder] = useState<Folder | null>(null);
@@ -867,6 +869,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => setIsProfileOpen(true)}
+            data-tour="account"
             className="w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 text-left transition-all mb-3 cursor-pointer group"
           >
             <div className="w-9 h-9 rounded-full bg-slate-300 text-deep flex items-center justify-center text-xs font-bold shrink-0 shadow-xs group-hover:scale-105 transition-transform">
@@ -909,9 +912,10 @@ export default function Dashboard() {
         <div className="md:hidden p-4 flex justify-between items-center rounded-xl mb-4 shrink-0 shadow-xs bg-slate-900 text-white">
           <div className="flex items-center gap-2">
             <LogoASF className="w-8 h-8 shrink-0" variant="white" />
-            <button 
+            <button
               type="button"
               onClick={() => setIsProfileOpen(true)}
+              data-tour="account"
               className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-white/10 transition-all cursor-pointer text-left"
             >
               <div className="w-7 h-7 rounded-full bg-azur text-white flex items-center justify-center text-xs font-bold shrink-0">
@@ -1152,7 +1156,7 @@ export default function Dashboard() {
           </div>
           
           {/* Storage Capacity Indicator Card */}
-          <div className={`${themeConfig.cardBg} ${borderStyle} p-6 ${containerRounded} ${cardShadow} flex flex-col justify-center transition-all duration-300`}>
+          <div data-tour="storage" className={`${themeConfig.cardBg} ${borderStyle} p-6 ${containerRounded} ${cardShadow} flex flex-col justify-center transition-all duration-300`}>
             <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2 font-sans">
               <span className={`flex items-center gap-1 ${themeConfig.textColor}`}>
                 <HardDrive className="w-3.5 h-3.5 text-azur" /> Espace de Stockage Alloué

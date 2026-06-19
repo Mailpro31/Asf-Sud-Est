@@ -28,6 +28,15 @@ export interface GuidedTourProps {
 
 interface Box { top: number; left: number; width: number; height: number; }
 
+/** Premier élément *visible* correspondant au sélecteur (gère desktop/mobile). */
+function resolveTarget(selector: string): HTMLElement | null {
+  const els = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
+  for (const el of els) {
+    if (el.getClientRects().length > 0) return el;
+  }
+  return els[0] || null;
+}
+
 const PAD = 8;
 const POP_W = 320;
 const POP_H = 210;
@@ -39,7 +48,7 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
   const measure = useCallback(() => {
     const step = steps[index];
     if (!step) { setBox(null); return; }
-    const el = document.querySelector(step.target) as HTMLElement | null;
+    const el = resolveTarget(step.target);
     if (!el) { setBox(null); return; }
     const r = el.getBoundingClientRect();
     setBox({ top: r.top, left: r.left, width: r.width, height: r.height });
@@ -49,7 +58,7 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
   useLayoutEffect(() => {
     if (!open) return;
     const step = steps[index];
-    const el = step ? (document.querySelector(step.target) as HTMLElement | null) : null;
+    const el = step ? resolveTarget(step.target) : null;
     if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
     const t = setTimeout(measure, el ? 320 : 0);
     return () => clearTimeout(t);
