@@ -33,6 +33,8 @@ export interface DossierFile {
   antenne_id?: string;
   submissionStatus?: SubmissionStatus;
   sharedWithPartner?: boolean;
+  /** Note de revue rédigée par l'antenne : ce que l'organisme doit corriger. */
+  reviewNote?: string;
 }
 
 export interface Folder {
