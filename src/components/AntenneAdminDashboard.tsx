@@ -182,6 +182,7 @@ export default function AntenneAdminDashboard() {
 
   // Réglages de notification e-mail de l'antenne.
   const [notifyEnabled, setNotifyEnabled] = useState(false);
+  const [notifyNewUserEnabled, setNotifyNewUserEnabled] = useState(false);
   const [notifyEmail, setNotifyEmail] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -189,6 +190,7 @@ export default function AntenneAdminDashboard() {
     if (!antenneId) return;
     const unsub = subscribeAntenneSettings(antenneId, (s) => {
       setNotifyEnabled(s.notifyEnabled);
+      setNotifyNewUserEnabled(s.notifyNewUserEnabled);
       setNotifyEmail(s.notifyEmail);
     });
     return unsub;
@@ -196,24 +198,25 @@ export default function AntenneAdminDashboard() {
 
   const handleSaveSettings = async () => {
     const email = notifyEmail.trim();
-    if (notifyEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if ((notifyEnabled || notifyNewUserEnabled) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast('Veuillez saisir une adresse e-mail valide.', 'warning');
       return;
     }
     setSavingSettings(true);
     try {
-      await saveAntenneSettings(antenneId, { notifyEnabled, notifyEmail: email });
+      await saveAntenneSettings(antenneId, { notifyEnabled, notifyNewUserEnabled, notifyEmail: email });
+      const anyOn = notifyEnabled || notifyNewUserEnabled;
       logAction('antenne_settings_change', {
         targetType: 'antenne',
         targetId: antenneId,
         targetName: antenneName,
         antenne_id: antenneId,
         delegation_id: delegationId,
-        details: notifyEnabled ? `Notifications activées vers ${email}` : 'Notifications désactivées',
+        details: anyOn ? `Notifications activées vers ${email}` : 'Notifications désactivées',
       });
       toast(
-        notifyEnabled
-          ? `Notifications activées vers ${email}.`
+        anyOn
+          ? `Réglages enregistrés — notifications vers ${email}.`
           : 'Notifications désactivées.',
         'success',
       );
@@ -1462,20 +1465,33 @@ export default function AntenneAdminDashboard() {
             <div className="min-w-0">
               <h2 className="font-display text-deep dark:text-azur-pastel font-bold tracking-tight">Notifications par e-mail</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Un e-mail à chaque nouveau dépôt d'un partenaire.
+                Recevez un e-mail aux moments importants de la vie de votre antenne.
               </p>
             </div>
           </div>
 
-          <label className="flex items-center gap-3 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={notifyEnabled}
-              onChange={(e) => setNotifyEnabled(e.target.checked)}
-              className="w-4 h-4 accent-azur cursor-pointer"
-            />
-            <span className="text-sm font-semibold text-deep dark:text-azur-pastel">Activer les notifications de dépôt</span>
-          </label>
+          <div className="space-y-2.5">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={notifyNewUserEnabled}
+                onChange={(e) => setNotifyNewUserEnabled(e.target.checked)}
+                className="w-4 h-4 accent-azur cursor-pointer"
+              />
+              <span className="text-sm font-semibold text-deep dark:text-azur-pastel">
+                M'avertir quand un <span className="text-azur">nouvel organisme</span> rejoint mon antenne
+              </span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={notifyEnabled}
+                onChange={(e) => setNotifyEnabled(e.target.checked)}
+                className="w-4 h-4 accent-azur cursor-pointer"
+              />
+              <span className="text-sm font-semibold text-deep dark:text-azur-pastel">M'avertir à chaque nouveau dépôt d'un partenaire</span>
+            </label>
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
             <div className="flex-1">
@@ -1487,7 +1503,7 @@ export default function AntenneAdminDashboard() {
                 value={notifyEmail}
                 onChange={(e) => setNotifyEmail(e.target.value)}
                 placeholder="prenom.nom@exemple.org"
-                disabled={!notifyEnabled}
+                disabled={!notifyEnabled && !notifyNewUserEnabled}
                 className="input-asf text-sm w-full disabled:opacity-50"
               />
             </div>

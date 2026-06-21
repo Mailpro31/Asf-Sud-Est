@@ -5,6 +5,7 @@ import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { AntenneGroup, Organization } from '../types';
 import { localDb } from '../lib/localDb';
 import { getMyInvite } from '../lib/antenneAdmins';
+import { notifyAntenneOnNewOrg } from '../lib/antenneSettings';
 import { logAction, setCurrentActor, AuditActor } from '../lib/auditLog';
 
 /** uids ayant déjà journalisé leur connexion durant cette session (anti-doublon). */
@@ -253,6 +254,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         try {
           await setDoc(docRef, newOrgData);
+          // Notifie le gestionnaire d'antenne d'un nouvel organisme (best-effort,
+          // si la notification « nouvel organisme » est activée pour l'antenne).
+          if (!isAdminUser && antenneId) {
+            const antName = (Object.values(antennes).flat().find((a: any) => a.id === antenneId) as any)?.name || antenneId;
+            notifyAntenneOnNewOrg(antenneId, {
+              orgName: newOrgData.name,
+              contactName: newOrgData.contactName,
+              email: newOrgData.email,
+              phone: newOrgData.phone,
+              antenneName: antName,
+            });
+          }
           const effNew = await provisionFromInvite(uid, email, newOrgData);
           setOrganization({ ...effNew, id: uid } as Organization);
         } catch (err: any) {

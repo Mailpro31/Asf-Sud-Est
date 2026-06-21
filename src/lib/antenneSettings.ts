@@ -13,11 +13,14 @@ import { queueEmail } from './antenneAdmins';
  */
 
 export interface AntenneSettings {
+  /** E-mail à chaque nouveau dépôt (fichier/dossier) d'un partenaire. */
   notifyEnabled: boolean;
+  /** E-mail quand un nouvel organisme rejoint l'antenne. */
+  notifyNewUserEnabled: boolean;
   notifyEmail: string;
 }
 
-const DEFAULT_SETTINGS: AntenneSettings = { notifyEnabled: false, notifyEmail: '' };
+const DEFAULT_SETTINGS: AntenneSettings = { notifyEnabled: false, notifyNewUserEnabled: false, notifyEmail: '' };
 
 const LS_KEY = 'asf_antenne_settings';
 
@@ -46,6 +49,7 @@ export async function getAntenneSettings(antenneId: string): Promise<AntenneSett
     const d = snap.data();
     return {
       notifyEnabled: !!d.notifyEnabled,
+      notifyNewUserEnabled: !!d.notifyNewUserEnabled,
       notifyEmail: typeof d.notifyEmail === 'string' ? d.notifyEmail : '',
     };
   } catch {
@@ -79,6 +83,7 @@ export function subscribeAntenneSettings(
         const d = snap.data();
         cb({
           notifyEnabled: !!d.notifyEnabled,
+          notifyNewUserEnabled: !!d.notifyNewUserEnabled,
           notifyEmail: typeof d.notifyEmail === 'string' ? d.notifyEmail : '',
         });
       },
@@ -97,6 +102,7 @@ export async function saveAntenneSettings(
 ): Promise<void> {
   const clean: AntenneSettings = {
     notifyEnabled: !!settings.notifyEnabled,
+    notifyNewUserEnabled: !!settings.notifyNewUserEnabled,
     notifyEmail: settings.notifyEmail.trim(),
   };
   if (localDb.isSandboxActive()) {
@@ -147,5 +153,48 @@ export async function notifyAntenneOnUpload(
     await queueEmail(settings.notifyEmail, subject, text, html);
   } catch (err) {
     console.warn('notifyAntenneOnUpload échec (non bloquant) :', err);
+  }
+}
+
+/**
+ * Notifie par e-mail le gestionnaire d'antenne qu'un NOUVEL organisme vient de
+ * rejoindre son antenne, si la notification « nouvel organisme » est activée.
+ * Échec silencieux (ne bloque jamais la création de compte).
+ */
+export async function notifyAntenneOnNewOrg(
+  antenneId: string | undefined | null,
+  context: { orgName?: string; contactName?: string; email?: string; phone?: string; antenneName?: string } = {},
+): Promise<void> {
+  if (!antenneId) return;
+  try {
+    const settings = await getAntenneSettings(antenneId);
+    if (!settings.notifyNewUserEnabled || !settings.notifyEmail) return;
+
+    const antenne = context.antenneName || antenneId;
+    const who = context.orgName || context.contactName || 'Un nouvel organisme';
+    const lines: string[] = [];
+    if (context.contactName) lines.push(`Contact : ${context.contactName}`);
+    if (context.email) lines.push(`E-mail : ${context.email}`);
+    if (context.phone) lines.push(`Téléphone : ${context.phone}`);
+    const details = lines.length ? `\n\n${lines.join('\n')}` : '';
+
+    const subject = `ASF · Nouvel organisme — ${antenne}`;
+    const text =
+      `Bonjour,\n\nUn nouvel organisme vient de rejoindre votre antenne ${antenne} :\n\n• ${who}${details}\n\n` +
+      `Son compte est en attente de validation. Connectez-vous au portail ASF pour le valider.\n\n— Portail ASF`;
+    const html =
+      `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
+      `<p>Bonjour,</p>` +
+      `<p><strong>Un nouvel organisme</strong> vient de rejoindre votre antenne <strong>${antenne}</strong> :</p>` +
+      `<p style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600">🏢 ${who}</p>` +
+      (lines.length
+        ? `<p style="color:#334155;font-size:13px">${lines.map((l) => l.replace(/</g, '&lt;')).join('<br>')}</p>`
+        : '') +
+      `<p>Son compte est <strong>en attente de validation</strong>. Connectez-vous au portail ASF pour le valider.</p>` +
+      `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
+      `</div>`;
+    await queueEmail(settings.notifyEmail, subject, text, html);
+  } catch (err) {
+    console.warn('notifyAntenneOnNewOrg échec (non bloquant) :', err);
   }
 }
