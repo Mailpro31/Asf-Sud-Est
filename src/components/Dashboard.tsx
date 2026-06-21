@@ -593,8 +593,9 @@ export default function Dashboard() {
   const tourSteps: TourStep[] = [
     { target: '[data-tour="tutoriel"]', title: 'Le bouton Tutoriel', text: "Toujours ici, en haut à droite. Relancez cette visite guidée à tout moment." },
     { target: '[data-tour="status"]', title: "Le statut de votre dossier", text: "Indique où en est votre dossier : en attente, en révision, validé ou incomplet. Tant qu'il n'est pas validé, le dépôt reste bloqué." },
-    { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Glissez-déposez vos documents dans cette zone, ou cliquez pour parcourir votre ordinateur. Vous pouvez aussi les déposer directement sur un dossier pour les classer." },
-    { target: '[data-tour="storage"]', title: 'Votre espace de stockage', text: "Suivez l'espace utilisé sur votre quota. La barre passe au rouge quand vous approchez de la limite." },
+    { target: '[data-tour="folders"]', title: 'Vos dossiers', text: "Créez et ouvrez vos dossiers ici, dans la barre latérale. Le bouton + crée un nouveau dossier ; le chiffre indique le nombre de fichiers qu'il contient." },
+    { target: '[data-tour="upload"]', title: 'Déposer vos fichiers', text: "Cliquez sur « Déposer », ou glissez vos documents sur la tuile en pointillés. Ouvrez d'abord un dossier à gauche pour y classer directement vos fichiers." },
+    { target: '[data-tour="storage"]', title: 'Votre espace de stockage', text: "Suivez l'espace utilisé sur votre quota, ici dans la barre latérale. La jauge passe au rouge quand vous approchez de la limite." },
     { target: '[data-tour="submit"]', title: 'Soumettre votre dossier', text: "Quand vous estimez que votre dossier est complet, cliquez sur « Soumettre mon dossier » : votre antenne est prévenue sur son tableau de bord et procède à la revue." },
     { target: '[data-tour="filters"]', title: 'Rechercher et filtrer', text: "Retrouvez un document par son nom (raccourci ⌘K / Ctrl+K), ou filtrez par type et par statut." },
     ...docSteps,
@@ -602,6 +603,8 @@ export default function Dashboard() {
   ];
   const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
   const [deletingFolder, setDeletingFolder] = useState<Folder | null>(null);
+  const [renamingFolder, setRenamingFolder] = useState<Folder | null>(null);
+  const [renameFolderInput, setRenameFolderInput] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   
   const handleCreateFolder = async (name: string) => {
@@ -763,6 +766,41 @@ export default function Dashboard() {
     }
   };
 
+  const handleRenameFolderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renamingFolder) return;
+    const newName = renameFolderInput.trim();
+    if (!newName || newName === renamingFolder.name) {
+      setRenamingFolder(null);
+      return;
+    }
+    const logIt = () => logAction('folder_rename', {
+      targetType: 'folder',
+      targetId: renamingFolder.id,
+      targetName: newName,
+      details: `Renommé : « ${renamingFolder.name} » → « ${newName} »`,
+    });
+    if (localDb.isSandboxActive()) {
+      const found = localDb.getFolders().find((f) => f.id === renamingFolder.id);
+      if (found) {
+        localDb.saveFolder({ ...found, name: newName });
+        logIt();
+        refreshLocalState();
+      }
+      setRenamingFolder(null);
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'folders', renamingFolder.id), { name: newName });
+      logIt();
+    } catch (error) {
+      console.error('Error renaming folder:', error);
+      toast('Le renommage du dossier a échoué, réessayez.', 'error');
+    } finally {
+      setRenamingFolder(null);
+    }
+  };
+
   const confirmDeleteFolder = async () => {
     if (!deletingFolder) return;
     const folderFiles = files.filter(f => f.folderId === deletingFolder.id);
@@ -882,10 +920,6 @@ export default function Dashboard() {
       return 0;
     });
 
-  const displayedFolders = currentFolderId 
-    ? [] 
-    : folders.filter(fol => fol.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
   const currentFolder = folders.find(f => f.id === currentFolderId);
 
   // Styling helpers
@@ -916,11 +950,11 @@ export default function Dashboard() {
               <p className="text-[10px] uppercase tracking-[0.2em] mb-4 text-slate-400 font-bold">Menu principal</p>
               <ul className="space-y-1.5">
                 <li>
-                  <button 
+                  <button
                     onClick={() => setCurrentFolderId(null)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all text-left font-bold ${
-                      !currentFolderId 
-                        ? themeConfig.sidebarActive 
+                      !currentFolderId
+                        ? themeConfig.sidebarActive
                         : `${themeConfig.sidebarText}`
                     }`}
                   >
@@ -930,11 +964,75 @@ export default function Dashboard() {
                 </li>
               </ul>
             </div>
+
+            {/* Dossiers — création et navigation depuis la barre latérale */}
+            <div data-tour="folders">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Dossiers</p>
+                {organization.submissionStatus === 'Validated' && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingFolder(true)}
+                    title="Nouveau dossier"
+                    aria-label="Nouveau dossier"
+                    className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <FolderPlus className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {folders.length === 0 ? (
+                <p className="text-[11px] text-slate-500 leading-relaxed px-1">
+                  Aucun dossier pour l'instant.
+                  {organization.submissionStatus === 'Validated' && ' Créez-en un avec le bouton +.'}
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {folders.map((folder) => {
+                    const count = files.filter((f) => f.folderId === folder.id).length;
+                    const active = currentFolderId === folder.id;
+                    return (
+                      <li key={folder.id}>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentFolderId(folder.id)}
+                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm transition-all text-left ${
+                            active ? themeConfig.sidebarActive : themeConfig.sidebarText
+                          }`}
+                        >
+                          <FolderIcon className="w-4 h-4 text-azur-pastel shrink-0" />
+                          <span className="flex-1 truncate font-medium">{folder.name}</span>
+                          <span className="text-[11px] font-mono text-slate-400 shrink-0">{count}</span>
+                          {folder.createdBy === 'admin' && (
+                            <span className="px-1 py-0.5 rounded text-[7px] font-extrabold uppercase tracking-widest bg-amber-500/20 text-amber-300 shrink-0">Adm</span>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </nav>
         </div>
 
         {/* Sidebar Footer with Active Profile */}
         <div className="mt-auto p-5 border-t border-white/10 bg-black/5">
+          {/* Indicateur de stockage compact */}
+          <div data-tour="storage" className="mb-4 px-1">
+            <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-1.5 text-slate-400">
+              <span className="flex items-center gap-1"><HardDrive className="w-3 h-3" /> Stockage</span>
+              <span>{Math.round(storagePercent)}%</span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-1.5">
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${storagePercent > 90 ? 'bg-rose-500' : 'bg-azur'}`}
+                style={{ width: `${storagePercent}%` }}
+              ></div>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1 font-mono">{formatBytes(totalStorageUsed)} / 100 Mo</p>
+          </div>
+
           <button
             type="button"
             onClick={() => setIsProfileOpen(true)}
@@ -1149,102 +1247,48 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div data-tour="upload" className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 shrink-0">
-
-          {/* Draggable Drop/Click Upload Area */}
-          <div className="lg:col-span-2">
-            {organization?.submissionStatus !== 'Validated' ? (
-              <div
-                className={`bg-rose-50 dark:bg-rose-950/20 border-2 border-dashed border-rose-200 dark:border-rose-900/50 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 shadow-xs ${containerRounded} cursor-not-allowed`}
-                title={organization?.submissionStatus === 'Incomplete' ? 'Compte suspendu : envoi désactivé' : "Compte en attente de validation"}
-              >
-                <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center shadow-xs shrink-0">
-                  <AlertCircle className="w-6 h-6" />
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className="text-base font-bold text-rose-800 dark:text-rose-300">
-                    {organization?.submissionStatus === 'Incomplete'
-                      ? 'Envoi de fichiers suspendu'
-                      : "Envoi en attente de validation"}
-                  </p>
-                  <p className="text-xs text-rose-700/80 dark:text-rose-400/80 mt-1 font-sans">
-                    {organization?.submissionStatus === 'Incomplete'
-                      ? 'Votre compte a été suspendu par un coordinateur ASF. Vous pourrez à nouveau déposer des fichiers une fois votre accès rétabli.'
-                      : "Votre inscription doit d'abord être approuvée par un coordinateur ASF. Vous pourrez déposer vos fichiers dès que votre accès sera validé."}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <label
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={`bg-white dark:bg-slate-900 border-2 border-dashed ${themeConfig.textColor} hover:brightness-98 transition-all duration-300 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 cursor-pointer shadow-xs ${containerRounded} ${
-                  isDragActive
-                    ? 'border-azur bg-azur/5 scale-101'
-                    : 'border-slate-200 dark:border-slate-800'
-                }`}
-              >
-                <input
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-                <div className="w-12 h-12 bg-azur-light dark:bg-azur/15 text-deep dark:text-azur-pastel rounded-full flex items-center justify-center shadow-xs">
-                  <CloudUpload className="w-6 h-6 animate-bounce" />
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className={`text-base font-bold ${themeConfig.textColor}`}>
-                    {isDragActive ? 'Relâchez pour lancer la transmission' : 'Déposez les fichiers de vol ici ou cliquez pour téléverser'}
-                  </p>
-                  <p className={`text-xs ${themeConfig.textMuted} mt-1 font-sans`}>
-                    Faites les glisser sur les dossiers ci-dessous pour les classer directement. Formats acceptés : PDF, manifestes de vol, images.
-                  </p>
-                </div>
-              </label>
-            )}
-
-            {uploading && (
-              <div className={`mt-3 ${themeConfig.cardBg} ${borderStyle} p-4 ${containerRounded} animate-pulse`}>
-                <div className={`flex justify-between text-xs font-semibold mb-2 ${themeConfig.textColor}`}>
-                  <span className="flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 animate-spin text-azur" />
-                    Transmission des fichiers en cours vers votre dossier sécurisé...
-                  </span>
-                  <span>{Math.round(uploadProgress)}%</span>
-                </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                  <div
-                    className="bg-azur h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Storage Capacity Indicator Card */}
-          <div data-tour="storage" className={`${themeConfig.cardBg} ${borderStyle} p-6 ${containerRounded} ${cardShadow} flex flex-col justify-center transition-all duration-300`}>
-            <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2 font-sans">
-              <span className={`flex items-center gap-1 ${themeConfig.textColor}`}>
-                <HardDrive className="w-3.5 h-3.5 text-azur" /> Espace de Stockage Alloué
-              </span>
-              <span className={themeConfig.textMuted}>{Math.round(storagePercent)}% de 100 Mo</span>
+        {/* Notice : dépôt désactivé tant que le compte n'est pas validé */}
+        {organization.submissionStatus !== 'Validated' && (
+          <div
+            className={`mb-6 shrink-0 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 p-4 ${containerRounded} flex items-center gap-4 shadow-xs`}
+            title={organization.submissionStatus === 'Incomplete' ? 'Compte suspendu : envoi désactivé' : 'Compte en attente de validation'}
+          >
+            <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5" />
             </div>
-            <div className={`text-3xl font-black ${themeConfig.textColor} mb-3`}>{formatBytes(totalStorageUsed)}</div>
-            <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-2.5">
-              <div 
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  storagePercent > 90
-                    ? 'bg-rose-500'
-                    : 'bg-azur'
-                }`}
-                style={{ width: `${storagePercent}%` }}
+            <div>
+              <p className="text-sm font-bold text-rose-800 dark:text-rose-300">
+                {organization.submissionStatus === 'Incomplete'
+                  ? 'Envoi de fichiers suspendu'
+                  : 'Envoi en attente de validation'}
+              </p>
+              <p className="text-xs text-rose-700/80 dark:text-rose-400/80 mt-0.5 font-sans">
+                {organization.submissionStatus === 'Incomplete'
+                  ? 'Votre compte a été suspendu par un coordinateur ASF. Vous pourrez à nouveau déposer des fichiers une fois votre accès rétabli.'
+                  : "Votre inscription doit d'abord être approuvée par un coordinateur ASF. Vous pourrez déposer vos fichiers dès que votre accès sera validé."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Progression de transmission des fichiers */}
+        {uploading && (
+          <div className={`mb-6 shrink-0 ${themeConfig.cardBg} ${borderStyle} p-4 ${containerRounded}`}>
+            <div className={`flex justify-between text-xs font-semibold mb-2 ${themeConfig.textColor}`}>
+              <span className="flex items-center gap-1">
+                <RefreshCw className="w-3 h-3 animate-spin text-azur" />
+                Transmission des fichiers en cours vers votre dossier sécurisé...
+              </span>
+              <span>{Math.round(uploadProgress)}%</span>
+            </div>
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+              <div
+                className="bg-azur h-2 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
               ></div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Soumission du dossier */}
         <div data-tour="submit" className="mb-6 shrink-0">
@@ -1435,22 +1479,33 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="flex items-center gap-4">
-              <span className={`text-xs ${themeConfig.textMuted}`}>
-                {filteredFiles.length + displayedFolders.length} élément{filteredFiles.length + displayedFolders.length !== 1 ? 's' : ''} trouvé{filteredFiles.length + displayedFolders.length !== 1 ? 's' : ''}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className={`text-xs ${themeConfig.textMuted} mr-1`}>
+                {filteredFiles.length} élément{filteredFiles.length !== 1 ? 's' : ''} trouvé{filteredFiles.length !== 1 ? 's' : ''}
               </span>
-              
-              {!currentFolderId && (
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingFolder(true)}
-                  className="flex items-center gap-1.5 text-xs font-semibold bg-azur-light text-azur hover:bg-azur/15 border border-azur/20 hover:border-azur/40 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-3xs"
-                >
-                  <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
-                </button>
+
+              {/* Gestion du dossier ouvert (renommer / supprimer) */}
+              {currentFolder && currentFolder.orgId === user.uid && currentFolder.createdBy !== 'admin' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { setRenamingFolder(currentFolder); setRenameFolderInput(currentFolder.name); }}
+                    className="flex items-center gap-1.5 text-xs font-semibold btn-ghost !py-1.5 !px-3 cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" /> Renommer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeletingFolder(currentFolder)}
+                    className="flex items-center gap-1.5 text-xs font-semibold btn-ghost !py-1.5 !px-3 text-red-500 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                  </button>
+                </>
               )}
+
               {organization.submissionStatus === 'Validated' && (
-                <label className="flex items-center gap-1.5 text-xs font-semibold btn-secondary !py-1.5 !px-3 cursor-pointer">
+                <label data-tour="upload" className="flex items-center gap-1.5 text-xs font-semibold btn-secondary !py-1.5 !px-3 cursor-pointer">
                   <input type="file" multiple className="hidden" onChange={handleFileChange} />
                   <Upload className="w-3.5 h-3.5" /> Déposer
                 </label>
@@ -1459,53 +1514,16 @@ export default function Dashboard() {
           </div>
 
           <div className="flex-1 overflow-auto">
-            {filteredFiles.length === 0 && displayedFolders.length === 0 ? (
+            {filteredFiles.length === 0 && organization.submissionStatus !== 'Validated' ? (
               <div className="h-full flex flex-col items-center justify-center p-12 text-center">
                 <FileText className={`w-14 h-14 mb-4 opacity-30 ${themeConfig.textColor}`} />
                 <h3 className={`text-sm font-bold ${themeConfig.textColor}`}>Aucun document de vol trouvé</h3>
                 <p className={`text-xs ${themeConfig.textMuted} mt-1 max-w-sm`}>
-                  Vous pouvez commencer par créer des dossiers thématiques ou faire glisser directement des documents dans cet espace.
+                  Vos documents apparaîtront ici une fois votre compte validé par un coordinateur ASF.
                 </p>
               </div>
             ) : (
               <div className="p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
-                {/* Sous-dossiers (cartes) */}
-                {displayedFolders.map((folder) => (
-                  <div
-                    key={folder.id}
-                    onClick={() => setCurrentFolderId(folder.id)}
-                    onDragOver={handleDragOverFolder}
-                    onDrop={(e) => handleDropOnFolder(e, folder.id)}
-                    className="card-asf p-4 flex flex-col gap-3 cursor-pointer group relative"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="w-10 h-10 bg-azur/10 text-azur rounded-xl flex items-center justify-center shrink-0">
-                        <FolderIcon className="w-5 h-5 fill-current" />
-                      </div>
-                      {folder.orgId === user.uid && folder.createdBy !== 'admin' && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDeletingFolder(folder); }}
-                          className="opacity-0 group-hover:opacity-100 text-slate-400 dark:text-slate-500 hover:text-red-500 transition-all p-1 cursor-pointer"
-                          title="Supprimer le dossier"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className={`text-sm font-semibold truncate ${themeConfig.textColor}`}>{folder.name}</p>
-                        {folder.createdBy === 'admin' && (
-                          <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">Admin</span>
-                        )}
-                      </div>
-                      <p className={`text-[11px] font-mono mt-1 ${themeConfig.textMuted}`}>
-                        {files.filter((f) => f.folderId === folder.id).length} fichier(s) · Dossier
-                      </p>
-                    </div>
-                  </div>
-                ))}
-
                 {/* Fichiers (cartes) */}
                 {filteredFiles.map((file, fileIdx) => {
                   const editable = file.orgId === user.uid && file.uploadedBy !== 'admin';
@@ -1669,6 +1687,42 @@ export default function Dashboard() {
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setRenamingFile(null)} className="btn-secondary text-sm">Annuler</button>
               <button type="submit" disabled={!renameInput.trim()} className="btn-asf text-sm disabled:opacity-60">Enregistrer</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modale de renommage de dossier */}
+      {renamingFolder && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+          onClick={() => setRenamingFolder(null)}
+        >
+          <form
+            onSubmit={handleRenameFolderSubmit}
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                <FolderIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold text-deep dark:text-white">Renommer le dossier</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Saisissez un nouveau nom de dossier.</p>
+              </div>
+            </div>
+            <input
+              autoFocus
+              type="text"
+              value={renameFolderInput}
+              onChange={(e) => setRenameFolderInput(e.target.value)}
+              className="input-asf w-full"
+              placeholder="Nouveau nom du dossier"
+            />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setRenamingFolder(null)} className="btn-secondary text-sm">Annuler</button>
+              <button type="submit" disabled={!renameFolderInput.trim()} className="btn-asf text-sm disabled:opacity-60">Enregistrer</button>
             </div>
           </form>
         </div>
