@@ -96,7 +96,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
       {onNavigateHome && (
         <button
           onClick={onNavigateHome}
-          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-azur transition-colors cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200/80 shadow-3xs"
+          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-azur transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
           id="back-to-home-btn"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Retour à l'accueil
@@ -107,21 +107,21 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
         {/* En-tête */}
         <div className="mb-8 text-center flex flex-col items-center">
           <LogoASF className="w-16 h-16 mb-4 hover:scale-105 transition-transform duration-200" variant="color" />
-          <h1 className="text-2xl font-bold tracking-tight text-deep font-display">
+          <h1 className="text-2xl font-bold tracking-tight text-deep dark:text-azur-pastel font-display">
             Aviation Sans Frontières
           </h1>
-          <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
-            Espace sécurisé pour déposer et suivre les documents des vols <span className="font-semibold text-deep">Les Ailes du Sourire</span>.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-xs leading-relaxed">
+            Espace sécurisé pour déposer et suivre les documents des vols <span className="font-semibold text-deep dark:text-azur-pastel">Les Ailes du Sourire</span>.
           </p>
         </div>
 
         {/* Carte */}
         <div className={`w-full p-8 sm:p-10 ${themeConfig.cardBg} ${borderStyle} rounded-2xl ${themeConfig.accentGlow} transition-all duration-300`}>
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-deep font-display">
+            <h2 className="text-lg font-bold text-deep dark:text-azur-pastel font-display">
               {mode === 'login' ? 'Se connecter' : 'Mot de passe oublié'}
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {mode === 'login'
                 ? 'Saisissez vos identifiants pour accéder aux dossiers'
                 : 'Recevez un lien de réinitialisation par e-mail'}
@@ -129,13 +129,13 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
           </div>
 
           {error && (
-            <div className="mb-5 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 rounded-xl text-xs font-semibold flex items-start gap-2">
+            <div className="mb-5 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-300 rounded-xl text-xs font-semibold flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 shrink-0 mt-px" />
               <span>{error}</span>
             </div>
           )}
           {info && (
-            <div className="mb-5 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 rounded-xl text-xs font-semibold flex items-start gap-2">
+            <div className="mb-5 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-semibold flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0 mt-px" />
               <span>{info}</span>
             </div>
@@ -144,9 +144,9 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
           {mode === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">Adresse e-mail</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-200 mb-1.5">Adresse e-mail</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="email"
                     required
@@ -160,7 +160,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-slate-700">Mot de passe</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">Mot de passe</label>
                   <button
                     type="button"
                     onClick={() => switchMode('reset')}
@@ -170,7 +170,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -183,7 +183,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
                     title={showPassword ? 'Masquer' : 'Afficher'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -202,9 +202,9 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">Adresse e-mail du compte</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-200 mb-1.5">Adresse e-mail du compte</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="email"
                     required
@@ -226,7 +226,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-azur transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-azur transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Revenir à la connexion
               </button>
@@ -237,9 +237,9 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
             <>
               <div className="mt-6 flex flex-col items-center">
                 <div className="w-full flex items-center mb-6">
-                  <div className="flex-1 border-t border-slate-200/60" />
-                  <span className="px-3 text-[10px] uppercase tracking-widest text-slate-400 font-medium">ou se connecter avec</span>
-                  <div className="flex-1 border-t border-slate-200/60" />
+                  <div className="flex-1 border-t border-slate-200/60 dark:border-slate-700" />
+                  <span className="px-3 text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-medium">ou se connecter avec</span>
+                  <div className="flex-1 border-t border-slate-200/60 dark:border-slate-700" />
                 </div>
 
                 <button
@@ -257,7 +257,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
                 </button>
               </div>
 
-              <div className="mt-8 text-center text-xs text-slate-500">
+              <div className="mt-8 text-center text-xs text-slate-500 dark:text-slate-400">
                 Besoin d'identifiants d'accès ?{' '}
                 <button onClick={onNavigateRegister} className="font-semibold text-azur hover:text-azur-hover transition hover:underline cursor-pointer">
                   Inscrivez votre organisation
@@ -267,7 +267,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
           )}
         </div>
 
-        <p className="mt-6 text-center text-[10px] text-slate-400 flex items-center justify-center gap-1.5">
+        <p className="mt-6 text-center text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3 h-3" /> Connexion chiffrée · Vos données restent confidentielles
         </p>
       </div>

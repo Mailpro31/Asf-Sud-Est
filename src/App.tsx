@@ -14,6 +14,7 @@ import AdminPanel from './components/AdminPanel';
 import AntenneAdminDashboard from './components/AntenneAdminDashboard';
 import ChooseAntenne from './components/ChooseAntenne';
 import LandingPage from './components/LandingPage';
+import { FloatingThemeToggle } from './components/ui';
 
 function MainApp() {
   const { user, organization, loading, error, signOut } = useAuth();
@@ -135,6 +136,7 @@ export default function App() {
       <AuthProvider>
         <FeedbackProvider>
           <MainApp />
+          <FloatingThemeToggle />
         </FeedbackProvider>
       </AuthProvider>
     </ThemeProvider>

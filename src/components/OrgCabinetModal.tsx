@@ -371,11 +371,11 @@ export default function OrgCabinetModal({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => { setOrgOpenFolderId(null); setOrgFilesSearch(''); }}
-                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-xl transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-xl transition-all cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" /> Dossiers
                   </button>
-                  <ChevronRight className="w-4 h-4 text-slate-300" />
+                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600" />
                   <span className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-1">
                     📂 {currentFolder?.name}
                   </span>
@@ -383,7 +383,7 @@ export default function OrgCabinetModal({
 
                 {/* Search */}
                 <div className="relative max-w-xs w-full sm:w-64">
-                  <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
+                  <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                   <input
                     type="text"
                     placeholder="Rechercher un fichier..."
@@ -399,7 +399,7 @@ export default function OrgCabinetModal({
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div className="text-left">
                     <span className="text-xs font-black text-emerald-800 dark:text-emerald-400 block">📥 Téléverser un justificatif réglementaire</span>
-                    <span className="text-[10px] text-slate-400 block">Ajoutez un justificatif de vol (PDF, Image, Manifeste) directement dans ce dossier de l'organisme.</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 block">Ajoutez un justificatif de vol (PDF, Image, Manifeste) directement dans ce dossier de l'organisme.</span>
                   </div>
                   
                   <label className="flex items-center gap-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer shrink-0">
@@ -415,7 +415,7 @@ export default function OrgCabinetModal({
                 </div>
 
                 {orgUploading && (
-                  <div className="space-y-1.5 bg-white dark:bg-slate-950 p-3 border border-emerald-100 rounded-xl text-left">
+                  <div className="space-y-1.5 bg-white dark:bg-slate-950 p-3 border border-emerald-100 dark:border-emerald-500/15 rounded-xl text-left">
                     <div className="flex justify-between items-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
                       <span className="flex items-center gap-1 animate-pulse text-emerald-600">
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -423,7 +423,7 @@ export default function OrgCabinetModal({
                       </span>
                       <span>{orgUploadProgress}%</span>
                     </div>
-                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-emerald-600 h-full transition-all duration-300" style={{ width: `${orgUploadProgress}%` }}></div>
                     </div>
                   </div>
@@ -432,18 +432,18 @@ export default function OrgCabinetModal({
 
               {/* Files inside the folder table */}
               {orgFiles.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center space-y-2">
-                  <FileText className="w-10 h-10 text-slate-300" />
+                <div className="py-12 text-center text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center space-y-2">
+                  <FileText className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                   <div>
                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Aucun fichier dans ce dossier</p>
-                    <p className="text-[10.5px] text-slate-400">Sélectionnez un justificatif avec le bouton de téléversement ci-dessus pour l'ajouter.</p>
+                    <p className="text-[10.5px] text-slate-400 dark:text-slate-500">Sélectionnez un justificatif avec le bouton de téléversement ci-dessus pour l'ajouter.</p>
                   </div>
                 </div>
               ) : (
                 <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-950">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="text-[10px] font-bold uppercase bg-slate-50 dark:bg-slate-900 text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                      <tr className="text-[10px] font-bold uppercase bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                         <th className="px-4 py-3">Document</th>
                         <th className="px-4 py-3 w-32">Propriétaire</th>
                         <th className="px-4 py-3 w-40">Statut de validation</th>
@@ -457,7 +457,7 @@ export default function OrgCabinetModal({
                           <tr key={file.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                             <td className="px-4 py-3">
                               {isOriginalRenaming ? (
-                                <div className="flex items-center gap-1.5 focus-within:ring-1 focus-within:ring-azur rounded p-1 bg-white dark:bg-slate-900 border">
+                                <div className="flex items-center gap-1.5 focus-within:ring-1 focus-within:ring-azur rounded p-1 bg-white dark:bg-slate-900 border dark:border-slate-700">
                                   <input
                                     type="text"
                                     value={renameInput}
@@ -477,7 +477,7 @@ export default function OrgCabinetModal({
                                   </button>
                                   <button
                                     onClick={() => setRenamingFile(null)}
-                                    className="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded cursor-pointer"
+                                    className="text-[10px] bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2 py-1 rounded cursor-pointer"
                                   >
                                     Annuler
                                   </button>
@@ -485,7 +485,7 @@ export default function OrgCabinetModal({
                               ) : (
                                 <div className="text-left">
                                   <p className="font-bold text-slate-900 dark:text-slate-100 max-w-sm truncate">{file.name}</p>
-                                  <p className="text-[9.5px] text-slate-400 font-mono mt-0.5">
+                                  <p className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
                                     {formatBytes(file.size)} | {file.type.split('/').pop()?.toUpperCase()} | Versé le {new Date(file.uploadDate).toLocaleDateString()}
                                   </p>
                                 </div>
@@ -517,7 +517,7 @@ export default function OrgCabinetModal({
                                     className={`text-[9px] px-2 py-0.5 rounded-lg border font-bold pointer-events-auto transition-all cursor-pointer ${
                                       file.sharedWithPartner !== false
                                         ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
-                                        : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-amber-500/15 hover:text-amber-600 hover:border-amber-500/30"
+                                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-amber-500/15 hover:text-amber-600 hover:border-amber-500/30"
                                     }`}
                                   >
                                     {file.sharedWithPartner !== false ? "🔓 Partagé with Partner" : "🔒 Privé Coordinateur"}
@@ -531,10 +531,10 @@ export default function OrgCabinetModal({
                                 value={file.submissionStatus || 'Pending'}
                                 onChange={(e) => handleUpdateOrgFileStatus(file.id, e.target.value as SubmissionStatus)}
                                 className={`text-[11px] font-extrabold p-1 rounded-lg border focus:outline-none ${
-                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-200' :
-                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 border-rose-200' :
-                                  (file.submissionStatus === 'Under review') ? 'bg-azur-light dark:bg-azur/10 text-deep border-azur-pastel' :
-                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 border-amber-200'
+                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' :
+                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' :
+                                  (file.submissionStatus === 'Under review') ? 'bg-azur-light dark:bg-azur/10 text-deep dark:text-azur-pastel border-azur-pastel' :
+                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'
                                 }`}
                               >
                                 <option value="Pending">⌛ En attente</option>
@@ -548,7 +548,7 @@ export default function OrgCabinetModal({
                               <div className="flex justify-end gap-1">
                                 <button
                                   onClick={() => handleStartRenaming(file)}
-                                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
                                   title="Renommer"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
@@ -559,7 +559,7 @@ export default function OrgCabinetModal({
                                     download={file.name}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer"
+                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer"
                                     title="Consulter / Télécharger"
                                   >
                                     <Download className="w-3.5 h-3.5" />
@@ -567,7 +567,7 @@ export default function OrgCabinetModal({
                                 )}
                                 <button
                                   onClick={() => handleDeleteOrgFile(file.id, file.name)}
-                                  className="p-1 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                  className="p-1 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded text-slate-400 dark:text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
                                   title="Supprimer définitivement"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -590,7 +590,7 @@ export default function OrgCabinetModal({
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="text-left">
                   <h4 className="text-sm font-display font-black text-deep dark:text-slate-500">📁 REPERTOIRES ASSOCIES ET JUSTIFICATIFS REGLEMENTAIRES</h4>
-                  <p className="text-xs text-slate-400">Duffers de stockage virtuel contenant les récépissés de douane, assurances de bord et brevets de navigation.</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">Duffers de stockage virtuel contenant les récépissés de douane, assurances de bord et brevets de navigation.</p>
                 </div>
                 
                 {/* Toggle Create Folder bar */}
@@ -631,11 +631,11 @@ export default function OrgCabinetModal({
 
               {/* Folder Grid Cards */}
               {orgFolders.length === 0 ? (
-                <div className="py-10 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/20 rounded-2xl flex flex-col items-center justify-center space-y-2">
-                  <FolderIcon className="w-10 h-10 text-slate-300" />
+                <div className="py-10 text-center text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 rounded-2xl flex flex-col items-center justify-center space-y-2">
+                  <FolderIcon className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                   <div>
                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Aucun dossier créé pour cet organisme</p>
-                    <span className="text-[10.5px] text-slate-400">Le partenaire n'a pas encore créé de dossiers. Créez des dossiers pour structurer son archivage d'accréditation.</span>
+                    <span className="text-[10.5px] text-slate-400 dark:text-slate-500">Le partenaire n'a pas encore créé de dossiers. Créez des dossiers pour structurer son archivage d'accréditation.</span>
                   </div>
                 </div>
               ) : (
@@ -662,7 +662,7 @@ export default function OrgCabinetModal({
                             )}
                           </div>
                           <p className="font-extrabold text-deep dark:text-slate-200 text-xs tracking-tight group-hover:text-azur dark:group-hover:text-azur-pastel transition-colors mt-2">{folder.name}</p>
-                          <span className="text-[10px] text-slate-400 font-mono font-bold uppercase">{folFiles.length} fichiers justificatifs</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono font-bold uppercase">{folFiles.length} fichiers justificatifs</span>
                         </div>
                         <button
                           onClick={(e) => {
@@ -685,18 +685,18 @@ export default function OrgCabinetModal({
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3 text-left">
                 <div className="text-left">
                   <h4 className="text-xs font-display font-black text-deep dark:text-white">📄 PIECES VERSES A LA RACINE (HORS DOSSIERS)</h4>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Fichiers uploadés par l'organisme sans dossier de classement associé.</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5">Fichiers uploadés par l'organisme sans dossier de classement associé.</span>
                 </div>
 
                 {files.filter(f => f.orgId === org.id && (!f.folderId || f.folderId === null)).length === 0 ? (
-                  <div className="py-6 text-center text-slate-400 italic text-[11px] bg-slate-50/10 dark:bg-slate-950/10 border rounded-2xl border-dashed">
+                  <div className="py-6 text-center text-slate-400 dark:text-slate-500 italic text-[11px] bg-slate-50/10 dark:bg-slate-950/10 border dark:border-slate-800 rounded-2xl border-dashed">
                     Aucun justificatif versé à la racine de l'espace.
                   </div>
                 ) : (
                   <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-950">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="text-[10px] font-bold uppercase bg-slate-50 dark:bg-slate-900 text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                        <tr className="text-[10px] font-bold uppercase bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                           <th className="px-4 py-3">Document</th>
                           <th className="px-4 py-3 w-32">Propriétaire</th>
                           <th className="px-4 py-3 w-40">Statut</th>
@@ -708,7 +708,7 @@ export default function OrgCabinetModal({
                           <tr key={file.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                             <td className="px-4 py-3 text-left">
                               <p className="font-bold text-slate-900 dark:text-slate-100 max-w-sm truncate">{file.name}</p>
-                              <p className="text-[9.5px] text-slate-400 font-mono mt-0.5">
+                              <p className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
                                 {formatBytes(file.size)} | {file.type.split('/').pop()?.toUpperCase()} | Versé le {new Date(file.uploadDate).toLocaleDateString()}
                               </p>
                             </td>
@@ -722,10 +722,10 @@ export default function OrgCabinetModal({
                                 value={file.submissionStatus || 'Pending'}
                                 onChange={(e) => handleUpdateOrgFileStatus(file.id, e.target.value as SubmissionStatus)}
                                 className={`text-[11px] font-extrabold p-1 rounded-lg border focus:outline-none ${
-                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-200' :
-                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 border-rose-200' :
-                                  (file.submissionStatus === 'Under review') ? 'bg-azur-light dark:bg-azur/10 text-deep border-azur-pastel' :
-                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 border-amber-200'
+                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' :
+                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' :
+                                  (file.submissionStatus === 'Under review') ? 'bg-azur-light dark:bg-azur/10 text-deep dark:text-azur-pastel border-azur-pastel' :
+                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'
                                 }`}
                               >
                                 <option value="Pending">⌛ En attente</option>
@@ -742,7 +742,7 @@ export default function OrgCabinetModal({
                                     download={file.name}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
                                     title="Consulter / Télécharger"
                                   >
                                     <Download className="w-3.5 h-3.5" />
@@ -750,7 +750,7 @@ export default function OrgCabinetModal({
                                 )}
                                 <button
                                   onClick={() => handleDeleteOrgFile(file.id, file.name)}
-                                  className="p-1 hover:bg-rose-100 dark:hover:bg-rose-950/30 rounded text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                  className="p-1 hover:bg-rose-100 dark:hover:bg-rose-950/30 rounded text-slate-400 dark:text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -771,7 +771,7 @@ export default function OrgCabinetModal({
 
         {/* Footer and controls */}
         <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between shrink-0">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
             Système de Synchronisation Réseau d'ARCHIVAGE ASF
           </span>
           <button

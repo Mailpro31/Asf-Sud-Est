@@ -528,7 +528,7 @@ export default function FilePreviewModal({
               <h3 className="text-base font-black font-display text-deep dark:text-slate-100 truncate pr-5" title={file.name}>
                 {file.name}
               </h3>
-              <p className="text-[10px] text-slate-400 uppercase font-mono tracking-wider">
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-mono tracking-wider">
                 Type : {file.type.split('/').pop()?.toUpperCase()}
               </p>
             </div>
@@ -898,7 +898,7 @@ export default function FilePreviewModal({
                         className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all border flex items-center justify-between cursor-pointer ${
                           localStatus === opt.value
                             ? 'bg-white dark:bg-slate-900 border-azur dark:border-azur shadow-sm ring-2 ring-azur/15'
-                            : 'bg-transparent border-transparent text-slate-600 hover:bg-white/40 dark:hover:bg-slate-900/50 dark:text-slate-400'
+                            : 'bg-transparent border-transparent text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-900/50 dark:text-slate-400'
                         }`}
                       >
                         <span className="flex items-center gap-2">
@@ -919,7 +919,7 @@ export default function FilePreviewModal({
 
                 {/* Status Card */}
                 <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 text-left">
-                  <p className="text-[9px] text-slate-400 font-bold uppercase">Statut</p>
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Statut</p>
                   <StatusBadge status={localStatus as any} />
                 </div>
 
@@ -927,7 +927,7 @@ export default function FilePreviewModal({
                 <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
                   <HardDrive className="w-4 h-4 text-azur shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[9px] text-slate-400 font-bold uppercase">Taille</p>
+                    <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Taille</p>
                     <p className="text-xs font-black text-slate-800 dark:text-slate-100 dark:text-slate-100">{formatBytes(file.size)}</p>
                   </div>
                 </div>
@@ -936,7 +936,7 @@ export default function FilePreviewModal({
                 <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-left">
                   <User className="w-4 h-4 text-azur shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[9px] text-slate-400 font-bold uppercase font-sans">Auteur de l'envoi</p>
+                    <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase font-sans">Auteur de l'envoi</p>
                     <p className="text-xs font-black text-slate-800 dark:text-slate-100 dark:text-slate-100 truncate pr-2">
                       {file.uploadedBy === 'admin' ? "Administrateur" : orgName}
                     </p>
@@ -951,7 +951,7 @@ export default function FilePreviewModal({
                     <p className="text-xs font-black text-slate-800 dark:text-slate-100 dark:text-slate-100">
                       {new Date(file.uploadDate).toLocaleDateString()}
                     </p>
-                    <span className="text-[9px] text-slate-400 font-mono font-bold block mt-0.5">
+                    <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono font-bold block mt-0.5">
                       {new Date(file.uploadDate).toLocaleTimeString()}
                     </span>
                   </div>

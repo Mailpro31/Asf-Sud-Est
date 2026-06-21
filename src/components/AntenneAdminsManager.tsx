@@ -161,12 +161,12 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
   return (
     <div className="card-asf p-6 space-y-6">
       <div className="flex items-start gap-3">
-        <span className="w-10 h-10 rounded-xl bg-azur-light text-azur flex items-center justify-center shrink-0">
+        <span className="w-10 h-10 rounded-xl bg-azur-light dark:bg-azur/15 text-azur flex items-center justify-center shrink-0">
           <UserCog className="w-5 h-5" />
         </span>
         <div>
-          <h3 className="font-display text-deep font-bold tracking-tight">Gestionnaires d'antennes</h3>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <h3 className="font-display text-deep dark:text-azur-pastel font-bold tracking-tight">Gestionnaires d'antennes</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
             Attribuez une antenne à un e-mail. Si le compte existe, l'accès est immédiat ; sinon, copiez l'invitation (bouton <span className="inline-flex align-middle"><Copy className="w-3 h-3" /></span>) et envoyez-la — l'accès s'activera à sa première connexion.
           </p>
         </div>
@@ -176,9 +176,9 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
       <form onSubmit={handleAssign} className="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
         <div className="grid sm:grid-cols-3 gap-3">
           <div className="flex flex-col gap-1.5 sm:col-span-3 lg:col-span-1">
-            <label className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">E-mail du gestionnaire</label>
+            <label className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">E-mail du gestionnaire</label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="email"
                 value={email}
@@ -189,7 +189,7 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Délégation</label>
+            <label className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">Délégation</label>
             <select
               value={delegationId}
               onChange={(e) => {
@@ -205,7 +205,7 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Antenne</label>
+            <label className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">Antenne</label>
             <select
               value={antenneId}
               onChange={(e) => setAntenneId(e.target.value)}
@@ -226,28 +226,28 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
 
       {/* Gestionnaires actifs */}
       <div className="space-y-2">
-        <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1.5">
+        <p className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5">
           <ShieldCheck className="w-4 h-4 text-emerald-500" /> Gestionnaires actifs ({currentAdmins.length})
         </p>
         {currentAdmins.length === 0 ? (
-          <p className="text-xs text-slate-400 italic py-2">Aucun gestionnaire d'antenne pour le moment.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 italic py-2">Aucun gestionnaire d'antenne pour le moment.</p>
         ) : (
-          <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             {currentAdmins.map((org) => (
-              <div key={org.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50/70">
+              <div key={org.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50/70 dark:hover:bg-slate-800">
                 <span className="w-8 h-8 rounded-lg bg-azur/10 text-azur flex items-center justify-center shrink-0 text-xs font-bold">
                   {(org.contactName || org.email || '?').charAt(0).toUpperCase()}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-deep truncate">{org.email}</p>
-                  <p className="text-[11px] text-slate-500 flex items-center gap-1 truncate">
+                  <p className="text-sm font-semibold text-deep dark:text-azur-pastel truncate">{org.email}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 truncate">
                     <MapPin className="w-3 h-3 text-azur" />
                     {antenneName(org.delegation_id || '', org.antenne_id || '')} · {delegationName(org.delegation_id || '')}
                   </p>
                 </div>
                 <button
                   onClick={() => handleRevokeAdmin(org)}
-                  className="btn-ghost p-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50 shrink-0"
+                  className="btn-ghost p-2 text-rose-500 hover:text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 shrink-0"
                   title="Retirer le rôle"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -261,30 +261,30 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
       {/* Invitations en attente */}
       {pendingInvites.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1.5">
+          <p className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5">
             <Clock className="w-4 h-4 text-amber-500" /> Invitations en attente ({pendingInvites.length})
           </p>
-          <div className="divide-y divide-amber-100 rounded-xl border border-amber-200 bg-amber-50/40 overflow-hidden">
+          <div className="divide-y divide-amber-100 dark:divide-amber-500/20 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/40 dark:bg-amber-500/10 overflow-hidden">
             {pendingInvites.map((inv) => (
               <div key={inv.id} className="flex items-center gap-3 px-3 py-2.5">
                 <Clock className="w-4 h-4 text-amber-500 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-amber-900 truncate">{inv.email}</p>
-                  <p className="text-[11px] text-amber-700 flex items-center gap-1 truncate">
+                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-300 truncate">{inv.email}</p>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-1 truncate">
                     <MapPin className="w-3 h-3" />
                     {antenneName(inv.delegation_id, inv.antenne_id)} · {delegationName(inv.delegation_id)} — en attente de connexion
                   </p>
                 </div>
                 <button
                   onClick={() => handleCopyInvite(inv)}
-                  className="btn-ghost p-2 text-amber-800 hover:bg-amber-100 shrink-0"
+                  className="btn-ghost p-2 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/15 shrink-0"
                   title="Copier le message d'invitation à envoyer"
                 >
                   <Copy className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDeleteInvite(inv)}
-                  className="btn-ghost p-2 text-amber-700 hover:bg-amber-100 shrink-0"
+                  className="btn-ghost p-2 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/15 shrink-0"
                   title="Annuler l'invitation"
                 >
                   <Trash2 className="w-4 h-4" />

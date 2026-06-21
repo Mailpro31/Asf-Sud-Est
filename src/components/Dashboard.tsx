@@ -809,7 +809,7 @@ export default function Dashboard() {
 
   if (!organization) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-500 font-sans">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-sans">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-azur border-t-transparent rounded-full animate-spin"></div>
           <p className="text-sm font-medium">Chargement du portail équipage...</p>
@@ -986,19 +986,19 @@ export default function Dashboard() {
               <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded bg-azur/10 text-azur border border-azur/20">
                 Autorisation de mission Aviation Sans Frontières
               </span>
-              <span className="text-[10px] uppercase font-bold text-slate-400">/ Organisme</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">/ Organisme</span>
               {organization.delegation_id && (
                 <span className="text-[10px] font-black px-2.5 py-1 rounded bg-azur/10 text-azur border border-azur/20">
                   📍 {getDelegationName(organization.delegation_id)}
                 </span>
               )}
               {organization.antenne_id && (
-                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-500 text-emerald-400 border border-emerald-500/20">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-500 dark:text-emerald-300 text-emerald-400 border border-emerald-500/20">
                   🏢 {getAntenneName(organization.delegation_id, organization.antenne_id)}
                 </span>
               )}
             </div>
-            <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-deep">
+            <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-deep dark:text-azur-pastel">
               Soumission des Dossiers & Autorisations
             </h1>
             <p className={`text-xs mt-1 ${themeConfig.textMuted}`}>
@@ -1092,7 +1092,7 @@ export default function Dashboard() {
                         <p>
                           <strong>La solution de secours automatique :</strong> Pour que vous puissiez tester sans contrainte, nous avons implémenté un système de découpage binaire automatique (<em>Chunks</em>) qui fragmente et sauvegarde vos fichiers volumineux directement dans Firestore. Tout est 100% fonctionnel et transparent pour vous !
                         </p>
-                        <p className="pt-1.5 border-t border-amber-500/5 text-[9px] text-slate-400">
+                        <p className="pt-1.5 border-t border-amber-500/5 text-[9px] text-slate-400 dark:text-slate-500">
                           ℹ️ Pour lier votre propre base de données réelle sans cette alerte, modifiez simplement vos clés d'API dans le fichier de configuration <code>firebase-applet-config.json</code> à gauche.
                         </p>
                       </div>
@@ -1150,7 +1150,7 @@ export default function Dashboard() {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`bg-white border-2 border-dashed ${themeConfig.textColor} hover:brightness-98 transition-all duration-300 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 cursor-pointer shadow-xs ${containerRounded} ${
+                className={`bg-white dark:bg-slate-900 border-2 border-dashed ${themeConfig.textColor} hover:brightness-98 transition-all duration-300 p-6 flex flex-col sm:flex-row items-center justify-center gap-5 cursor-pointer shadow-xs ${containerRounded} ${
                   isDragActive
                     ? 'border-azur bg-azur/5 scale-101'
                     : 'border-slate-200 dark:border-slate-800'
@@ -1162,7 +1162,7 @@ export default function Dashboard() {
                   className="hidden"
                   onChange={handleFileChange}
                 />
-                <div className="w-12 h-12 bg-azur-light text-deep rounded-full flex items-center justify-center shadow-xs">
+                <div className="w-12 h-12 bg-azur-light dark:bg-azur/15 text-deep dark:text-azur-pastel rounded-full flex items-center justify-center shadow-xs">
                   <CloudUpload className="w-6 h-6 animate-bounce" />
                 </div>
                 <div className="text-center sm:text-left">
@@ -1219,16 +1219,16 @@ export default function Dashboard() {
 
         {/* Soumission du dossier */}
         <div data-tour="submit" className="mb-6 shrink-0">
-          <div className={`card-asf p-5 flex flex-col sm:flex-row sm:items-center gap-4 ${organization.dossierSubmittedAt ? 'ring-1 ring-emerald-200' : ''}`}>
+          <div className={`card-asf p-5 flex flex-col sm:flex-row sm:items-center gap-4 ${organization.dossierSubmittedAt ? 'ring-1 ring-emerald-200 dark:ring-emerald-500/30' : ''}`}>
             <div className="min-w-0 flex-1">
               <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Soumettre mon dossier</h3>
               {organization.dossierSubmittedAt ? (
-                <p className="text-xs text-emerald-600 mt-1 font-semibold flex items-center gap-1.5">
+                <p className="text-xs text-emerald-600 dark:text-emerald-300 mt-1 font-semibold flex items-center gap-1.5">
                   <Check className="w-4 h-4 shrink-0" />
                   Dossier soumis le {new Date(organization.dossierSubmittedAt).toLocaleDateString('fr-FR')} · en cours de revue par votre antenne.
                 </p>
               ) : (
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                   Quand vous estimez que votre dossier est complet, soumettez-le : votre antenne en est informée sur son tableau de bord et procède à la revue.
                 </p>
               )}
@@ -1258,7 +1258,7 @@ export default function Dashboard() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input-asf pl-10 pr-14 text-xs"
             />
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 border border-slate-200 rounded-md px-1.5 py-0.5 bg-slate-50 hidden sm:block">⌘K</span>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-0.5 bg-slate-50 dark:bg-slate-800/50 hidden sm:block">⌘K</span>
           </div>
 
           {/* Middle Type Filters */}
@@ -1306,12 +1306,12 @@ export default function Dashboard() {
               onChange={(e) => setSortBy(e.target.value)}
               className={`text-xs px-2.5 py-1.5 border ${themeConfig.cardBorder} rounded-xl bg-transparent ${themeConfig.textColor} focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium`}
             >
-              <option value="date-desc" className="text-slate-900 bg-white">Date (Plus récent)</option>
-              <option value="date-asc" className="text-slate-900 bg-white">Date (Plus ancien)</option>
-              <option value="name-asc" className="text-slate-900 bg-white">Nom (A-Z)</option>
-              <option value="name-desc" className="text-slate-900 bg-white">Nom (Z-A)</option>
-              <option value="size-desc" className="text-slate-900 bg-white">Taille (Plus grand)</option>
-              <option value="size-asc" className="text-slate-900 bg-white">Taille (Plus petit)</option>
+              <option value="date-desc" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">Date (Plus récent)</option>
+              <option value="date-asc" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">Date (Plus ancien)</option>
+              <option value="name-asc" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">Nom (A-Z)</option>
+              <option value="name-desc" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">Nom (Z-A)</option>
+              <option value="size-desc" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">Taille (Plus grand)</option>
+              <option value="size-asc" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">Taille (Plus petit)</option>
             </select>
           </div>
 
@@ -1402,7 +1402,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2">
                               <span className={`text-sm font-semibold truncate ${themeConfig.textColor}`}>{folder.name}</span>
                               {folder.createdBy === 'admin' ? (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 bg-amber-100 text-amber-800 border border-amber-200">
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
                                   Administrateur
                                 </span>
                               ) : (
@@ -1421,7 +1421,7 @@ export default function Dashboard() {
                           {folder.orgId === user.uid && folder.createdBy !== 'admin' && (
                             <button
                               onClick={(e) => { e.stopPropagation(); setDeletingFolder(folder); }}
-                              className="text-slate-400 hover:text-red-500 transition-colors p-1.5 focus:outline-none cursor-pointer"
+                              className="text-slate-400 dark:text-slate-500 hover:text-red-500 transition-colors p-1.5 focus:outline-none cursor-pointer"
                               title="Supprimer le dossier"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1441,7 +1441,7 @@ export default function Dashboard() {
                         onClick={() => setPreviewingFile(file)}
                       >
                         <td data-tour={fileIdx === 0 ? 'doc-row' : undefined} className="px-6 py-4 flex items-center gap-4">
-                          <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg flex items-center justify-center shrink-0">
                             <FileText className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1452,7 +1452,7 @@ export default function Dashboard() {
                                     {file.name}
                                   </span>
                                   {file.uploadedBy === 'admin' ? (
-                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
                                       Administrateur
                                     </span>
                                   ) : (
@@ -1461,7 +1461,7 @@ export default function Dashboard() {
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-[9px] text-slate-400 font-mono tracking-tight flex items-center gap-1 mt-1">
+                                <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono tracking-tight flex items-center gap-1 mt-1">
                                   ID : {file.id.substring(0, 8)} | Type : {file.type.split('/').pop()?.toUpperCase()}
                                 </span>
                               </div>
@@ -1481,7 +1481,7 @@ export default function Dashboard() {
                           <div className="flex justify-end items-center space-x-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}
-                              className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-slate-600 cursor-pointer`}
+                              className={`p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 dark:hover:border-slate-600 transition-all text-slate-600 dark:text-slate-300 cursor-pointer`}
                               title="Télécharger"
                             >
                               <Download className="w-3.5 h-3.5" />
@@ -1490,14 +1490,14 @@ export default function Dashboard() {
                               <>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setRenamingFile(file); setRenameInput(file.name); }}
-                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-azur cursor-pointer`}
+                                  className={`p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 dark:hover:border-slate-600 transition-all text-azur cursor-pointer`}
                                   title="Renommer"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setDeletingFile(file); }}
-                                  className={`p-1.5 bg-white border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 transition-all text-red-500 cursor-pointer`}
+                                  className={`p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 dark:hover:border-slate-600 transition-all text-red-500 cursor-pointer`}
                                   title="Purger définitivement"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1506,7 +1506,7 @@ export default function Dashboard() {
                             )}
                             {file.orgId === user.uid && file.uploadedBy === 'admin' && (
                               <span
-                                className="p-1.5 text-[9px] font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-lg flex items-center"
+                                className="p-1.5 text-[9px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg flex items-center"
                                 title="Déposé par un administrateur — non modifiable"
                               >
                                 Admin
@@ -1584,7 +1584,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-display text-lg font-bold text-deep dark:text-white">Renommer le document</h3>
-                <p className="text-sm text-slate-500">Saisissez un nouveau nom de fichier.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Saisissez un nouveau nom de fichier.</p>
               </div>
             </div>
             <input

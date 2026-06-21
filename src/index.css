@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+/* Active la stratégie « classe » pour le mode sombre (Tailwind v4).
+   Toute utilité préfixée `dark:` s'applique quand <html class="dark">. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Typographie — humaniste moderne */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -48,6 +52,15 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  /* Fond et couleur de texte par défaut en mode sombre (filet de sécurité :
+     même un écran non converti reste lisible). */
+  .dark body {
+    background-color: #020617; /* slate-950 */
+    color: #e2e8f0;            /* slate-200 */
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -93,6 +106,23 @@
   ::-webkit-scrollbar-thumb:hover {
     background: rgb(148 163 184);
     background-clip: content-box;
+  }
+
+  /* Barre de défilement + sélection en mode sombre */
+  .dark * {
+    scrollbar-color: rgb(71 85 105) transparent;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgb(71 85 105);
+    background-clip: content-box;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgb(100 116 139);
+    background-clip: content-box;
+  }
+  .dark ::selection {
+    background: rgba(131, 208, 245, 0.28);
+    color: #f1f5f9;
   }
 }
 
@@ -308,6 +338,59 @@
     box-shadow: var(--shadow-asf-lg);
     overflow: hidden;
     animation: asf-panel-in 0.28s var(--ease-asf);
+  }
+
+  /* ===================== Variantes MODE SOMBRE ===================== */
+  .dark .card-asf {
+    background: #0f172a;            /* slate-900 */
+    border-color: rgb(51 65 85 / 0.7); /* slate-700 */
+  }
+
+  .dark .btn-secondary {
+    color: #e2e8f0;
+    background: #1e293b;            /* slate-800 */
+    border-color: rgb(51 65 85);   /* slate-700 */
+  }
+  .dark .btn-secondary:hover {
+    background: #334155;            /* slate-700 */
+    border-color: var(--color-azur);
+  }
+
+  .dark .btn-ghost {
+    color: rgb(203 213 225);       /* slate-300 */
+  }
+  .dark .btn-ghost:hover {
+    background: rgb(255 255 255 / 0.08);
+    color: #fff;
+  }
+
+  .dark .input-asf {
+    background: #1e293b;            /* slate-800 */
+    border-color: rgb(51 65 85);   /* slate-700 */
+    color: #f1f5f9;
+  }
+  .dark .input-asf::placeholder {
+    color: rgb(100 116 139);       /* slate-500 */
+  }
+  .dark .input-asf:hover:not(:focus) {
+    border-color: rgb(71 85 105);  /* slate-600 */
+  }
+  .dark .input-asf:focus {
+    border-color: var(--color-azur);
+    box-shadow: 0 0 0 3px rgba(27, 152, 196, 0.28);
+  }
+
+  .dark .badge-pending    { background: #422006; color: #fcd34d; border-color: #854d0e; }
+  .dark .badge-review     { background: rgba(27,152,196,0.18); color: #bae6fd; border-color: rgba(131,208,245,0.4); }
+  .dark .badge-validated  { background: #052e1a; color: #6ee7b7; border-color: #065f46; }
+  .dark .badge-incomplete { background: #4c0519; color: #fda4af; border-color: #9f1239; }
+
+  .dark .modal-overlay {
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .dark .modal-panel {
+    background: #0f172a;            /* slate-900 */
+    border: 1px solid rgb(51 65 85); /* slate-700 */
   }
 }
 
