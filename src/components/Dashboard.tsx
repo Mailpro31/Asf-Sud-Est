@@ -1437,7 +1437,7 @@ export default function Dashboard() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className={`text-xs px-2.5 py-1.5 border ${themeConfig.cardBorder} rounded-xl bg-transparent ${themeConfig.textColor} focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium`}
+              className={`text-xs text-center px-2.5 py-1.5 border ${themeConfig.cardBorder} rounded-xl bg-transparent ${themeConfig.textColor} focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium`}
             >
               <option value="date-desc" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">Date (Plus récent)</option>
               <option value="date-asc" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">Date (Plus ancien)</option>
