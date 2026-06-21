@@ -38,6 +38,7 @@ export type AuditAction =
   | 'file_download'
   | 'folder_create'
   | 'folder_delete'
+  | 'folder_rename'
   | 'org_create'
   | 'org_delete'
   | 'org_role_change'
