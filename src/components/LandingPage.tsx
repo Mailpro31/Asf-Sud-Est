@@ -219,7 +219,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
       <header className="sticky top-0 z-40 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border-b border-slate-200/70 dark:border-white/10">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-5 sm:px-7 py-2.5">
           <a href="#top" className="flex items-center gap-2.5 shrink-0">
-            <img src="/logo-asf.png" alt="Aviation Sans Frontières France" className="h-11 w-auto object-contain select-none dark:hidden" draggable={false} />
+            <img src="/logo-asf-clear.png" alt="Aviation Sans Frontières France" className="h-11 w-auto object-contain select-none dark:hidden" draggable={false} />
             <img src="/logo-asf-white.png" alt="Aviation Sans Frontières France" className="h-11 w-auto object-contain select-none hidden dark:block" draggable={false} />
           </a>
           <nav className="hidden lg:flex items-center gap-7">
