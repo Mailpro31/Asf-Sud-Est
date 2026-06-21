@@ -660,7 +660,7 @@ export default function Dashboard() {
         details: `Renommé : « ${renamingFile.name} » → « ${newName} »`,
       });
       if (localDb.isSandboxActive()) {
-        const file = { ...renamingFile, name: newName };
+        const file = { ...renamingFile, name: newName, updatedAt: Date.now() };
         localDb.saveFile(file);
         logIt();
         refreshLocalState();
@@ -668,7 +668,8 @@ export default function Dashboard() {
         return;
       }
       try {
-        await updateDoc(doc(db, 'files', renamingFile.id), { name: newName });
+        // `updatedAt` permet à l'antenne de repérer un document modifié (badge « Nouveau »).
+        await updateDoc(doc(db, 'files', renamingFile.id), { name: newName, updatedAt: Date.now() });
         logIt();
       } catch (error) {
         console.error('Error renaming file:', error);

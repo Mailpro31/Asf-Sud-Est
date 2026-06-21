@@ -35,6 +35,9 @@ export interface DossierFile {
   sharedWithPartner?: boolean;
   /** Note de revue rédigée par l'antenne : ce que l'organisme doit corriger. */
   reviewNote?: string;
+  /** Dernière modification par l'organisme (renommage…). Sert au repérage
+   *  « Nouveau » côté antenne. */
+  updatedAt?: number;
 }
 
 export interface Folder {
