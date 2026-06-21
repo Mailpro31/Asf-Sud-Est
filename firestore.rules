@@ -295,6 +295,10 @@ service cloud.firestore {
                     isSuperAdmin() ||
                     (isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) && incoming().diff(existing()).affectedKeys().hasOnly(['submissionStatus', 'updatedAt'])) ||
                     (isOwner(orgId) && incoming().get('role', '') == 'admin_antenne' && hasMatchingInvite(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'delegation_id', 'antenne_id', 'updatedAt'])) ||
+                    // Onboarding « Choix de l'antenne » (ex. inscription Google) : un
+                    // partenaire peut renseigner LUI-MÊME sa délégation + antenne de
+                    // rattachement tant qu'aucune ne lui a encore été attribuée.
+                    (isOwner(orgId) && incoming().get('role', '') == 'organization' && (existing().get('antenne_id', '') == '' || existing().get('antenne_id', '') == null) && incoming().get('antenne_id', '') != '' && incoming().diff(existing()).affectedKeys().hasOnly(['delegation_id', 'antenne_id', 'updatedAt'])) ||
                     (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt', 'dossierSubmittedAt', 'hasSeenTour']))
                   );
 
