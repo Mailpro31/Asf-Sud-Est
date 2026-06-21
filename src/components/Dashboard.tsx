@@ -22,6 +22,9 @@ import {
   HardDrive,
   Settings,
   GraduationCap,
+  AlertTriangle,
+  Clock,
+  MessageSquare,
   X
 } from 'lucide-react';
 import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
@@ -1263,6 +1266,55 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Verdict de revue (dérivé des statuts/notes des fichiers) */}
+        {(() => {
+          const corrections = files.filter(
+            (f) => (f.submissionStatus === 'Incomplete') || (f.reviewNote && f.reviewNote.trim()),
+          );
+          const hasFiles = files.length > 0;
+          const allValidated = hasFiles && files.every((f) => (f.submissionStatus || 'Pending') === 'Validated');
+          if (corrections.length > 0) {
+            return (
+              <div className="mb-4 rounded-2xl border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-4">
+                <p className="text-sm font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  Corrections demandées par votre antenne ({corrections.length} pièce{corrections.length > 1 ? 's' : ''})
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300/90 mt-1">
+                  Consultez la note « À corriger » sur les documents concernés ci-dessous, corrigez-les puis re-soumettez votre dossier.
+                </p>
+              </div>
+            );
+          }
+          if (dossierSubmittedAt && allValidated) {
+            return (
+              <div className="mb-4 rounded-2xl border-l-4 border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 p-4">
+                <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                  <Check className="w-4 h-4 shrink-0" />
+                  Dossier validé par votre antenne
+                </p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300/90 mt-1">
+                  Toutes vos pièces sont conformes. Aucune action requise.
+                </p>
+              </div>
+            );
+          }
+          if (dossierSubmittedAt) {
+            return (
+              <div className="mb-4 rounded-2xl border-l-4 border-azur bg-azur/5 dark:bg-azur/10 border border-azur/20 dark:border-azur/30 p-4">
+                <p className="text-sm font-bold text-deep dark:text-azur-pastel flex items-center gap-2">
+                  <Clock className="w-4 h-4 shrink-0" />
+                  Dossier en cours de revue
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Votre antenne examine vos pièces. Vous serez informé ici dès qu'une décision est prise.
+                </p>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
         {/* Search, Filter & Sort Panel combined */}
         <div data-tour="filters" className={`mb-4 px-5 py-4.5 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 shadow-xs`}>
 
@@ -1483,6 +1535,12 @@ export default function Dashboard() {
                                 <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono tracking-tight flex items-center gap-1 mt-1">
                                   ID : {file.id.substring(0, 8)} | Type : {file.type.split('/').pop()?.toUpperCase()}
                                 </span>
+                                {file.reviewNote && (
+                                  <span className="mt-1.5 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5 whitespace-normal" title="Correction demandée par votre antenne">
+                                    <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
+                                    <span className="min-w-0">À corriger : {file.reviewNote}</span>
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>

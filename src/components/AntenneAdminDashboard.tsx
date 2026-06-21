@@ -45,7 +45,7 @@ import {
   Send,
   Archive,
 } from 'lucide-react';
-import { Bell, GraduationCap } from 'lucide-react';
+import { Bell, GraduationCap, MessageSquare } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { queueEmail } from '../lib/antenneAdmins';
@@ -139,6 +139,10 @@ export default function AntenneAdminDashboard() {
   const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<any>(null);
+  // Note de revue d'un fichier (ce que l'organisme doit corriger).
+  const [noteFile, setNoteFile] = useState<DossierFile | null>(null);
+  const [noteValue, setNoteValue] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
 
   // Réglages de notification e-mail de l'antenne.
   const [notifyEnabled, setNotifyEnabled] = useState(false);
@@ -494,6 +498,46 @@ export default function AntenneAdminDashboard() {
     } catch (err) {
       console.error('Update status failed:', err);
       toast("Impossible de mettre à jour le statut.", 'error');
+    }
+  };
+
+  const openNote = (file: DossierFile) => {
+    setNoteFile(file);
+    setNoteValue(file.reviewNote || '');
+  };
+
+  // Enregistre (ou efface) la note de revue d'un fichier. La note est lisible
+  // par l'organisme propriétaire : c'est le canal « ce qu'il faut corriger ».
+  const saveNote = async () => {
+    if (!noteFile) return;
+    setSavingNote(true);
+    const note = noteValue.trim();
+    const logIt = () => logAction('file_status_change', {
+      targetType: 'file',
+      targetId: noteFile.id,
+      targetName: noteFile.name,
+      antenne_id: noteFile.antenne_id || antenneId,
+      delegation_id: noteFile.delegation_id || delegationId,
+      details: note ? `Note de revue : ${note}` : 'Note de revue effacée',
+    });
+    if (localDb.isSandboxActive()) {
+      const target = localDb.getFiles().find((f) => f.id === noteFile.id);
+      if (target) { (target as any).reviewNote = note; localDb.saveFile(target); }
+      logIt();
+      setNoteFile(null);
+      setSavingNote(false);
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'files', noteFile.id), { reviewNote: note });
+      logIt();
+      toast(note ? 'Note enregistrée.' : 'Note effacée.', 'success');
+      setNoteFile(null);
+    } catch (err) {
+      console.error('Save note failed:', err);
+      toast("Impossible d'enregistrer la note.", 'error');
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -1093,6 +1137,12 @@ export default function AntenneAdminDashboard() {
         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
           {orgName(file.orgId)} · {formatBytes(file.size)} · {new Date(file.uploadDate).toLocaleDateString('fr-FR')}
         </p>
+        {file.reviewNote && (
+          <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5">
+            <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
+            <span className="min-w-0">{file.reviewNote}</span>
+          </p>
+        )}
       </div>
 
       {/* Sélecteur de statut */}
@@ -1125,6 +1175,13 @@ export default function AntenneAdminDashboard() {
         </button>
       )}
 
+      <button
+        onClick={() => openNote(file)}
+        className={`btn-ghost p-2 shrink-0 ${file.reviewNote ? 'text-amber-600 dark:text-amber-300' : ''}`}
+        title={file.reviewNote ? 'Modifier la note de revue' : 'Ajouter une note (ce qu\'il faut corriger)'}
+      >
+        <MessageSquare className="w-4 h-4" />
+      </button>
       <button onClick={() => setPreviewFile(file)} className="btn-ghost p-2 shrink-0" title="Aperçu">
         <Eye className="w-4 h-4" />
       </button>
@@ -1514,6 +1571,40 @@ export default function AntenneAdminDashboard() {
             <div className="flex justify-end gap-2">
               <button onClick={() => setRenamingFile(null)} className="btn-secondary text-sm">Annuler</button>
               <button onClick={confirmRename} className="btn-asf text-sm">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Note de revue d'un fichier (ce qu'il faut corriger) */}
+      {noteFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => !savingNote && setNoteFile(null)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-300 flex items-center justify-center shrink-0">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Note de revue</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{noteFile.name}</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Indiquez à l'organisme ce qu'il doit corriger sur cette pièce. La note s'affiche dans son espace.
+            </p>
+            <textarea
+              autoFocus
+              value={noteValue}
+              onChange={(e) => setNoteValue(e.target.value)}
+              rows={4}
+              className="input-asf w-full resize-none"
+              placeholder="Ex. : document illisible, signature manquante, version périmée…"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setNoteFile(null)} disabled={savingNote} className="btn-secondary text-sm">Annuler</button>
+              <button onClick={saveNote} disabled={savingNote} className="btn-asf text-sm">
+                {savingNote ? 'Enregistrement…' : 'Enregistrer la note'}
+              </button>
             </div>
           </div>
         </div>
