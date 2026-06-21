@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   collection,
   query,
@@ -131,6 +131,41 @@ export default function AntenneAdminDashboard() {
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [updatingOrgStatus, setUpdatingOrgStatus] = useState(false);
   const orgUploadRef = useRef<any>(null);
+
+  // --- Notifications « nouveau » (par admin) -------------------------------
+  // Un fichier déposé/modifié ou un dossier créé par l'organisme, ainsi qu'un
+  // dossier fraîchement soumis, s'entourent de rouge tant que l'admin n'a pas
+  // cliqué dessus. L'état « vu » est mémorisé localement (par antenne/admin) :
+  // aucune écriture Firestore, aucun déploiement de règles requis.
+  const seenKey = `asf_antenne_seen_${user?.uid || antenneId || 'anon'}`;
+  const [seen, setSeen] = useState<{ baseline: number; items: Record<string, number> }>(() => {
+    try {
+      const raw = localStorage.getItem(seenKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && typeof p.baseline === 'number' && p.items) return p;
+      }
+    } catch { /* ignore */ }
+    const init = { baseline: Date.now(), items: {} as Record<string, number> };
+    try { localStorage.setItem(seenKey, JSON.stringify(init)); } catch { /* ignore */ }
+    return init;
+  });
+  // Un élément est « nouveau » si son horodatage (dépôt/modif/soumission) est
+  // postérieur à la dernière consultation (ou à la mise en service du suivi).
+  const isUnseen = useCallback(
+    (id: string, ts: number) => !!id && ts > 0 && ts > (seen.items[id] ?? seen.baseline),
+    [seen],
+  );
+  const markSeen = useCallback((id: string) => {
+    if (!id) return;
+    setSeen((prev) => {
+      const next = { ...prev, items: { ...prev.items, [id]: Date.now() } };
+      try { localStorage.setItem(seenKey, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, [seenKey]);
+  // Horodatage de « nouveauté » d'un fichier : dépôt ou dernière modification.
+  const fileStamp = (f: DossierFile) => Math.max(f.uploadDate || 0, (f as any).updatedAt || 0);
 
   // Gestion des fichiers (dépôt, renommage, suppression, partage).
   const [uploading, setUploading] = useState(false);
@@ -281,21 +316,43 @@ export default function AntenneAdminDashboard() {
   // ou l'action `dossier_submit`. On retient l'horodatage le plus récent par
   // organisme.
   const [submittedMap, setSubmittedMap] = useState<Record<string, number>>({});
+  // Suivi pour repérer une soumission FRAÎCHE (toast) sans rejouer l'historique.
+  const seenRef = useRef(seen);
+  useEffect(() => { seenRef.current = seen; }, [seen]);
+  const prevSubsRef = useRef<Record<string, number> | null>(null);
+  // Instant de montage : on ne notifie (toast) que des soumissions postérieures,
+  // jamais l'historique rejoué au chargement.
+  const mountTimeRef = useRef(Date.now());
   useEffect(() => {
     if (!antenneId) return;
     const unsub = subscribeAuditLogs({ antenneId }, (logs) => {
       const m: Record<string, number> = {};
+      const nameById: Record<string, string> = {};
       for (const l of logs) {
         const isSubmit = l.action === 'dossier_submit' || l.targetType === 'dossier_submission';
         if (!isSubmit) continue;
         const oid = l.targetId || l.actorUid;
         if (!oid) continue;
         if (!m[oid] || (l.timestamp || 0) > m[oid]) m[oid] = l.timestamp || 0;
+        if (l.targetName) nameById[oid] = l.targetName;
       }
+      // Notifie d'une soumission réellement nouvelle (après le 1er chargement).
+      const prev = prevSubsRef.current;
+      if (prev) {
+        for (const oid of Object.keys(m)) {
+          const ts = m[oid];
+          const isFresh = ts > (prev[oid] || 0);
+          const isUnread = ts > (seenRef.current.items[oid] ?? seenRef.current.baseline);
+          if (isFresh && isUnread && ts >= mountTimeRef.current) {
+            toast(`📥 ${nameById[oid] || 'Un organisme'} a soumis son dossier pour revue`, 'info');
+          }
+        }
+      }
+      prevSubsRef.current = m;
       setSubmittedMap(m);
     }, 500);
     return unsub;
-  }, [antenneId]);
+  }, [antenneId, toast]);
 
   // Dossiers soumis « à traiter » : organismes ayant soumis (journal ou champ
   // `dossierSubmittedAt`) et dont le compte n'est pas encore tranché
@@ -1038,6 +1095,7 @@ export default function AntenneAdminDashboard() {
 
   // Ouverture / fermeture de la fiche organisme (réinitialise les filtres internes).
   const openOrg = (id: string) => {
+    markSeen(id); // consulter la fiche efface la notification de soumission
     setSelectedOrgId(id); setOrgFolderId(null); setOrgDocSearch('');
     setOrgStatusFilter('all'); setOrgSortBy('date_desc'); clearSelection();
   };
@@ -1114,8 +1172,16 @@ export default function AntenneAdminDashboard() {
   const statusSelectCls = (s?: SubmissionStatus) => STATUS_SELECT_CLS[s || 'Pending'] || STATUS_SELECT_CLS.Pending;
 
   // Ligne de document réutilisable (liste principale + fiche organisme).
-  const renderFileRow = (file: DossierFile, opts?: { selectable?: boolean; tourExample?: boolean }) => (
-    <div key={file.id} data-tour={opts?.tourExample ? 'org-doc' : undefined} className={`flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70 dark:hover:bg-slate-800'}`}>
+  const renderFileRow = (file: DossierFile, opts?: { selectable?: boolean; tourExample?: boolean }) => {
+   const fileNew = file.uploadedBy !== 'admin' && isUnseen(file.id, fileStamp(file));
+   return (
+    <div
+      key={file.id}
+      data-tour={opts?.tourExample ? 'org-doc' : undefined}
+      onClickCapture={() => { if (fileNew) markSeen(file.id); }}
+      className={`relative flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70 dark:hover:bg-slate-800'} ${fileNew ? 'ring-2 ring-inset ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
+      title={fileNew ? 'Nouveau document — cliquez pour le marquer comme vu' : undefined}
+    >
       {opts?.selectable && (
         <input
           type="checkbox"
@@ -1125,16 +1191,24 @@ export default function AntenneAdminDashboard() {
           title="Sélectionner"
         />
       )}
-      <div className="w-9 h-9 rounded-lg bg-azur/10 text-azur flex items-center justify-center shrink-0">
+      <div className="relative w-9 h-9 rounded-lg bg-azur/10 text-azur flex items-center justify-center shrink-0">
         <FileText className="w-4 h-4" />
+        {fileNew && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />}
       </div>
       <div className="min-w-0 flex-1">
-        <button
-          onClick={() => setPreviewFile(file)}
-          className="font-medium text-slate-800 dark:text-slate-100 hover:text-azur truncate block text-left w-full"
-        >
-          {file.name}
-        </button>
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            onClick={() => setPreviewFile(file)}
+            className="font-medium text-slate-800 dark:text-slate-100 hover:text-azur truncate block text-left min-w-0"
+          >
+            {file.name}
+          </button>
+          {fileNew && (
+            <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-rose-500 text-white">
+              Nouveau
+            </span>
+          )}
+        </div>
         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
           {orgName(file.orgId)} · {formatBytes(file.size)} · {new Date(file.uploadDate).toLocaleDateString('fr-FR')}
         </p>
@@ -1200,7 +1274,8 @@ export default function AntenneAdminDashboard() {
         <Trash2 className="w-4 h-4" />
       </button>
     </div>
-  );
+   );
+  };
 
   if (!organization) return null;
 
@@ -1338,10 +1413,13 @@ export default function AntenneAdminDashboard() {
                 <li key={org.id}>
                   <button
                     onClick={() => { setView('workspace'); openOrg(org.id); }}
-                    className="w-full flex items-center gap-3 text-left px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-azur dark:hover:border-azur transition-colors group"
+                    className={`w-full flex items-center gap-3 text-left px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border transition-colors group ${isUnseen(org.id, at) ? 'border-rose-300 dark:border-rose-500/60 ring-1 ring-rose-200 dark:ring-rose-500/30' : 'border-slate-200 dark:border-slate-700 hover:border-azur dark:hover:border-azur'}`}
                   >
                     <Send className="w-4 h-4 text-azur shrink-0" />
                     <span className="min-w-0 grow truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{org.name}</span>
+                    {isUnseen(org.id, at) && (
+                      <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-rose-500 text-white animate-pulse">Nouveau</span>
+                    )}
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono shrink-0 hidden sm:inline">
                       {new Date(at).toLocaleDateString('fr-FR')}
                     </span>
@@ -1472,13 +1550,16 @@ export default function AntenneAdminDashboard() {
               {filteredPartnerOrgs.map((org) => {
                 const orgFiles = files.filter((f) => f.orgId === org.id);
                 const validated = orgFiles.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
+                const orgSubmitTs = submittedMap[org.id] || org.dossierSubmittedAt || 0;
+                const orgNew = isUnseen(org.id, orgSubmitTs);
                 return (
                   <button
                     key={org.id}
                     onClick={() => openOrg(org.id)}
-                    className="card-asf p-4 text-left hover:border-azur hover:shadow-md transition-all cursor-pointer group"
-                    title="Voir les documents et gérer ce compte"
+                    className={`card-asf p-4 text-left hover:border-azur hover:shadow-md transition-all cursor-pointer group relative ${orgNew ? 'ring-2 ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
+                    title={orgNew ? 'Nouveau dossier soumis — cliquez pour le traiter' : 'Voir les documents et gérer ce compte'}
                   >
+                    {orgNew && <span className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="font-semibold text-deep dark:text-azur-pastel truncate group-hover:text-azur transition-colors">{org.name}</p>
@@ -1486,10 +1567,16 @@ export default function AntenneAdminDashboard() {
                       </div>
                       <StatusBadge status={org.submissionStatus} />
                     </div>
-                    {(org.dossierSubmittedAt || submittedMap[org.id]) && (
-                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
-                        <CheckCircle2 className="w-3 h-3" /> Dossier soumis
-                      </span>
+                    {orgSubmitTs > 0 && (
+                      orgNew ? (
+                        <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-extrabold uppercase tracking-wider text-white bg-rose-500 rounded-full px-2 py-0.5">
+                          <Send className="w-3 h-3" /> Nouveau · dossier soumis
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
+                          <CheckCircle2 className="w-3 h-3" /> Dossier soumis
+                        </span>
+                      )
                     )}
                     <div className="mt-3">
                       <ComplianceBar validated={validated} total={orgFiles.length} />
@@ -1815,17 +1902,26 @@ export default function AntenneAdminDashboard() {
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {orgFolders.map((fol) => (
+                      {orgFolders.map((fol) => {
+                        const folderSelfNew = fol.createdBy !== 'admin' && isUnseen(fol.id, fol.createdAt || 0);
+                        const folderHasNew = files.some((f) => (f.folderId || null) === fol.id && f.uploadedBy !== 'admin' && isUnseen(f.id, fileStamp(f)));
+                        const folNew = folderSelfNew || folderHasNew;
+                        return (
                         <div
                           key={fol.id}
-                          onClick={() => setOrgFolderId(fol.id)}
-                          className="card-asf p-3.5 flex flex-col gap-2.5 group relative cursor-pointer"
+                          onClick={() => { if (folderSelfNew) markSeen(fol.id); setOrgFolderId(fol.id); }}
+                          className={`card-asf p-3.5 flex flex-col gap-2.5 group relative cursor-pointer ${folNew ? 'ring-2 ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
+                          title={folNew ? 'Nouveau dossier — cliquez pour le marquer comme vu' : undefined}
                         >
+                          {folNew && <span className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />}
                           <div className="flex items-start justify-between gap-2">
                             <div className="w-9 h-9 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
                               <FolderIcon className="w-4 h-4 fill-current" />
                             </div>
                             <div className="flex items-center gap-1.5">
+                              {folNew && (
+                                <span className="text-[8px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-rose-500 text-white">Nouveau</span>
+                              )}
                               <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
                                 {fol.createdBy === 'admin' ? 'Admin' : 'Org'}
                               </span>
@@ -1845,7 +1941,8 @@ export default function AntenneAdminDashboard() {
                             </p>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </>
