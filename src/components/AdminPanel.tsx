@@ -1254,10 +1254,15 @@ export default function AdminPanel() {
       (ANTENNES_BY_DELEGATION[d] || []).some((a) => a.id === antId),
     ) || '';
   const antenneStats = useMemo(() => {
+    // Antennes actives uniquement : on ignore les fichiers rattachés à une
+    // antenne supprimée (ou sans antenne) pour ne pas faire réapparaître une
+    // antenne supprimée dans le tableau « Antennes à suivre ».
+    const activeIds = new Set(allAntennesFlat.map((a) => a.id));
     const nameOf = (id: string) => allAntennesFlat.find((a) => a.id === id)?.name || id || '—';
     const map = new Map<string, { total: number; validated: number; pending: number }>();
     for (const f of files) {
-      const id = f.antenne_id || '—';
+      const id = f.antenne_id || '';
+      if (!id || !activeIds.has(id)) continue;
       const e = map.get(id) || { total: 0, validated: 0, pending: 0 };
       e.total++;
       const st = f.submissionStatus || 'Pending';
