@@ -49,7 +49,7 @@ import { Bell, GraduationCap } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { subscribeAntenneSettings, saveAntenneSettings } from '../lib/antenneSettings';
 import { queueEmail } from '../lib/antenneAdmins';
-import { logAction } from '../lib/auditLog';
+import { logAction, subscribeAuditLogs } from '../lib/auditLog';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
@@ -269,6 +269,42 @@ export default function AntenneAdminDashboard() {
     () => orgProfiles.filter((o) => o.role === 'organization'),
     [orgProfiles],
   );
+
+  // Notifications de soumission de dossier. Pour rester fonctionnel même sans
+  // déploiement des règles, on s'appuie sur le journal d'activité (action
+  // autorisée) : un dépôt est repéré via `targetType === 'dossier_submission'`
+  // ou l'action `dossier_submit`. On retient l'horodatage le plus récent par
+  // organisme.
+  const [submittedMap, setSubmittedMap] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!antenneId) return;
+    const unsub = subscribeAuditLogs({ antenneId }, (logs) => {
+      const m: Record<string, number> = {};
+      for (const l of logs) {
+        const isSubmit = l.action === 'dossier_submit' || l.targetType === 'dossier_submission';
+        if (!isSubmit) continue;
+        const oid = l.targetId || l.actorUid;
+        if (!oid) continue;
+        if (!m[oid] || (l.timestamp || 0) > m[oid]) m[oid] = l.timestamp || 0;
+      }
+      setSubmittedMap(m);
+    }, 500);
+    return unsub;
+  }, [antenneId]);
+
+  // Dossiers soumis « à traiter » : organismes ayant soumis (journal ou champ
+  // `dossierSubmittedAt`) et dont le compte n'est pas encore tranché
+  // (ni validé, ni marqué incomplet). Triés du plus récent au plus ancien.
+  const pendingSubmissions = useMemo(() => {
+    return partnerOrgs
+      .map((o) => ({ org: o, at: submittedMap[o.id] || o.dossierSubmittedAt || 0 }))
+      .filter(({ org, at }) => {
+        if (!at) return false;
+        const st = org.submissionStatus || 'Pending';
+        return st !== 'Validated' && st !== 'Incomplete';
+      })
+      .sort((a, b) => b.at - a.at);
+  }, [partnerOrgs, submittedMap]);
 
   const stats = useMemo(() => {
     const by = (s: SubmissionStatus) => files.filter((f) => (f.submissionStatus || 'Pending') === s).length;
@@ -1220,6 +1256,47 @@ export default function AntenneAdminDashboard() {
           ))}
         </div>
 
+        {/* Dossiers soumis à traiter — notification proéminente */}
+        {pendingSubmissions.length > 0 && (
+          <section className="rounded-2xl border-l-4 border-azur bg-azur/5 dark:bg-azur/10 border border-azur/20 dark:border-azur/30 p-4 sm:p-5 shadow-asf-sm">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-9 h-9 rounded-xl bg-azur text-white flex items-center justify-center shrink-0">
+                <Send className="w-4.5 h-4.5" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-display font-bold text-deep dark:text-azur-pastel text-sm">
+                  Dossiers soumis à traiter
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {pendingSubmissions.length} organisme{pendingSubmissions.length > 1 ? 's ont' : ' a'} soumis son dossier pour revue.
+                </p>
+              </div>
+              <span className="ml-auto text-xs font-black text-white bg-azur rounded-full px-2.5 py-1 font-mono shrink-0">
+                {pendingSubmissions.length}
+              </span>
+            </div>
+            <ul className="flex flex-col gap-1.5">
+              {pendingSubmissions.slice(0, 6).map(({ org, at }) => (
+                <li key={org.id}>
+                  <button
+                    onClick={() => { setView('workspace'); openOrg(org.id); }}
+                    className="w-full flex items-center gap-3 text-left px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-azur dark:hover:border-azur transition-colors group"
+                  >
+                    <Send className="w-4 h-4 text-azur shrink-0" />
+                    <span className="min-w-0 grow truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{org.name}</span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono shrink-0 hidden sm:inline">
+                      {new Date(at).toLocaleDateString('fr-FR')}
+                    </span>
+                    <span className="text-[11px] font-bold text-azur shrink-0 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
+                      Traiter <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {/* Navigation par onglets : évite une page trop longue */}
         <div data-tour="tabs" className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-700 rounded-2xl p-1.5 shadow-asf-sm w-full sm:w-fit overflow-x-auto">
           {([
@@ -1351,7 +1428,7 @@ export default function AntenneAdminDashboard() {
                       </div>
                       <StatusBadge status={org.submissionStatus} />
                     </div>
-                    {org.dossierSubmittedAt && (
+                    {(org.dossierSubmittedAt || submittedMap[org.id]) && (
                       <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
                         <CheckCircle2 className="w-3 h-3" /> Dossier soumis
                       </span>
@@ -1555,12 +1632,12 @@ export default function AntenneAdminDashboard() {
                     <ComplianceBar validated={orgValidated} total={orgAll.length} />
                   </div>
 
-                  {selectedOrg.dossierSubmittedAt && (
+                  {(selectedOrg.dossierSubmittedAt || submittedMap[selectedOrg.id]) && (
                     <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 p-3 flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-300 mt-0.5 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Dossier soumis pour revue</p>
-                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300">Le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')} par l'organisme.</p>
+                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300">Le {new Date((selectedOrg.dossierSubmittedAt || submittedMap[selectedOrg.id])!).toLocaleDateString('fr-FR')} par l'organisme.</p>
                       </div>
                     </div>
                   )}

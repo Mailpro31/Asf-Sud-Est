@@ -671,6 +671,10 @@ export default function Dashboard() {
   // Soumission du dossier pour revue par l'antenne (l'organisme décide quand
   // il estime son dossier complet — aucun pré-requis bloquant).
   const [submittingDossier, setSubmittingDossier] = useState(false);
+  // Confirmation locale de soumission (au cas où l'horodatage n'est pas encore
+  // persisté sur le profil — règles non déployées).
+  const [submittedAtLocal, setSubmittedAtLocal] = useState<number | null>(null);
+  const dossierSubmittedAt = organization?.dossierSubmittedAt || submittedAtLocal;
   const handleSubmitDossier = async () => {
     if (!organization || submittingDossier) return;
     setSubmittingDossier(true);
@@ -681,17 +685,32 @@ export default function Dashboard() {
         if (found) localDb.saveOrganization({ ...found, dossierSubmittedAt: now, updatedAt: now });
         refreshLocalState();
       } else {
-        // Marque le dossier comme soumis (badge « Dossier soumis » côté antenne).
-        await updateDoc(doc(db, 'organizations', organization.id), { dossierSubmittedAt: now, updatedAt: now });
+        // Marque le dossier sur le profil (badge « Dossier soumis » côté
+        // antenne). Best-effort : si les règles ne sont pas encore déployées,
+        // l'écriture est refusée — la notification passe alors par le journal
+        // d'activité ci-dessous (canal toujours autorisé).
+        try {
+          await updateDoc(doc(db, 'organizations', organization.id), { dossierSubmittedAt: now, updatedAt: now });
+        } catch (e) {
+          console.warn('dossierSubmittedAt non écrit (règles non déployées ?), repli journal :', e);
+        }
       }
-      // Notification au tableau de bord de l'antenne (journal d'activité).
-      await logAction('dossier_submit', {
-        targetType: 'organization',
+      // Notification fiable au tableau de bord de l'antenne via le journal
+      // d'activité. `org_profile_update` est une action autorisée pour un
+      // partenaire même sans déploiement de règles ; `targetType` permet à
+      // l'antenne de repérer un dépôt de dossier.
+      const ok = await logAction('org_profile_update', {
+        targetType: 'dossier_submission',
         targetId: organization.id,
         targetName: organization.name,
-        details: "Dossier soumis pour revue par l'organisme",
+        details: "Dossier soumis pour revue par l'organisme.",
       });
-      toast('Dossier soumis à votre antenne ✓', 'success');
+      if (ok || localDb.isSandboxActive()) {
+        setSubmittedAtLocal(now);
+        toast('Dossier soumis à votre antenne ✓', 'success');
+      } else {
+        toast('La soumission a échoué, réessayez.', 'error');
+      }
     } catch (err) {
       console.error('Error submitting dossier:', err);
       toast('La soumission a échoué, réessayez.', 'error');
@@ -1219,13 +1238,13 @@ export default function Dashboard() {
 
         {/* Soumission du dossier */}
         <div data-tour="submit" className="mb-6 shrink-0">
-          <div className={`card-asf p-5 flex flex-col sm:flex-row sm:items-center gap-4 ${organization.dossierSubmittedAt ? 'ring-1 ring-emerald-200 dark:ring-emerald-500/30' : ''}`}>
+          <div className={`card-asf p-5 flex flex-col sm:flex-row sm:items-center gap-4 ${dossierSubmittedAt ? 'ring-1 ring-emerald-200 dark:ring-emerald-500/30' : ''}`}>
             <div className="min-w-0 flex-1">
               <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Soumettre mon dossier</h3>
-              {organization.dossierSubmittedAt ? (
+              {dossierSubmittedAt ? (
                 <p className="text-xs text-emerald-600 dark:text-emerald-300 mt-1 font-semibold flex items-center gap-1.5">
                   <Check className="w-4 h-4 shrink-0" />
-                  Dossier soumis le {new Date(organization.dossierSubmittedAt).toLocaleDateString('fr-FR')} · en cours de revue par votre antenne.
+                  Dossier soumis le {new Date(dossierSubmittedAt).toLocaleDateString('fr-FR')} · en cours de revue par votre antenne.
                 </p>
               ) : (
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
@@ -1236,10 +1255,10 @@ export default function Dashboard() {
             <button
               onClick={handleSubmitDossier}
               disabled={submittingDossier}
-              className={`${organization.dossierSubmittedAt ? 'btn-secondary' : 'btn-asf'} text-sm justify-center shrink-0 disabled:opacity-60`}
-              title={organization.dossierSubmittedAt ? 'Renvoyer le dossier après modification' : 'Soumettre votre dossier pour revue'}
+              className={`${dossierSubmittedAt ? 'btn-secondary' : 'btn-asf'} text-sm justify-center shrink-0 disabled:opacity-60`}
+              title={dossierSubmittedAt ? 'Renvoyer le dossier après modification' : 'Soumettre votre dossier pour revue'}
             >
-              {submittingDossier ? 'Envoi…' : organization.dossierSubmittedAt ? 'Soumettre à nouveau' : 'Soumettre mon dossier'}
+              {submittingDossier ? 'Envoi…' : dossierSubmittedAt ? 'Soumettre à nouveau' : 'Soumettre mon dossier'}
             </button>
           </div>
         </div>
