@@ -222,6 +222,10 @@ export default function AdminPanel() {
   // Modals & UI states
   const [fileToDelete, setFileToDelete] = useState<DossierFile | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
+  // Suppression définitive d'un compte (avec confirmation par saisie).
+  const [orgToDelete, setOrgToDelete] = useState<Organization | null>(null);
+  const [deleteOrgConfirm, setDeleteOrgConfirm] = useState('');
+  const [deletingOrgBusy, setDeletingOrgBusy] = useState(false);
   const [previewingFile, setPreviewingFile] = useState<DossierFile | null>(null);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -673,34 +677,61 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteOrg = async (org: Organization) => {
+  // Ouvre la modale de confirmation par saisie (sécurité anti-suppression accidentelle).
+  const handleDeleteOrg = (org: Organization) => {
+    setOrgToDelete(org);
+    setDeleteOrgConfirm('');
+  };
+
+  // Suppression DÉFINITIVE et complète : profil + tous ses fichiers (et leur
+  // stockage) + tous ses dossiers. Déclenchée uniquement après confirmation.
+  const performDeleteOrg = async () => {
+    const org = orgToDelete;
+    if (!org) return;
     const label = org.name || org.contactName || org.email || org.id;
-    const ok = await confirm(
-      `Supprimer définitivement le compte « ${label} » ?\n\nCette action est irréversible. Le profil partenaire sera retiré ; ses fichiers déjà déposés ne seront pas effacés.`,
-    );
-    if (!ok) return;
+    setDeletingOrgBusy(true);
     const logIt = () => logAction('org_delete', {
       targetType: 'organization',
       targetId: org.id,
       targetName: label,
       antenne_id: org.antenne_id,
       delegation_id: org.delegation_id,
-      details: `Compte « ${label} » supprimé`,
+      details: `Compte « ${label} » et toutes ses données supprimés`,
     });
+    const orgFiles = files.filter((f) => f.orgId === org.id);
+    const orgFolders = folders.filter((f) => f.orgId === org.id);
+
     if (localDb.isSandboxActive()) {
+      orgFiles.forEach((f) => localDb.deleteFile(f.id));
+      orgFolders.forEach((f) => localDb.deleteFolder(f.id));
       localDb.deleteOrganization(org.id);
+      setFiles(localDb.getFiles());
+      setFolders(localDb.getFolders());
       setOrgProfiles(localDb.getOrganizations());
       logIt();
-      toast(`Compte « ${label} » supprimé.`, 'success');
+      toast(`Compte « ${label} » et ses données supprimés.`, 'success');
+      setOrgToDelete(null);
+      setDeletingOrgBusy(false);
       return;
     }
     try {
+      // 1) Fichiers (+ artefacts de stockage), 2) dossiers, 3) profil.
+      for (const f of orgFiles) {
+        try { await deleteFileArtifacts(f); } catch { /* artefact déjà absent */ }
+        await deleteDoc(doc(db, 'files', f.id));
+      }
+      for (const fo of orgFolders) {
+        await deleteDoc(doc(db, 'folders', fo.id));
+      }
       await deleteDoc(doc(db, 'organizations', org.id));
       logIt();
-      toast(`Compte « ${label} » supprimé.`, 'success');
+      toast(`Compte « ${label} » et ses ${orgFiles.length} fichier(s) supprimés.`, 'success');
+      setOrgToDelete(null);
     } catch (err: any) {
       console.error("Error deleting organization:", err);
       toast("Échec de la suppression : " + (err?.message || 'erreur inconnue'), 'error');
+    } finally {
+      setDeletingOrgBusy(false);
     }
   };
 
@@ -3507,6 +3538,68 @@ export default function AdminPanel() {
         onClose={() => setIsCreatingFolder(false)}
         onConfirm={handleCreateFolder}
       />
+
+      {/* Suppression définitive d'un compte — confirmation par saisie. */}
+      {orgToDelete && (() => {
+        const label = orgToDelete.name || orgToDelete.contactName || orgToDelete.email || orgToDelete.id;
+        const nbFiles = files.filter((f) => f.orgId === orgToDelete.id).length;
+        const nbFolders = folders.filter((f) => f.orgId === orgToDelete.id).length;
+        const armed = deleteOrgConfirm.trim().toUpperCase() === 'SUPPRIMER';
+        return (
+          <div className="modal-overlay" onClick={() => !deletingOrgBusy && setOrgToDelete(null)}>
+            <div className="modal-panel max-w-md" onClick={(e) => e.stopPropagation()}>
+              <div className="p-6">
+                <div className="flex items-start gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 flex items-center justify-center shrink-0">
+                    <Trash2 className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-display text-lg font-bold text-deep dark:text-white">Supprimer définitivement le compte</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                      Le compte <span className="font-bold">« {label} »</span> et toutes ses données vont être
+                      <span className="font-bold text-rose-600 dark:text-rose-300"> définitivement supprimés</span> :
+                    </p>
+                    <ul className="text-xs text-slate-500 dark:text-slate-400 mt-2 space-y-1 list-disc list-inside">
+                      <li>le profil partenaire,</li>
+                      <li>{nbFiles} fichier{nbFiles > 1 ? 's' : ''} déposé{nbFiles > 1 ? 's' : ''} (et leur stockage),</li>
+                      <li>{nbFolders} dossier{nbFolders > 1 ? 's' : ''}.</li>
+                    </ul>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">
+                      Cette action est irréversible. (Remarque : l'identifiant de connexion Google/e-mail
+                      n'est pas supprimé du système d'authentification.)
+                    </p>
+                  </div>
+                </div>
+
+                <label className="block mt-5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Tapez <span className="font-mono text-rose-600 dark:text-rose-300">SUPPRIMER</span> pour confirmer
+                </label>
+                <input
+                  autoFocus
+                  value={deleteOrgConfirm}
+                  onChange={(e) => setDeleteOrgConfirm(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && armed && !deletingOrgBusy) performDeleteOrg(); }}
+                  placeholder="SUPPRIMER"
+                  className="input-asf mt-2"
+                />
+
+                <div className="flex justify-end gap-2 mt-5">
+                  <button onClick={() => setOrgToDelete(null)} disabled={deletingOrgBusy} className="btn-secondary text-sm">
+                    Annuler
+                  </button>
+                  <button
+                    onClick={performDeleteOrg}
+                    disabled={!armed || deletingOrgBusy}
+                    className="btn-danger text-sm"
+                  >
+                    {deletingOrgBusy ? 'Suppression…' : 'Supprimer définitivement'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <FilePreviewModal
         isOpen={!!previewingFile}
