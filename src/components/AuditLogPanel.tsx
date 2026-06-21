@@ -9,30 +9,30 @@ import { AuditLog, AuditAction, subscribeAuditLogs } from '../lib/auditLog';
  */
 
 const ACTION_META: Record<string, { label: string; icon: string; cls: string }> = {
-  login: { label: 'Connexion', icon: '🔓', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  logout: { label: 'Déconnexion', icon: '🔒', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
+  login: { label: 'Connexion', icon: '🔓', cls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' },
+  logout: { label: 'Déconnexion', icon: '🔒', cls: 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
   file_upload: { label: 'Dépôt de fichier', icon: '⬆️', cls: 'bg-azur/10 text-azur border-azur/20' },
-  file_delete: { label: 'Suppression de fichier', icon: '🗑️', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
-  file_status_change: { label: 'Statut de fichier', icon: '🏷️', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  file_share_toggle: { label: 'Partage de fichier', icon: '🔁', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  file_rename: { label: 'Renommage de fichier', icon: '✏️', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
-  file_move: { label: 'Déplacement de fichier', icon: '📦', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
+  file_delete: { label: 'Suppression de fichier', icon: '🗑️', cls: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' },
+  file_status_change: { label: 'Statut de fichier', icon: '🏷️', cls: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30' },
+  file_share_toggle: { label: 'Partage de fichier', icon: '🔁', cls: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30' },
+  file_rename: { label: 'Renommage de fichier', icon: '✏️', cls: 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+  file_move: { label: 'Déplacement de fichier', icon: '📦', cls: 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
   file_download: { label: 'Téléchargement', icon: '⬇️', cls: 'bg-azur/10 text-azur border-azur/20' },
   folder_create: { label: 'Création de dossier', icon: '📁', cls: 'bg-azur/10 text-azur border-azur/20' },
-  folder_delete: { label: 'Suppression de dossier', icon: '🗂️', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
-  org_create: { label: 'Nouveau compte', icon: '✨', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  org_delete: { label: 'Suppression de compte', icon: '🧹', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
-  org_role_change: { label: 'Changement de rôle', icon: '🛡️', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
-  org_status_change: { label: 'Statut de compte', icon: '⚙️', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  org_reminder: { label: 'Relance e-mail', icon: '✉️', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+  folder_delete: { label: 'Suppression de dossier', icon: '🗂️', cls: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' },
+  org_create: { label: 'Nouveau compte', icon: '✨', cls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' },
+  org_delete: { label: 'Suppression de compte', icon: '🧹', cls: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' },
+  org_role_change: { label: 'Changement de rôle', icon: '🛡️', cls: 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-500/30' },
+  org_status_change: { label: 'Statut de compte', icon: '⚙️', cls: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30' },
+  org_reminder: { label: 'Relance e-mail', icon: '✉️', cls: 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30' },
   org_assign_antenne: { label: "Affectation d'antenne", icon: '📍', cls: 'bg-azur/10 text-azur border-azur/20' },
-  org_profile_update: { label: 'Profil mis à jour', icon: '✏️', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
+  org_profile_update: { label: 'Profil mis à jour', icon: '✏️', cls: 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
   antenne_create: { label: "Création d'antenne", icon: '🛰️', cls: 'bg-azur/10 text-azur border-azur/20' },
-  antenne_delete: { label: "Suppression d'antenne", icon: '💥', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+  antenne_delete: { label: "Suppression d'antenne", icon: '💥', cls: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' },
   antenne_update: { label: "Modification d'antenne", icon: '🛠️', cls: 'bg-azur/10 text-azur border-azur/20' },
-  antenne_group_change: { label: "Groupe d'antennes", icon: '🗺️', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
-  antenne_settings_change: { label: "Réglages d'antenne", icon: '🔔', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  delegation_create: { label: 'Création de délégation', icon: '🏛️', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  antenne_group_change: { label: "Groupe d'antennes", icon: '🗺️', cls: 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-500/30' },
+  antenne_settings_change: { label: "Réglages d'antenne", icon: '🔔', cls: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30' },
+  delegation_create: { label: 'Création de délégation', icon: '🏛️', cls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' },
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -44,7 +44,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 function actionMeta(a: string) {
-  return ACTION_META[a] || { label: a, icon: '•', cls: 'bg-slate-50 text-slate-600 border-slate-200' };
+  return ACTION_META[a] || { label: a, icon: '•', cls: 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' };
 }
 
 function formatDate(ts: number): string {
@@ -191,13 +191,13 @@ export default function AuditLogPanel({
       {/* Liste */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden">
         <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             {filtered.length} entrée{filtered.length > 1 ? 's' : ''}
           </span>
         </div>
 
         {filtered.length === 0 ? (
-          <div className="py-16 text-center text-sm text-slate-400 font-semibold">
+          <div className="py-16 text-center text-sm text-slate-400 dark:text-slate-500 font-semibold">
             Aucune action enregistrée pour le moment.
           </div>
         ) : (
@@ -224,7 +224,7 @@ export default function AuditLogPanel({
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{l.details}</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-[11px] text-slate-400 font-mono tabular-nums whitespace-nowrap mt-0.5">
+                  <span className="shrink-0 text-[11px] text-slate-400 dark:text-slate-500 font-mono tabular-nums whitespace-nowrap mt-0.5">
                     {formatDate(l.timestamp)}
                   </span>
                 </div>

@@ -17,6 +17,19 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Applique le thème avant le rendu pour éviter tout « flash » de couleur.
+      (function () {
+        try {
+          var m = localStorage.getItem('asf_theme');
+          if (m !== 'light' && m !== 'dark') {
+            m = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.classList.toggle('dark', m === 'dark');
+          document.documentElement.style.colorScheme = m;
+        } catch (e) {}
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

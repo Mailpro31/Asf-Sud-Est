@@ -1025,16 +1025,16 @@ export default function AntenneAdminDashboard() {
 
   // Couleur de la pastille de statut (lecture en un coup d'œil).
   const STATUS_SELECT_CLS: Record<SubmissionStatus, string> = {
-    Pending: 'border-amber-300 bg-amber-50 text-amber-700',
+    Pending: 'border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300',
     'Under review': 'border-azur/40 bg-azur/10 text-azur',
-    Validated: 'border-emerald-300 bg-emerald-50 text-emerald-700',
-    Incomplete: 'border-rose-300 bg-rose-50 text-rose-700',
+    Validated: 'border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    Incomplete: 'border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300',
   };
   const statusSelectCls = (s?: SubmissionStatus) => STATUS_SELECT_CLS[s || 'Pending'] || STATUS_SELECT_CLS.Pending;
 
   // Ligne de document réutilisable (liste principale + fiche organisme).
   const renderFileRow = (file: DossierFile, opts?: { selectable?: boolean; tourExample?: boolean }) => (
-    <div key={file.id} data-tour={opts?.tourExample ? 'org-doc' : undefined} className={`flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70'}`}>
+    <div key={file.id} data-tour={opts?.tourExample ? 'org-doc' : undefined} className={`flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70 dark:hover:bg-slate-800'}`}>
       {opts?.selectable && (
         <input
           type="checkbox"
@@ -1050,11 +1050,11 @@ export default function AntenneAdminDashboard() {
       <div className="min-w-0 flex-1">
         <button
           onClick={() => setPreviewFile(file)}
-          className="font-medium text-slate-800 hover:text-azur truncate block text-left w-full"
+          className="font-medium text-slate-800 dark:text-slate-100 hover:text-azur truncate block text-left w-full"
         >
           {file.name}
         </button>
-        <p className="text-xs text-slate-500 truncate">
+        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
           {orgName(file.orgId)} · {formatBytes(file.size)} · {new Date(file.uploadDate).toLocaleDateString('fr-FR')}
         </p>
       </div>
@@ -1080,8 +1080,8 @@ export default function AntenneAdminDashboard() {
           onClick={() => handleToggleShare(file)}
           className={`text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 transition-colors ${
             file.sharedWithPartner !== false
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-slate-100 text-slate-500 border-slate-200'
+              ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
           }`}
           title={file.sharedWithPartner !== false ? 'Partagé avec le partenaire (cliquer pour rendre privé)' : 'Privé (cliquer pour partager)'}
         >
@@ -1100,7 +1100,7 @@ export default function AntenneAdminDashboard() {
       </button>
       <button
         onClick={() => setDeletingFile(file)}
-        className="btn-ghost p-2 shrink-0 text-rose-500 hover:bg-rose-50"
+        className="btn-ghost p-2 shrink-0 text-rose-500 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10"
         title="Supprimer"
       >
         <Trash2 className="w-4 h-4" />
@@ -1114,22 +1114,22 @@ export default function AntenneAdminDashboard() {
 
   const STAT_CARDS = [
     { label: 'Documents', value: stats.total, icon: FileText, tone: 'text-azur bg-azur/10' },
-    { label: 'Organismes', value: stats.organisms, icon: Building2, tone: 'text-deep bg-azur-light' },
-    { label: 'En attente', value: stats.pending, icon: Clock, tone: 'text-amber-600 bg-amber-50' },
+    { label: 'Organismes', value: stats.organisms, icon: Building2, tone: 'text-deep dark:text-azur-pastel bg-azur-light dark:bg-azur/15' },
+    { label: 'En attente', value: stats.pending, icon: Clock, tone: 'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10' },
     { label: 'En révision', value: stats.review, icon: AlertCircle, tone: 'text-azur bg-azur/10' },
-    { label: 'Validés', value: stats.validated, icon: CheckCircle2, tone: 'text-emerald-600 bg-emerald-50' },
+    { label: 'Validés', value: stats.validated, icon: CheckCircle2, tone: 'text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10' },
   ];
 
   // Un coordinateur d'antenne sans antenne affectée ne peut rien gérer : on
   // l'informe clairement au lieu d'afficher un tableau de bord vide.
   if (!antenneId) {
     return (
-      <div className="min-h-screen bg-slate-50/60 text-slate-800 font-sans flex flex-col items-center justify-center px-6 text-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50/60 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 font-sans flex flex-col items-center justify-center px-6 text-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center">
           <MapPin className="w-7 h-7 text-amber-500" />
         </div>
-        <h1 className="font-display text-xl font-bold text-deep">Aucune antenne affectée</h1>
-        <p className="text-sm text-slate-500 max-w-md leading-relaxed">
+        <h1 className="font-display text-xl font-bold text-deep dark:text-azur-pastel">Aucune antenne affectée</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
           Votre compte de coordinateur n'est rattaché à aucune antenne pour le moment.
           Demandez au super administrateur de vous affecter une antenne de rattachement
           pour accéder à votre espace de gestion.
@@ -1143,18 +1143,18 @@ export default function AntenneAdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 text-slate-800 font-sans">
+    <div className="min-h-screen bg-slate-50/60 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 font-sans">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200/70 sticky top-0 z-30">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200/70 dark:border-slate-700 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-azur-light flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-azur-light dark:bg-azur/15 flex items-center justify-center shrink-0">
             <LogoASF className="w-6 h-6" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="font-display text-base sm:text-lg font-bold text-deep leading-tight truncate">
+            <h1 className="font-display text-base sm:text-lg font-bold text-deep dark:text-azur-pastel leading-tight truncate">
               Antenne {antenneName}
             </h1>
-            <p className="text-[11px] text-slate-500 truncate flex items-center gap-1">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
               <MapPin className="w-3 h-3 text-azur" /> {delegationName} · Espace gestionnaire
             </p>
           </div>
@@ -1214,14 +1214,14 @@ export default function AntenneAdminDashboard() {
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 ${c.tone}`}>
                 <c.icon className="w-5 h-5" />
               </div>
-              <p className="font-display text-2xl font-bold text-deep">{c.value}</p>
-              <p className="text-xs text-slate-500 font-medium">{c.label}</p>
+              <p className="font-display text-2xl font-bold text-deep dark:text-azur-pastel">{c.value}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{c.label}</p>
             </div>
           ))}
         </div>
 
         {/* Navigation par onglets : évite une page trop longue */}
-        <div data-tour="tabs" className="flex items-center gap-1.5 bg-white border border-slate-200/70 rounded-2xl p-1.5 shadow-asf-sm w-full sm:w-fit overflow-x-auto">
+        <div data-tour="tabs" className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-700 rounded-2xl p-1.5 shadow-asf-sm w-full sm:w-fit overflow-x-auto">
           {([
             { id: 'workspace', label: 'Espace de travail', icon: Building2 },
             { id: 'activity', label: 'Journal', icon: Clock },
@@ -1231,7 +1231,7 @@ export default function AntenneAdminDashboard() {
               key={t.id}
               onClick={() => setView(t.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${
-                view === t.id ? 'bg-azur text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+                view === t.id ? 'bg-azur text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
               <t.icon className="w-4 h-4" /> {t.label}
@@ -1247,8 +1247,8 @@ export default function AntenneAdminDashboard() {
               <Bell className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-display text-deep font-bold tracking-tight">Notifications par e-mail</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h2 className="font-display text-deep dark:text-azur-pastel font-bold tracking-tight">Notifications par e-mail</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Un e-mail à chaque nouveau dépôt d'un partenaire.
               </p>
             </div>
@@ -1261,12 +1261,12 @@ export default function AntenneAdminDashboard() {
               onChange={(e) => setNotifyEnabled(e.target.checked)}
               className="w-4 h-4 accent-azur cursor-pointer"
             />
-            <span className="text-sm font-semibold text-deep">Activer les notifications de dépôt</span>
+            <span className="text-sm font-semibold text-deep dark:text-azur-pastel">Activer les notifications de dépôt</span>
           </label>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
             <div className="flex-1">
-              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">
                 Adresse e-mail de notification
               </label>
               <input
@@ -1292,16 +1292,16 @@ export default function AntenneAdminDashboard() {
         {view === 'workspace' && (<>
         {/* Organismes */}
         <section className="space-y-3">
-          <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
+          <h2 className="font-display text-deep dark:text-azur-pastel font-bold tracking-tight flex items-center gap-2">
             <Building2 className="w-5 h-5 text-azur" /> Organismes
-            <span className="text-xs font-normal text-slate-400">· cliquez pour gérer</span>
+            <span className="text-xs font-normal text-slate-400 dark:text-slate-500">· cliquez pour gérer</span>
           </h2>
 
           {/* Recherche + filtres rapides par statut */}
           {partnerOrgs.length > 0 && (
             <div data-tour="filters" className="space-y-2.5">
               <div className="relative max-w-md">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   ref={orgSearchRef}
                   value={orgSearch}
@@ -1309,7 +1309,7 @@ export default function AntenneAdminDashboard() {
                   placeholder="Rechercher un organisme…"
                   className="input-asf pl-9 pr-14 py-2 w-full text-sm"
                 />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 border border-slate-200 rounded-md px-1.5 py-0.5 bg-slate-50 hidden sm:block">⌘K</span>
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-0.5 bg-slate-50 dark:bg-slate-800/50 hidden sm:block">⌘K</span>
               </div>
               <StatusFilterChips
                 value={orgQuickStatus}
@@ -1318,18 +1318,18 @@ export default function AntenneAdminDashboard() {
                 allLabel="Tous"
                 className="gap-2"
                 chipClass={(active) =>
-                  `text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center transition-colors ${active ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'}`
+                  `text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center transition-colors ${active ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'}`
                 }
               />
             </div>
           )}
 
           {partnerOrgs.length === 0 ? (
-            <div className="card-asf p-6 text-center text-sm text-slate-500">
+            <div className="card-asf p-6 text-center text-sm text-slate-500 dark:text-slate-400">
               Aucun organisme rattaché à cette antenne pour le moment.
             </div>
           ) : filteredPartnerOrgs.length === 0 ? (
-            <div className="card-asf p-6 text-center text-sm text-slate-500">
+            <div className="card-asf p-6 text-center text-sm text-slate-500 dark:text-slate-400">
               Aucun organisme ne correspond à votre recherche.
             </div>
           ) : (
@@ -1346,13 +1346,13 @@ export default function AntenneAdminDashboard() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-semibold text-deep truncate group-hover:text-azur transition-colors">{org.name}</p>
-                        <p className="text-xs text-slate-500 truncate">{org.email}</p>
+                        <p className="font-semibold text-deep dark:text-azur-pastel truncate group-hover:text-azur transition-colors">{org.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{org.email}</p>
                       </div>
                       <StatusBadge status={org.submissionStatus} />
                     </div>
                     {org.dossierSubmittedAt && (
-                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
                         <CheckCircle2 className="w-3 h-3" /> Dossier soumis
                       </span>
                     )}
@@ -1360,7 +1360,7 @@ export default function AntenneAdminDashboard() {
                       <ComplianceBar validated={validated} total={orgFiles.length} />
                     </div>
                     <p className="text-xs mt-2.5 flex items-center justify-between">
-                      <span className="text-slate-500">{orgFiles.length} document{orgFiles.length > 1 ? 's' : ''}</span>
+                      <span className="text-slate-500 dark:text-slate-400">{orgFiles.length} document{orgFiles.length > 1 ? 's' : ''}</span>
                       <span className="inline-flex items-center gap-1 text-azur font-bold group-hover:translate-x-0.5 transition-transform">
                         Gérer <ChevronRight className="w-3.5 h-3.5" />
                       </span>
@@ -1374,9 +1374,9 @@ export default function AntenneAdminDashboard() {
 
         {/* Documents internes de l'antenne (non rattachés à un organisme) */}
         <section className="space-y-3">
-          <h2 className="font-display text-deep font-bold tracking-tight flex items-center gap-2">
+          <h2 className="font-display text-deep dark:text-azur-pastel font-bold tracking-tight flex items-center gap-2">
             <FolderIcon className="w-5 h-5 text-azur" /> Documents internes
-            <span className="text-xs font-normal text-slate-400">· de l'antenne</span>
+            <span className="text-xs font-normal text-slate-400 dark:text-slate-500">· de l'antenne</span>
           </h2>
           <button
             onClick={openInternal}
@@ -1389,8 +1389,8 @@ export default function AntenneAdminDashboard() {
                 <FolderOpen className="w-5 h-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-deep group-hover:text-azur transition-colors">Documents internes</p>
-                <p className="text-xs text-slate-500">{internalAll.length} document{internalAll.length > 1 ? 's' : ''} · usage interne</p>
+                <p className="font-semibold text-deep dark:text-azur-pastel group-hover:text-azur transition-colors">Documents internes</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{internalAll.length} document{internalAll.length > 1 ? 's' : ''} · usage interne</p>
               </div>
               <span className="inline-flex items-center gap-1 text-azur font-bold group-hover:translate-x-0.5 transition-transform">
                 Ouvrir <ChevronRight className="w-3.5 h-3.5" />
@@ -1424,8 +1424,8 @@ export default function AntenneAdminDashboard() {
       {/* Modale de renommage */}
       {renamingFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => setRenamingFile(null)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-display text-lg font-bold text-deep">Renommer le document</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Renommer le document</h3>
             <input
               autoFocus
               value={renameValue}
@@ -1445,17 +1445,17 @@ export default function AntenneAdminDashboard() {
       {/* Confirmation de suppression */}
       {deletingFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => !deleting && setDeletingFile(null)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 dark:text-rose-300 flex items-center justify-center shrink-0">
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-display text-lg font-bold text-deep">Supprimer le document ?</h3>
-                <p className="text-sm text-slate-500">Cette action est irréversible.</p>
+                <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Supprimer le document ?</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Cette action est irréversible.</p>
               </div>
             </div>
-            <p className="text-sm text-slate-600 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 truncate">
+            <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl px-3 py-2 truncate">
               📄 {deletingFile.name}
             </p>
             <div className="flex justify-end gap-2">
@@ -1479,24 +1479,24 @@ export default function AntenneAdminDashboard() {
           onClick={closeOrg}
         >
           <div
-            className="bg-white rounded-3xl shadow-asf-lg w-full max-w-6xl my-auto animate-panel-in overflow-hidden flex flex-col max-h-[92vh]"
+            className="bg-white dark:bg-slate-900 rounded-3xl shadow-asf-lg w-full max-w-6xl my-auto animate-panel-in overflow-hidden flex flex-col max-h-[92vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête */}
-            <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-azur/5 to-transparent">
+            <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-azur/5 to-transparent">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-12 h-12 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
                   <Building2 className="w-6 h-6" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-display text-xl font-bold text-deep truncate">{selectedOrg.name}</h3>
-                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${isValidated ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                    <h3 className="font-display text-xl font-bold text-deep dark:text-azur-pastel truncate">{selectedOrg.name}</h3>
+                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${isValidated ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${isValidated ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                       {isValidated ? 'Compte validé' : 'Accès suspendu'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {orgAll.length} document{orgAll.length > 1 ? 's' : ''} · {orgValidated} validé{orgValidated > 1 ? 's' : ''}
                   </p>
                 </div>
@@ -1528,46 +1528,46 @@ export default function AntenneAdminDashboard() {
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
 
               {/* Rail gauche : coordonnées, dates, conformité, accès */}
-              <aside className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50/60 overflow-y-auto">
+              <aside className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 overflow-y-auto">
                 <div className="p-5 space-y-5">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Coordonnées</p>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mb-2">Coordonnées</p>
                     <ul className="space-y-2 text-sm">
-                      <li className="flex items-start gap-2 text-slate-700"><User className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 truncate">{selectedOrg.contactName || '—'}</span></li>
-                      <li data-tour="org-email" className="flex items-start gap-2 text-slate-700"><Mail className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 break-all">{selectedOrg.email || '—'}</span></li>
-                      <li className="flex items-start gap-2 text-slate-700"><Phone className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="min-w-0 truncate">{selectedOrg.phone || '—'}</span></li>
+                      <li className="flex items-start gap-2 text-slate-700 dark:text-slate-200"><User className="w-4 h-4 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" /><span className="min-w-0 truncate">{selectedOrg.contactName || '—'}</span></li>
+                      <li data-tour="org-email" className="flex items-start gap-2 text-slate-700 dark:text-slate-200"><Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" /><span className="min-w-0 break-all">{selectedOrg.email || '—'}</span></li>
+                      <li className="flex items-start gap-2 text-slate-700 dark:text-slate-200"><Phone className="w-4 h-4 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" /><span className="min-w-0 truncate">{selectedOrg.phone || '—'}</span></li>
                     </ul>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Créé le</p>
-                      <p className="text-sm font-semibold text-slate-700">{selectedOrg.createdAt ? new Date(selectedOrg.createdAt).toLocaleDateString('fr-FR') : '—'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold">Créé le</p>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{selectedOrg.createdAt ? new Date(selectedOrg.createdAt).toLocaleDateString('fr-FR') : '—'}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Activité</p>
-                      <p className="text-sm font-semibold text-slate-700">{selectedOrg.updatedAt ? new Date(selectedOrg.updatedAt).toLocaleDateString('fr-FR') : '—'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold">Activité</p>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{selectedOrg.updatedAt ? new Date(selectedOrg.updatedAt).toLocaleDateString('fr-FR') : '—'}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Conformité des documents</p>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mb-2">Conformité des documents</p>
                     <ComplianceBar validated={orgValidated} total={orgAll.length} />
                   </div>
 
                   {selectedOrg.dossierSubmittedAt && (
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                    <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 p-3 flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-300 mt-0.5 shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-emerald-800">Dossier soumis pour revue</p>
-                        <p className="text-[11px] text-emerald-700">Le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')} par l'organisme.</p>
+                        <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Dossier soumis pour revue</p>
+                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300">Le {new Date(selectedOrg.dossierSubmittedAt).toLocaleDateString('fr-FR')} par l'organisme.</p>
                       </div>
                     </div>
                   )}
 
-                  <div data-tour="org-access" className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Accès de l'organisme</p>
-                    <p className="text-xs text-slate-500 mt-1 leading-snug">
+                  <div data-tour="org-access" className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold">Accès de l'organisme</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
                       {isValidated
                         ? "Validé : l'organisme peut se connecter et déposer ses documents."
                         : "Suspendu : aucun dépôt possible tant qu'il n'est pas validé."}
@@ -1576,7 +1576,7 @@ export default function AntenneAdminDashboard() {
                       <button
                         onClick={() => handleSetOrgValidated(selectedOrg, false)}
                         disabled={updatingOrgStatus}
-                        className="mt-3 w-full text-sm font-bold px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                        className="mt-3 w-full text-sm font-bold px-4 py-2 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 inline-flex items-center justify-center gap-2 disabled:opacity-60"
                       >
                         <AlertCircle className="w-4 h-4" /> Suspendre le compte
                       </button>
@@ -1597,9 +1597,9 @@ export default function AntenneAdminDashboard() {
               <section className="flex-1 min-w-0 flex flex-col min-h-0">
 
             {/* Dossiers propres à l'organisme (rangement privé, visible par lui seul) */}
-            <div data-tour="org-folders" className="px-5 pt-4 pb-2 border-b border-slate-100">
+            <div data-tour="org-folders" className="px-5 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+                <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5">
                   <FolderIcon className="w-3.5 h-3.5" /> Dossiers de l'organisme
                 </p>
               </div>
@@ -1607,7 +1607,7 @@ export default function AntenneAdminDashboard() {
                 <button
                   onClick={() => setOrgFolderId(null)}
                   className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                    orgFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                    orgFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" /> Tous ({files.filter((f) => f.orgId === selectedOrg.id).length})
@@ -1616,7 +1616,7 @@ export default function AntenneAdminDashboard() {
                   <span
                     key={fol.id}
                     className={`text-xs font-bold pl-3 pr-1.5 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                      orgFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                      orgFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'
                     }`}
                   >
                     <button onClick={() => setOrgFolderId(fol.id)} className="inline-flex items-center gap-1.5 cursor-pointer">
@@ -1627,7 +1627,7 @@ export default function AntenneAdminDashboard() {
                       onClick={() => handleDeleteFolder(fol)}
                       title="Supprimer le dossier"
                       className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
-                        orgFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 text-slate-400 hover:text-rose-500'
+                        orgFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 dark:hover:bg-rose-500/10 text-slate-400 dark:text-slate-500 hover:text-rose-500'
                       }`}
                     >
                       <X className="w-3 h-3" />
@@ -1642,17 +1642,17 @@ export default function AntenneAdminDashboard() {
                 </button>
               </div>
               {orgFolderId && (
-                <p className="text-[11px] text-slate-500 mt-2">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
                   Les nouveaux dépôts iront dans le dossier <strong>{orgFolders.find((f) => f.id === orgFolderId)?.name}</strong>.
                 </p>
               )}
             </div>
 
             {/* Recherche, filtres et actions sur les documents de l'organisme */}
-            <div data-tour="org-tools" className="px-5 py-3 border-b border-slate-100 space-y-2">
+            <div data-tour="org-tools" className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1 min-w-[160px]">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     value={orgDocSearch}
                     onChange={(e) => setOrgDocSearch(e.target.value)}
@@ -1714,7 +1714,7 @@ export default function AntenneAdminDashboard() {
                 <button
                   onClick={() => exportCsv(orgModalFiles, selectedOrg.name)}
                   disabled={orgModalFiles.length === 0}
-                  className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="text-xs font-bold px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-azur/40 text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 disabled:opacity-50"
                   title="Exporter la liste en CSV"
                 >
                   <FileDown className="w-3.5 h-3.5" /> Export
@@ -1722,7 +1722,7 @@ export default function AntenneAdminDashboard() {
                 <button
                   onClick={() => downloadAsZip(orgModalFiles, `${selectedOrg.name}_documents`)}
                   disabled={orgModalFiles.length === 0 || zipping}
-                  className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="text-xs font-bold px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-azur/40 text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <Archive className="w-3.5 h-3.5" /> {zipping ? 'Archivage…' : '.zip'}
                 </button>
@@ -1732,7 +1732,7 @@ export default function AntenneAdminDashboard() {
             {/* Barre d'actions groupées (sélection multiple) */}
             {selectedIds.size > 0 && (
               <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 bg-azur/10 border-b border-azur/25">
-                <span className="text-sm font-bold text-deep">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
+                <span className="text-sm font-bold text-deep dark:text-azur-pastel">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
                 <div className="flex-1" />
                 <button onClick={() => handleBulkStatus('Validated')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5">
                   <CheckCheck className="w-3.5 h-3.5" /> Valider
@@ -1746,19 +1746,19 @@ export default function AntenneAdminDashboard() {
                   <option value="" disabled>Statut…</option>
                   {STATUS_ORDER.map((s) => (<option key={s} value={s}>{getStatusMeta(s).label}</option>))}
                 </select>
-                <button onClick={handleBulkDownload} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5">
+                <button onClick={handleBulkDownload} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-azur/40 text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">
                   <Download className="w-3.5 h-3.5" /> Télécharger
                 </button>
-                <button onClick={handleBulkDelete} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-1.5">
+                <button onClick={handleBulkDelete} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 inline-flex items-center gap-1.5">
                   <Trash2 className="w-3.5 h-3.5" /> Supprimer
                 </button>
-                <button onClick={clearSelection} className="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">Annuler</button>
+                <button onClick={clearSelection} className="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Annuler</button>
               </div>
             )}
 
             {/* Documents de l'organisme */}
             <div data-tour="org-list" className="flex-1 min-h-[30vh] overflow-y-auto">
-              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100 sticky top-0 bg-white z-10">
+              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
                 {orgModalFiles.length > 0 && (
                   <input
                     type="checkbox"
@@ -1771,7 +1771,7 @@ export default function AntenneAdminDashboard() {
                     title="Tout sélectionner"
                   />
                 )}
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {orgModalFiles.length} document{orgModalFiles.length > 1 ? 's' : ''}
                 </span>
                 {(['Validated', 'Pending', 'Under review', 'Incomplete'] as SubmissionStatus[]).map((s) => {
@@ -1785,7 +1785,7 @@ export default function AntenneAdminDashboard() {
                 })}
               </div>
               {orgModalFiles.length === 0 ? (
-                <div className="px-5 pb-8 pt-2 text-center text-sm text-slate-400 font-semibold">
+                <div className="px-5 pb-8 pt-2 text-center text-sm text-slate-400 dark:text-slate-500 font-semibold">
                   {orgDocSearch || orgStatusFilter !== 'all'
                     ? 'Aucun document ne correspond à votre recherche.'
                     : orgFolderId
@@ -1793,7 +1793,7 @@ export default function AntenneAdminDashboard() {
                       : "Cet organisme n'a déposé aucun document pour le moment."}
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {orgModalFiles.map((file, i) => renderFileRow(file, { selectable: true, tourExample: i === 0 }))}
                 </div>
               )}
@@ -1812,21 +1812,21 @@ export default function AntenneAdminDashboard() {
           onClick={closeInternal}
         >
           <div
-            className={`bg-white rounded-2xl shadow-asf-lg w-full max-w-5xl my-auto animate-panel-in ${dragOver ? 'ring-2 ring-azur' : ''}`}
+            className={`bg-white dark:bg-slate-900 rounded-2xl shadow-asf-lg w-full max-w-5xl my-auto animate-panel-in ${dragOver ? 'ring-2 ring-azur' : ''}`}
             onClick={(e) => e.stopPropagation()}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={onDropFiles}
           >
             {/* En-tête */}
-            <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
+            <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-start gap-3 min-w-0">
                 <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
                   <FolderOpen className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-display text-lg font-bold text-deep">Documents internes</h3>
-                  <p className="text-xs text-slate-500">Documents de l'antenne non rattachés à un organisme.</p>
+                  <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Documents internes</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Documents de l'antenne non rattachés à un organisme.</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -1840,15 +1840,15 @@ export default function AntenneAdminDashboard() {
             </div>
 
             {/* Dossiers internes */}
-            <div data-tour="int-folders" className="px-5 pt-4 pb-2 border-b border-slate-100">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5 mb-2">
+            <div data-tour="int-folders" className="px-5 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5 mb-2">
                 <FolderIcon className="w-3.5 h-3.5" /> Dossiers internes
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setActiveFolderId(null)}
                   className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                    activeFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                    activeFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" /> Tous ({internalAll.length})
@@ -1857,7 +1857,7 @@ export default function AntenneAdminDashboard() {
                   <span
                     key={fol.id}
                     className={`text-xs font-bold pl-3 pr-1.5 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                      activeFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white text-slate-600 border-slate-200 hover:border-azur/40'
+                      activeFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'
                     }`}
                   >
                     <button onClick={() => setActiveFolderId(fol.id)} className="inline-flex items-center gap-1.5 cursor-pointer">
@@ -1868,7 +1868,7 @@ export default function AntenneAdminDashboard() {
                       onClick={() => handleDeleteFolder(fol)}
                       title="Supprimer le dossier"
                       className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
-                        activeFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 text-slate-400 hover:text-rose-500'
+                        activeFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 dark:hover:bg-rose-500/10 text-slate-400 dark:text-slate-500 hover:text-rose-500'
                       }`}
                     >
                       <X className="w-3 h-3" />
@@ -1885,9 +1885,9 @@ export default function AntenneAdminDashboard() {
             </div>
 
             {/* Barre d'actions */}
-            <div data-tour="int-tools" className="px-5 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100">
+            <div data-tour="int-tools" className="px-5 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100 dark:border-slate-800">
               <div className="relative flex-1 min-w-[160px]">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -1946,7 +1946,7 @@ export default function AntenneAdminDashboard() {
               <button
                 onClick={() => exportCsv(internalFiles, 'internes')}
                 disabled={internalFiles.length === 0}
-                className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-azur/40 text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 disabled:opacity-50"
                 title="Exporter la liste en CSV"
               >
                 <FileDown className="w-3.5 h-3.5" /> Export
@@ -1954,7 +1954,7 @@ export default function AntenneAdminDashboard() {
               <button
                 onClick={() => downloadAsZip(internalFiles, 'documents_internes')}
                 disabled={internalFiles.length === 0 || zipping}
-                className="text-xs font-bold px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5 disabled:opacity-50"
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-azur/40 text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Archive className="w-3.5 h-3.5" /> {zipping ? 'Archivage…' : '.zip'}
               </button>
@@ -1963,24 +1963,24 @@ export default function AntenneAdminDashboard() {
             {/* Barre d'actions groupées */}
             {selectedIds.size > 0 && (
               <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 bg-azur/10 border-b border-azur/25">
-                <span className="text-sm font-bold text-deep">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
+                <span className="text-sm font-bold text-deep dark:text-azur-pastel">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
                 <div className="flex-1" />
                 <button onClick={() => handleBulkStatus('Validated')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5">
                   <CheckCheck className="w-3.5 h-3.5" /> Valider
                 </button>
-                <button onClick={handleBulkDownload} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-azur/40 text-slate-700 inline-flex items-center gap-1.5">
+                <button onClick={handleBulkDownload} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-azur/40 text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">
                   <Download className="w-3.5 h-3.5" /> Télécharger
                 </button>
-                <button onClick={handleBulkDelete} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-1.5">
+                <button onClick={handleBulkDelete} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 inline-flex items-center gap-1.5">
                   <Trash2 className="w-3.5 h-3.5" /> Supprimer
                 </button>
-                <button onClick={clearSelection} className="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700">Annuler</button>
+                <button onClick={clearSelection} className="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Annuler</button>
               </div>
             )}
 
             {/* Liste */}
             <div data-tour="int-list" className="max-h-[50vh] overflow-y-auto">
-              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100">
+              <div className="px-5 py-2.5 flex items-center gap-2 flex-wrap border-b border-slate-100 dark:border-slate-800">
                 {internalFiles.length > 0 && (
                   <input
                     type="checkbox"
@@ -1993,19 +1993,19 @@ export default function AntenneAdminDashboard() {
                     title="Tout sélectionner"
                   />
                 )}
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {internalFiles.length} document{internalFiles.length > 1 ? 's' : ''}
                 </span>
                 {dragOver && <span className="text-[11px] font-bold text-azur ml-auto">Déposez pour téléverser…</span>}
               </div>
               {internalFiles.length === 0 ? (
-                <div className="px-5 pb-8 pt-4 text-center text-sm text-slate-400 flex flex-col items-center gap-2">
-                  <CloudUpload className="w-8 h-8 text-slate-300" />
+                <div className="px-5 pb-8 pt-4 text-center text-sm text-slate-400 dark:text-slate-500 flex flex-col items-center gap-2">
+                  <CloudUpload className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                   Aucun document interne.
                   <span className="text-xs">Glissez-déposez des fichiers ici ou utilisez « Déposer ».</span>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {internalFiles.map((file) => renderFileRow(file, { selectable: true }))}
                 </div>
               )}
@@ -2017,14 +2017,14 @@ export default function AntenneAdminDashboard() {
       {/* Modale de création de dossier */}
       {creatingFolder && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-overlay-in" onClick={() => { setCreatingFolder(false); setFolderTargetOrgId(null); }}>
-          <div className="bg-white rounded-2xl shadow-asf-lg w-full max-w-md p-6 space-y-4 animate-panel-in" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-asf-lg w-full max-w-md p-6 space-y-4 animate-panel-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
                 <FolderPlus className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-display text-lg font-bold text-deep">Nouveau dossier</h3>
-                <p className="text-sm text-slate-500">
+                <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Nouveau dossier</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {folderTargetOrgId
                     ? <>Privé à <strong>{orgName(folderTargetOrgId)}</strong> — visible par cet organisme uniquement.</>
                     : "Pour organiser les documents internes de l'antenne."}
@@ -2051,19 +2051,19 @@ export default function AntenneAdminDashboard() {
       {/* Éditeur de relance : modifier le texte avant l'envoi */}
       {reminderOrg && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-overlay-in" onClick={() => !reminding && setReminderOrg(null)}>
-          <div className="bg-white rounded-2xl shadow-asf-lg w-full max-w-lg p-6 space-y-4 animate-panel-in" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-asf-lg w-full max-w-lg p-6 space-y-4 animate-panel-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
                 <Send className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-display text-lg font-bold text-deep">Relancer {reminderOrg.name}</h3>
-                <p className="text-sm text-slate-500 truncate">À : {reminderOrg.email}</p>
+                <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Relancer {reminderOrg.name}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 truncate">À : {reminderOrg.email}</p>
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Objet</label>
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">Objet</label>
               <input
                 value={reminderSubject}
                 onChange={(e) => setReminderSubject(e.target.value)}
@@ -2072,7 +2072,7 @@ export default function AntenneAdminDashboard() {
               />
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Message</label>
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">Message</label>
               <textarea
                 value={reminderBody}
                 onChange={(e) => setReminderBody(e.target.value)}
@@ -2080,7 +2080,7 @@ export default function AntenneAdminDashboard() {
                 className="input-asf w-full text-sm leading-relaxed resize-y"
                 placeholder="Texte du message…"
               />
-              <p className="text-[11px] text-slate-400 mt-1">Vous pouvez modifier librement le texte avant l'envoi.</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Vous pouvez modifier librement le texte avant l'envoi.</p>
             </div>
 
             <div className="flex justify-end gap-2">

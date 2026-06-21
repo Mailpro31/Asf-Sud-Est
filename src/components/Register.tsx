@@ -258,7 +258,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
           <h1 className="text-2xl font-black tracking-tight text-deep dark:text-white font-display">
             Aviation Sans Frontières
           </h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed text-center">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm leading-relaxed text-center">
             Ouvrez votre espace partenaire pour transmettre les documents des vols <span className="font-semibold text-azur">Les Ailes du Sourire</span>.
           </p>
         </div>
@@ -341,7 +341,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Nom complet de l'organisme / Institution</label>
                   <div className="relative">
-                    <Building2 className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <Building2 className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                     <input
                       type="text"
                       name="name"
@@ -357,7 +357,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Téléphone d'urgence opérationnelle</label>
                   <div className="relative">
-                    <Phone className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <Phone className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                     <input
                       type="tel"
                       name="phone"
@@ -401,7 +401,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                   <div className="p-4 bg-azur/5 rounded-2xl border border-azur/15 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
                     <p className="font-bold text-deep dark:text-slate-200">📍 Antenne validante sélectionnée :</p>
                     <p className="font-mono">Aviation Sans Frontières • <span className="underline font-bold text-azur uppercase">{getAntenneName(selectedAntenne)}</span></p>
-                    <p className="mt-2 text-[11px] leading-relaxed italic text-slate-500">
+                    <p className="mt-2 text-[11px] leading-relaxed italic text-slate-500 dark:text-slate-400">
                       C'est le coordinateur d'ASF basé dans ce centre de vol qui recevra vos documents réglementaires et autorisera l'accès au réseau Ailes du Sourire.
                     </p>
                   </div>
@@ -415,7 +415,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Coordinateur référent (Nom / Prénom)</label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <User className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                     <input
                       type="text"
                       name="contactName"
@@ -431,7 +431,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Email réglementaire de connexion</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                     <input
                       type="email"
                       name="email"
@@ -447,7 +447,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Mot de passe de chiffrement</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                     <input
                       type="password"
                       name="password"
@@ -531,7 +531,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             </div>
           )}
 
-          <div className="mt-8 text-center text-xs text-slate-500">
+          <div className="mt-8 text-center text-xs text-slate-500 dark:text-slate-400">
             Déjà inscrit auprès de l'organisation Aviation Sans Frontières ?{' '}
             <button onClick={onNavigateLogin} className="font-bold text-azur hover:underline cursor-pointer">
               Se connecter à l'espace

@@ -39,14 +39,14 @@ export function Input({
       {label && (
         <label
           htmlFor={inputId}
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-slate-700 dark:text-slate-200"
         >
           {label}
         </label>
       )}
       <div className="relative">
         {icon && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
             {icon}
           </span>
         )}
@@ -63,9 +63,9 @@ export function Input({
         />
       </div>
       {error ? (
-        <p className="text-xs text-rose-600">{error}</p>
+        <p className="text-xs text-rose-600 dark:text-rose-300">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-slate-500">{hint}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>
       ) : null}
     </div>
   );

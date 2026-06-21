@@ -142,7 +142,7 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
 
       {/* Bulle */}
       <div
-        className="absolute w-[320px] bg-white rounded-2xl shadow-asf-lg p-5 transition-all duration-300 ease-out"
+        className="absolute w-[320px] bg-white dark:bg-slate-900 rounded-2xl shadow-asf-lg p-5 transition-all duration-300 ease-out"
         style={popStyle}
         onClick={(e) => e.stopPropagation()}
       >
@@ -150,24 +150,24 @@ export function GuidedTour({ steps, open, onClose }: GuidedTourProps) {
           <span className="text-[11px] font-bold uppercase tracking-wider text-sourire-dark inline-flex items-center gap-1.5">
             <GraduationCap className="w-3.5 h-3.5" /> Étape {safeIndex + 1} / {steps.length}
           </span>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600" title="Fermer">
+          <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" title="Fermer">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <h4 className="font-display text-lg font-bold text-deep mb-1.5">{step.title}</h4>
-        <p className="text-sm text-slate-600 leading-relaxed">{step.text}</p>
+        <h4 className="font-display text-lg font-bold text-deep dark:text-azur-pastel mb-1.5">{step.title}</h4>
+        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{step.text}</p>
         <div className="flex items-center justify-between gap-2 mt-4">
           <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
             {steps.map((_, k) => (
               <span
                 key={k}
-                className={`h-1.5 rounded-full shrink-0 transition-all ${k === safeIndex ? 'w-4 bg-sourire' : 'w-1.5 bg-slate-200'}`}
+                className={`h-1.5 rounded-full shrink-0 transition-all ${k === safeIndex ? 'w-4 bg-sourire' : 'w-1.5 bg-slate-200 dark:bg-slate-700'}`}
               />
             ))}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {safeIndex > 0 && (
-              <button onClick={() => setIndex(safeIndex - 1)} className="text-sm font-bold px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 whitespace-nowrap">
+              <button onClick={() => setIndex(safeIndex - 1)} className="text-sm font-bold px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 whitespace-nowrap">
                 Précédent
               </button>
             )}

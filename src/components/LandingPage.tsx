@@ -123,7 +123,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
   ];
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-white text-slate-800 overflow-x-hidden antialiased font-sans">
+    <div className="min-h-screen relative flex flex-col bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-x-hidden antialiased font-sans">
 
       {/* Bandeau d'annonce */}
       <div className="bg-deep text-white py-2 px-4 text-center text-[11px] font-medium tracking-wide">
@@ -131,7 +131,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
       </div>
 
       {/* Navigation */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/70">
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/70 dark:border-slate-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-5 sm:px-6 py-2.5">
           <img
             src="/logo-asf.png"
@@ -143,7 +143,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
             <button
               onClick={onNavigateLogin}
               id="cta-top-login"
-              className="text-xs font-bold text-slate-600 hover:text-azur px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
+              className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-azur px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
             >
               Se connecter
             </button>
@@ -175,7 +175,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold text-deep bg-white/80 backdrop-blur border border-azur/25 shadow-asf-sm tracking-widest uppercase"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold text-deep dark:text-azur-pastel bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-azur/25 shadow-asf-sm tracking-widest uppercase"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Portail documentaire · Les Ailes du Sourire
@@ -185,7 +185,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.05 }}
-                className="text-4xl md:text-6xl font-black tracking-tight text-deep font-display leading-[1.05]"
+                className="text-4xl md:text-6xl font-black tracking-tight text-deep dark:text-azur-pastel font-display leading-[1.05]"
               >
                 Donnez des ailes
                 <br />
@@ -196,10 +196,10 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.15 }}
-                className="text-slate-600 text-sm md:text-lg leading-relaxed max-w-xl"
+                className="text-slate-600 dark:text-slate-300 text-sm md:text-lg leading-relaxed max-w-xl"
               >
                 Déposez, suivez et faites valider en quelques clics les documents nécessaires aux vols
-                <span className="font-semibold text-deep"> Les Ailes du Sourire</span> d’Aviation Sans Frontières.
+                <span className="font-semibold text-deep dark:text-azur-pastel"> Les Ailes du Sourire</span> d’Aviation Sans Frontières.
                 Un espace clair et sécurisé, au service de chaque sourire qui s’envole.
               </motion.p>
 
@@ -222,7 +222,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.35 }}
-                className="text-xs font-medium text-slate-500 flex items-center gap-1.5"
+                className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5"
               >
                 <ShieldAlert className="w-3.5 h-3.5 text-azur" />
                 Le dépôt de documents nécessite un compte partenaire validé.
@@ -232,7 +232,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-200/80 w-full max-w-md"
+                className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-200/80 dark:border-slate-700 w-full max-w-md"
               >
                 {[
                   { v: "800+", l: "Bénévoles" },
@@ -241,7 +241,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 ].map((s) => (
                   <div key={s.l}>
                     <span className="block text-xl md:text-2xl font-black text-azur">{s.v}</span>
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold font-mono">{s.l}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-extrabold font-mono">{s.l}</span>
                   </div>
                 ))}
               </motion.div>
@@ -315,13 +315,13 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
         </section>
 
         {/* ============== COMMENT ÇA MARCHE ============== */}
-        <section className="px-6 py-20 bg-white border-t border-slate-100">
+        <section className="px-6 py-20 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
           <div className="max-w-6xl mx-auto">
             <motion.div {...reveal} className="text-center max-w-2xl mx-auto mb-14 space-y-3">
               <span className="inline-block px-3 py-1 rounded-full bg-azur/10 text-azur text-[11px] font-bold tracking-widest uppercase font-mono">
                 Simple & sécurisé
               </span>
-              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep">
+              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep dark:text-azur-pastel">
                 Trois étapes pour faire décoller vos dossiers
               </h2>
             </motion.div>
@@ -340,8 +340,8 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-azur to-deep text-white flex items-center justify-center shadow-asf-md mb-4">
                     <s.icon className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold font-display text-deep">{s.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed mt-2">{s.desc}</p>
+                  <h3 className="text-lg font-bold font-display text-deep dark:text-azur-pastel">{s.title}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-2">{s.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -355,10 +355,10 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
               <span className="inline-block px-3 py-1 rounded-full bg-azur/15 text-azur text-[11px] font-bold tracking-widest uppercase font-mono">
                 Focus solidaire
               </span>
-              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep leading-tight">
+              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep dark:text-azur-pastel leading-tight">
                 Les Ailes du Sourire :<br />l’évasion pour tous
               </h2>
-              <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base leading-relaxed">
                 Dans le respect strict des chartes de sécurité, nos délégations s’organisent avec des aéroclubs
                 partenaires pour offrir aux personnes en situation de handicap ou de précarité des journées
                 d’initiation aéronautique et un baptême de l’air inoubliable.
@@ -370,11 +370,11 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                   { t: "Coordination réglementaire", d: "Chaque vol suit un protocole d’autorisation, orchestré via ce portail numérique." },
                   { t: "Réseau d’aéroclubs & partenaires", d: "Nous relions établissements de santé, aéroclubs hôtes et accompagnants." },
                 ].map((b) => (
-                  <div key={b.t} className="flex items-start gap-3 bg-white/80 backdrop-blur p-3.5 rounded-xl border border-slate-100 shadow-asf-sm">
+                  <div key={b.t} className="flex items-start gap-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-asf-sm">
                     <CheckCircle2 className="w-4 h-4 text-azur shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-xs font-bold text-deep">{b.t}</h4>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">{b.d}</p>
+                      <h4 className="text-xs font-bold text-deep dark:text-azur-pastel">{b.t}</h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">{b.d}</p>
                     </div>
                   </div>
                 ))}
@@ -397,17 +397,17 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                   <p className="text-xs italic leading-relaxed">« Un enfant qui décolle, c’est son handicap qui reste à terre le temps d’un vol. »</p>
                   <span className="text-[9px] font-mono font-bold opacity-80">— Pilote bénévole</span>
                 </div>
-                <div className="rounded-2xl bg-white border border-slate-100 p-5 h-32 flex flex-col justify-center shadow-asf-sm">
+                <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 h-32 flex flex-col justify-center shadow-asf-sm">
                   <span className="text-3xl font-black text-azur">96%</span>
-                  <h4 className="text-xs font-bold text-deep">Sourires & évasion</h4>
-                  <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">Un impact thérapeutique prouvé.</p>
+                  <h4 className="text-xs font-bold text-deep dark:text-azur-pastel">Sourires & évasion</h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">Un impact thérapeutique prouvé.</p>
                 </div>
               </div>
               <div className="space-y-4 pt-8">
-                <div className="rounded-2xl bg-white border border-slate-100 p-5 h-32 flex flex-col justify-center shadow-asf-sm">
+                <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 h-32 flex flex-col justify-center shadow-asf-sm">
                   <Compass className="w-7 h-7 text-azur" />
-                  <h4 className="text-xs font-bold text-deep mt-2">Pilotes certifiés</h4>
-                  <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">Encadrement et sécurité avant tout.</p>
+                  <h4 className="text-xs font-bold text-deep dark:text-azur-pastel mt-2">Pilotes certifiés</h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">Encadrement et sécurité avant tout.</p>
                 </div>
                 <div className="rounded-2xl overflow-hidden h-44 relative bg-gradient-to-b from-[#bfe6f7] to-[#2f9fc9] shadow-asf-md">
                   <Cloud className="asf-cloud-slow absolute top-6 left-4 scale-75 opacity-80" />
@@ -422,13 +422,13 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
         </section>
 
         {/* ============== MISSIONS ============== */}
-        <section className="px-6 py-20 bg-slate-50 border-y border-slate-100">
+        <section className="px-6 py-20 bg-slate-50 dark:bg-slate-800/50 border-y border-slate-100 dark:border-slate-800">
           <div className="max-w-7xl mx-auto">
             <motion.div {...reveal} className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep">
+              <h2 className="text-2xl md:text-4xl font-black font-display tracking-tight text-deep dark:text-azur-pastel">
                 Nos domaines d’action
               </h2>
-              <p className="text-slate-600 text-sm leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                 Aviation Sans Frontières intervient sur un large panel d’activités humanitaires et d’intégration, en France et dans le monde.
               </p>
             </motion.div>
@@ -441,7 +441,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.45, delay: (index % 3) * 0.08, ease: [0.4, 0, 0.2, 1] }}
-                  className={`group p-6 rounded-2xl bg-white border shadow-asf-sm hover:-translate-y-1.5 hover:shadow-asf-md transition-all relative overflow-hidden ${item.highlight ? "border-azur/40 ring-1 ring-azur/30" : "border-slate-200/80"}`}
+                  className={`group p-6 rounded-2xl bg-white dark:bg-slate-900 border shadow-asf-sm hover:-translate-y-1.5 hover:shadow-asf-md transition-all relative overflow-hidden ${item.highlight ? "border-azur/40 ring-1 ring-azur/30" : "border-slate-200/80 dark:border-slate-800"}`}
                 >
                   {item.highlight && (
                     <span className="absolute top-4 right-4 bg-azur text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
@@ -451,9 +451,9 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                   <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${item.highlight ? "bg-gradient-to-br from-azur to-deep text-white" : "bg-azur/10 text-azur"}`}>
                     <item.icon className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] tracking-wider uppercase font-black text-slate-400 block font-mono">{item.subtitle}</span>
-                  <h3 className="text-base font-bold text-deep font-display mt-1">{item.title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-2">{item.desc}</p>
+                  <span className="text-[10px] tracking-wider uppercase font-black text-slate-400 dark:text-slate-500 block font-mono">{item.subtitle}</span>
+                  <h3 className="text-base font-bold text-deep dark:text-azur-pastel font-display mt-1">{item.title}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-2">{item.desc}</p>
                   <button
                     onClick={onNavigateLogin}
                     className="mt-4 text-[11px] font-bold text-azur inline-flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer"

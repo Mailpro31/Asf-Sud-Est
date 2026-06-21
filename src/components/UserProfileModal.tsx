@@ -239,7 +239,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 <h4 className="text-sm font-display font-black text-deep dark:text-slate-100 truncate w-full px-1">
                   {contactName || organization.contactName}
                 </h4>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">
+                <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider mt-0.5">
                   {roleLabel}
                 </p>
                 <div className="mt-2.5 px-3 py-1 rounded-full text-[10px] font-bold bg-azur-light dark:bg-azur/15 text-azur border border-azur/30 truncate max-w-full">
@@ -321,7 +321,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
                       <form onSubmit={handleSaveProfile} className="space-y-4">
                         <div>
-                          <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2.5">
+                          <label className="block text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-2.5">
                             Choisissez votre avatar
                           </label>
                           <div className="grid grid-cols-5 gap-2.5">
@@ -350,7 +350,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5 flex items-center gap-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 flex items-center gap-1">
                               <User className="w-3.5 h-3.5" /> Nom complet
                             </label>
                             <input
@@ -363,7 +363,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5 flex items-center gap-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 flex items-center gap-1">
                               <Building className="w-3.5 h-3.5" /> Nom de l'organisme
                             </label>
                             <input
@@ -379,7 +379,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                           <div>
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5 flex items-center gap-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 flex items-center gap-1">
                               <Mail className="w-3.5 h-3.5" /> E-mail de contact et de connexion
                             </label>
                             <input
@@ -392,7 +392,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5 flex items-center gap-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 flex items-center gap-1">
                               <Phone className="w-3.5 h-3.5" /> Téléphone de contact
                             </label>
                             <input
@@ -405,7 +405,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                           </div>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 mt-4 text-[11px] space-y-1.5 text-slate-500 font-medium">
+                        <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 mt-4 text-[11px] space-y-1.5 text-slate-500 dark:text-slate-400 font-medium">
                           <div className="flex justify-between items-center">
                             <span>Statut du compte :</span>
                             <StatusBadge status={organization.submissionStatus} />
@@ -464,15 +464,15 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                           </div>
                           <div>
                             <h4 className="text-xs font-extrabold text-deep dark:text-slate-100 uppercase tracking-wider">Modifier mon mot de passe</h4>
-                            <p className="text-[11px] text-slate-400">Choisissez un mot de passe d'au moins 6 caractères.</p>
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500">Choisissez un mot de passe d'au moins 6 caractères.</p>
                           </div>
                         </div>
 
                         {passwordStatus.message && (
                           <div className={`p-3 rounded-lg text-xs font-semibold flex items-center gap-2 ${
                             passwordStatus.type === 'success'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                              : 'bg-rose-50 text-rose-700 border border-rose-100'
+                              ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-500/30'
+                              : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-100 dark:border-rose-500/30'
                           }`}>
                             {passwordStatus.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
                             <span>{passwordStatus.message}</span>
@@ -494,7 +494,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                               <button
                                 type="button"
                                 onClick={() => setShowPassword((s) => !s)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                                 title={showPassword ? 'Masquer' : 'Afficher'}
                               >
                                 {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -527,7 +527,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                           </div>
                           <div className="min-w-0">
                             <h4 className="text-xs font-extrabold text-deep dark:text-slate-100 uppercase tracking-wider">Réinitialiser par e-mail</h4>
-                            <p className="text-[11px] text-slate-400">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500">
                               Recevez un lien sécurisé sur <strong>{user.email}</strong> (utile si la modification directe demande une reconnexion).
                             </p>
                           </div>
@@ -536,8 +536,8 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                         {resetStatus.message && (
                           <div className={`p-3 rounded-lg text-xs font-semibold flex items-center gap-2 ${
                             resetStatus.type === 'success'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                              : 'bg-rose-50 text-rose-700 border border-rose-100'
+                              ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-500/30'
+                              : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-100 dark:border-rose-500/30'
                           }`}>
                             {resetStatus.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
                             <span>{resetStatus.message}</span>

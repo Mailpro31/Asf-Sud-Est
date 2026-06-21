@@ -81,7 +81,7 @@ export function Modal({
             onClick={(e) => e.stopPropagation()}
           >
             {(title || icon) && (
-              <div className="flex items-start gap-3 px-6 py-5 border-b border-slate-200/70">
+              <div className="flex items-start gap-3 px-6 py-5 border-b border-slate-200/70 dark:border-slate-700">
                 {icon && (
                   <span className="shrink-0 w-10 h-10 rounded-xl bg-azur-light text-azur flex items-center justify-center">
                     {icon}
@@ -89,18 +89,18 @@ export function Modal({
                 )}
                 <div className="flex-1 min-w-0">
                   {title && (
-                    <h2 className="font-display text-lg font-bold text-deep leading-tight">
+                    <h2 className="font-display text-lg font-bold text-deep dark:text-azur-pastel leading-tight">
                       {title}
                     </h2>
                   )}
                   {subtitle && (
-                    <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="shrink-0 w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer"
+                  className="shrink-0 w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition cursor-pointer"
                   aria-label="Fermer"
                 >
                   <X className="w-5 h-5" />
@@ -111,7 +111,7 @@ export function Modal({
             <div className="px-6 py-5 overflow-y-auto">{children}</div>
 
             {footer && (
-              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200/70 bg-slate-50/60">
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200/70 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40">
                 {footer}
               </div>
             )}

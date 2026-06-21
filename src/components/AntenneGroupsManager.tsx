@@ -114,7 +114,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
           <h4 className="text-xs font-display font-black text-deep dark:text-white uppercase tracking-wider">
             Groupes d'antennes
           </h4>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
             Classez librement les antennes par thématique. Une antenne peut appartenir à plusieurs groupes.
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
       {/* Création d'un nouveau groupe */}
       <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
         <div className="flex-1">
-          <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Nom du groupe</label>
+          <label className="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase mb-1">Nom du groupe</label>
           <input
             type="text"
             value={newGroupName}
@@ -134,7 +134,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
           />
         </div>
         <div>
-          <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Couleur</label>
+          <label className="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase mb-1">Couleur</label>
           <input
             type="color"
             value={newGroupColor}
@@ -155,7 +155,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
 
       {/* Liste des groupes */}
       {groups.length === 0 ? (
-        <p className="text-[11px] text-slate-400 italic text-center py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 italic text-center py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
           Aucun groupe pour l'instant. Créez-en un ci-dessus.
         </p>
       ) : (
@@ -211,7 +211,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
                           style={{ backgroundColor: group.color || DEFAULT_GROUP_COLOR }}
                         />
                         <span className="text-xs font-display font-black text-deep dark:text-white truncate">{group.name}</span>
-                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono shrink-0">
                           {group.antenneIds.length} antenne(s)
                         </span>
                       </div>
@@ -228,7 +228,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
                           type="button"
                           onClick={() => handleDelete(group)}
                           disabled={busy}
-                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 disabled:opacity-50 cursor-pointer"
+                          className="p-1.5 rounded-lg text-rose-500 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 disabled:opacity-50 cursor-pointer"
                           title="Supprimer le groupe"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -241,7 +241,7 @@ export default function AntenneGroupsManager({ groups, antennes }: AntenneGroups
                 {/* Antennes membres : toggle par antenne */}
                 <div className="flex flex-wrap gap-1.5">
                   {antennes.length === 0 ? (
-                    <span className="text-[10px] text-slate-400 italic">Aucune antenne disponible.</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">Aucune antenne disponible.</span>
                   ) : (
                     antennes.map((ant) => {
                       const member = group.antenneIds.includes(ant.id);

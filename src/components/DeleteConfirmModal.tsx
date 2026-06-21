@@ -98,14 +98,14 @@ export default function DeleteConfirmModal({
               <div className="mt-5 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 p-4">
                 <div className="flex items-center justify-between gap-3 min-w-0">
                   <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nom de la ressource</span>
+                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nom de la ressource</span>
                     <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate mt-0.5">
                       {itemName}
                     </span>
                   </div>
                   {itemSize && (
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Taille</span>
+                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Taille</span>
                       <p className="text-sm font-mono font-medium text-slate-700 dark:text-slate-300 mt-0.5">
                         {itemSize}
                       </p>
