@@ -28,6 +28,7 @@ import {
   Eye,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Upload,
   Trash2,
   Download,
@@ -414,7 +415,7 @@ export default function AntenneAdminDashboard() {
     const list = files.filter(
       (f) =>
         f.orgId === selectedOrgId &&
-        (!orgFolderId || (f.folderId || null) === orgFolderId) &&
+        ((f.folderId || null) === orgFolderId) &&
         (orgStatusFilter === 'all' || (f.submissionStatus || 'Pending') === orgStatusFilter) &&
         (!q || f.name.toLowerCase().includes(q)),
     );
@@ -1764,55 +1765,90 @@ export default function AntenneAdminDashboard() {
               {/* Colonne droite : documents de l'organisme */}
               <section className="flex-1 min-w-0 flex flex-col min-h-0">
 
-            {/* Dossiers propres à l'organisme (rangement privé, visible par lui seul) */}
-            <div data-tour="org-folders" className="px-5 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5">
-                  <FolderIcon className="w-3.5 h-3.5" /> Dossiers de l'organisme
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => setOrgFolderId(null)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                    orgFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5" /> Tous ({files.filter((f) => f.orgId === selectedOrg.id).length})
-                </button>
-                {orgFolders.map((fol) => (
-                  <span
-                    key={fol.id}
-                    className={`text-xs font-bold pl-3 pr-1.5 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                      orgFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'
-                    }`}
-                  >
-                    <button onClick={() => setOrgFolderId(fol.id)} className="inline-flex items-center gap-1.5 cursor-pointer">
-                      {orgFolderId === fol.id ? <FolderOpen className="w-3.5 h-3.5" /> : <FolderIcon className="w-3.5 h-3.5" />}
-                      {fol.name} ({folderFileCount(fol.id)})
-                    </button>
+            {/* Répertoires associés (cartes) + navigation, façon Cabinet Documentaire */}
+            <div data-tour="org-folders" className="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              {orgFolderId ? (
+                /* Vue d'un dossier : fil d'Ariane + actions du dossier */
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <button
-                      onClick={() => handleDeleteFolder(fol)}
-                      title="Supprimer le dossier"
-                      className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
-                        orgFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 dark:hover:bg-rose-500/10 text-slate-400 dark:text-slate-500 hover:text-rose-500'
-                      }`}
+                      onClick={() => setOrgFolderId(null)}
+                      className="btn-ghost text-xs !py-1.5 !px-3 inline-flex items-center gap-1.5"
                     >
-                      <X className="w-3 h-3" />
+                      <ChevronLeft className="w-3.5 h-3.5" /> Tous
                     </button>
-                  </span>
-                ))}
-                <button
-                  onClick={() => { setFolderName(''); setFolderTargetOrgId(selectedOrg.id); setCreatingFolder(true); }}
-                  className="text-xs font-bold px-3 py-1.5 rounded-full border border-dashed border-azur/40 text-azur hover:bg-azur/5 inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
-                </button>
-              </div>
-              {orgFolderId && (
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
-                  Les nouveaux dépôts iront dans le dossier <strong>{orgFolders.find((f) => f.id === orgFolderId)?.name}</strong>.
-                </p>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+                    <span className="text-sm font-bold text-deep dark:text-azur-pastel inline-flex items-center gap-1.5 min-w-0">
+                      <FolderOpen className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{orgFolders.find((f) => f.id === orgFolderId)?.name}</span>
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => { const fol = orgFolders.find((f) => f.id === orgFolderId); if (fol) handleDeleteFolder(fol); }}
+                    className="btn-ghost text-xs !py-1.5 !px-3 text-rose-500 dark:text-rose-300 inline-flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Supprimer le dossier
+                  </button>
+                </div>
+              ) : (
+                /* Racine : section « Répertoires associés » en cartes */
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-display font-black uppercase tracking-wider text-deep dark:text-slate-300 flex items-center gap-1.5">
+                        <FolderIcon className="w-3.5 h-3.5 text-azur" /> Répertoires associés et justificatifs réglementaires
+                      </h4>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                        Dossiers de rangement privés à cet organisme (récépissés, assurances, brevets…).
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { setFolderName(''); setFolderTargetOrgId(selectedOrg.id); setCreatingFolder(true); }}
+                      className="btn-asf text-xs shrink-0"
+                    >
+                      <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
+                    </button>
+                  </div>
+                  {orgFolders.length === 0 ? (
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">
+                      Aucun dossier — les pièces ci-dessous sont versées à la racine.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                      {orgFolders.map((fol) => (
+                        <div
+                          key={fol.id}
+                          onClick={() => setOrgFolderId(fol.id)}
+                          className="card-asf p-3.5 flex flex-col gap-2.5 group relative cursor-pointer"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="w-9 h-9 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                              <FolderIcon className="w-4 h-4 fill-current" />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
+                                {fol.createdBy === 'admin' ? 'Admin' : 'Org'}
+                              </span>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteFolder(fol); }}
+                                className="opacity-0 group-hover:opacity-100 text-slate-400 dark:text-slate-500 hover:text-rose-500 transition-all p-1 cursor-pointer"
+                                title="Supprimer le dossier"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold truncate text-slate-800 dark:text-slate-100">{fol.name}</p>
+                            <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
+                              {folderFileCount(fol.id)} fichier(s) justificatifs
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -1939,7 +1975,12 @@ export default function AntenneAdminDashboard() {
                     title="Tout sélectionner"
                   />
                 )}
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 inline-flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" />
+                  {orgFolderId
+                    ? `Dossier · ${orgFolders.find((f) => f.id === orgFolderId)?.name || ''}`
+                    : 'Pièces versées à la racine (hors dossiers)'}
+                  <span className="text-slate-300 dark:text-slate-600">·</span>
                   {orgModalFiles.length} document{orgModalFiles.length > 1 ? 's' : ''}
                 </span>
                 {(['Validated', 'Pending', 'Under review', 'Incomplete'] as SubmissionStatus[]).map((s) => {
@@ -1958,7 +1999,9 @@ export default function AntenneAdminDashboard() {
                     ? 'Aucun document ne correspond à votre recherche.'
                     : orgFolderId
                       ? 'Ce dossier est vide.'
-                      : "Cet organisme n'a déposé aucun document pour le moment."}
+                      : orgFolders.length > 0
+                        ? 'Aucune pièce à la racine — les documents sont rangés dans les dossiers ci-dessus.'
+                        : "Cet organisme n'a déposé aucun document pour le moment."}
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
