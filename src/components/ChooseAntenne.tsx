@@ -15,6 +15,7 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { localDb } from '../lib/localDb';
+import { notifyAntenneOnNewOrg } from '../lib/antenneSettings';
 import { LogoASF } from './LandingPage';
 
 export default function ChooseAntenne() {
@@ -79,6 +80,15 @@ export default function ChooseAntenne() {
 
     try {
       await setDoc(doc(db, 'organizations', user.uid), fullDoc, { merge: true });
+      // Prévient le gestionnaire de l'antenne choisie qu'un nouvel organisme
+      // l'a rejointe (best-effort, selon ses réglages de notification).
+      notifyAntenneOnNewOrg(selectedAntenne, {
+        orgName: fullDoc.name,
+        contactName: fullDoc.contactName,
+        email: fullDoc.email,
+        phone: fullDoc.phone,
+        antenneName: getAntenneName(selectedAntenne),
+      });
       await refreshOrganization();
     } catch (err: any) {
       console.error('Failed to set antenne:', err);
