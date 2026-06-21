@@ -25,6 +25,9 @@ import {
   AlertTriangle,
   Clock,
   MessageSquare,
+  Send,
+  ArrowRight,
+  Upload,
   X
 } from 'lucide-react';
 import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
@@ -678,6 +681,10 @@ export default function Dashboard() {
   // persisté sur le profil — règles non déployées).
   const [submittedAtLocal, setSubmittedAtLocal] = useState<number | null>(null);
   const dossierSubmittedAt = organization?.dossierSubmittedAt || submittedAtLocal;
+  // Progression de validation (pour la carte « Soumettre mon dossier »).
+  const validatedDocs = files.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
+  const totalDocs = files.length;
+  const remainingDocs = totalDocs - validatedDocs;
   const handleSubmitDossier = async () => {
     if (!organization || submittingDossier) return;
     setSubmittingDossier(true);
@@ -1241,13 +1248,23 @@ export default function Dashboard() {
 
         {/* Soumission du dossier */}
         <div data-tour="submit" className="mb-6 shrink-0">
-          <div className={`card-asf p-5 flex flex-col sm:flex-row sm:items-center gap-4 ${dossierSubmittedAt ? 'ring-1 ring-emerald-200 dark:ring-emerald-500/30' : ''}`}>
+          <div className={`card-asf p-5 flex flex-col sm:flex-row sm:items-center gap-4 border-azur/30 ${dossierSubmittedAt ? 'ring-1 ring-emerald-200 dark:ring-emerald-500/30' : ''}`}>
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-azur to-deep text-white flex items-center justify-center shrink-0 shadow-asf-md">
+              <Send className="w-5 h-5" />
+            </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm">Soumettre mon dossier</h3>
               {dossierSubmittedAt ? (
                 <p className="text-xs text-emerald-600 dark:text-emerald-300 mt-1 font-semibold flex items-center gap-1.5">
                   <Check className="w-4 h-4 shrink-0" />
                   Dossier soumis le {new Date(dossierSubmittedAt).toLocaleDateString('fr-FR')} · en cours de revue par votre antenne.
+                </p>
+              ) : totalDocs > 0 ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  <span className="font-semibold text-deep dark:text-azur-pastel">{validatedDocs} document{validatedDocs > 1 ? 's' : ''} validé{validatedDocs > 1 ? 's' : ''} sur {totalDocs}</span>
+                  {remainingDocs > 0
+                    ? ` — il reste ${remainingDocs} pièce(s) à compléter avant l'envoi à votre antenne.`
+                    : ' — toutes vos pièces sont prêtes à être soumises.'}
                 </p>
               ) : (
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
@@ -1258,10 +1275,11 @@ export default function Dashboard() {
             <button
               onClick={handleSubmitDossier}
               disabled={submittingDossier}
-              className={`${dossierSubmittedAt ? 'btn-secondary' : 'btn-asf'} text-sm justify-center shrink-0 disabled:opacity-60`}
+              className={`${dossierSubmittedAt ? 'btn-secondary' : 'btn-asf'} text-sm justify-center shrink-0 disabled:opacity-60 group`}
               title={dossierSubmittedAt ? 'Renvoyer le dossier après modification' : 'Soumettre votre dossier pour revue'}
             >
-              {submittingDossier ? 'Envoi…' : dossierSubmittedAt ? 'Soumettre à nouveau' : 'Soumettre mon dossier'}
+              {submittingDossier ? 'Envoi…' : dossierSubmittedAt ? 'Soumettre à nouveau' : 'Soumettre'}
+              {!submittingDossier && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             </button>
           </div>
         </div>
@@ -1431,6 +1449,12 @@ export default function Dashboard() {
                   <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
                 </button>
               )}
+              {organization.submissionStatus === 'Validated' && (
+                <label className="flex items-center gap-1.5 text-xs font-semibold btn-secondary !py-1.5 !px-3 cursor-pointer">
+                  <input type="file" multiple className="hidden" onChange={handleFileChange} />
+                  <Upload className="w-3.5 h-3.5" /> Déposer
+                </label>
+              )}
             </div>
           </div>
 
@@ -1444,157 +1468,127 @@ export default function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div className="w-full overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className={`text-[10px] font-bold uppercase tracking-wider border-b ${themeConfig.cardBorder} bg-black/5`}>
-                      <th className={`px-6 py-3.5 ${themeConfig.textColor}`}>Nom du Dossier / Fichier</th>
-                      <th className={`px-6 py-3.5 text-center w-36 ${themeConfig.textColor}`}>Statut</th>
-                      <th className={`px-6 py-3.5 text-center w-36 ${themeConfig.textColor}`}>Format & Taille</th>
-                      <th className={`px-6 py-3.5 w-40 ${themeConfig.textColor}`}>Date d'ajout</th>
-                      <th className={`px-6 py-3.5 text-right w-36 ${themeConfig.textColor}`}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {/* Render active Subfolders */}
-                    {displayedFolders.map((folder) => (
-                      <tr 
-                        key={folder.id} 
-                        className={`transition-colors cursor-pointer group hover:bg-deep/5`}
-                        onClick={() => setCurrentFolderId(folder.id)}
-                        onDragOver={handleDragOverFolder}
-                        onDrop={(e) => handleDropOnFolder(e, folder.id)}
-                      >
-                        <td className="px-6 py-4 font-medium flex items-center gap-4">
-                          <div className="w-9 h-9 bg-azur/10 text-azur rounded-lg flex items-center justify-center shrink-0">
-                            <FolderIcon className="w-5 h-5 fill-current" />
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-sm font-semibold truncate ${themeConfig.textColor}`}>{folder.name}</span>
-                              {folder.createdBy === 'admin' ? (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
-                                  Administrateur
-                                </span>
-                              ) : (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                                  {organization.name}
-                                </span>
-                              )}
-                            </div>
-                            <span className={`text-[10px] ${themeConfig.textMuted}`}>Glissez des fichiers ici pour les classer directement</span>
-                          </div>
-                        </td>
-                        <td className={`px-6 py-4 text-center text-xs font-mono font-medium ${themeConfig.textMuted}`}>--</td>
-                        <td className={`px-6 py-4 text-center text-xs font-mono font-medium ${themeConfig.textMuted}`}>-- Répertoire</td>
-                        <td className={`px-6 py-4 text-xs ${themeConfig.textMuted}`}>{new Date(folder.createdAt).toLocaleDateString()}</td>
-                        <td className="px-6 py-4 text-right">
-                          {folder.orgId === user.uid && folder.createdBy !== 'admin' && (
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                {/* Sous-dossiers (cartes) */}
+                {displayedFolders.map((folder) => (
+                  <div
+                    key={folder.id}
+                    onClick={() => setCurrentFolderId(folder.id)}
+                    onDragOver={handleDragOverFolder}
+                    onDrop={(e) => handleDropOnFolder(e, folder.id)}
+                    className="card-asf p-4 flex flex-col gap-3 cursor-pointer group relative"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="w-10 h-10 bg-azur/10 text-azur rounded-xl flex items-center justify-center shrink-0">
+                        <FolderIcon className="w-5 h-5 fill-current" />
+                      </div>
+                      {folder.orgId === user.uid && folder.createdBy !== 'admin' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeletingFolder(folder); }}
+                          className="opacity-0 group-hover:opacity-100 text-slate-400 dark:text-slate-500 hover:text-red-500 transition-all p-1 cursor-pointer"
+                          title="Supprimer le dossier"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-semibold truncate ${themeConfig.textColor}`}>{folder.name}</p>
+                        {folder.createdBy === 'admin' && (
+                          <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">Admin</span>
+                        )}
+                      </div>
+                      <p className={`text-[11px] font-mono mt-1 ${themeConfig.textMuted}`}>
+                        {files.filter((f) => f.folderId === folder.id).length} fichier(s) · Dossier
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Fichiers (cartes) */}
+                {filteredFiles.map((file, fileIdx) => {
+                  const editable = file.orgId === user.uid && file.uploadedBy !== 'admin';
+                  return (
+                    <div
+                      key={file.id}
+                      data-tour={fileIdx === 0 ? 'doc-row' : undefined}
+                      draggable
+                      onDragStart={(e) => handleDragStartFile(e, file)}
+                      onClick={() => setPreviewingFile(file)}
+                      className="card-asf p-4 flex flex-col gap-3 cursor-pointer group relative"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="w-10 h-10 bg-azur-light dark:bg-azur/15 text-azur rounded-xl flex items-center justify-center shrink-0">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div data-tour={fileIdx === 0 ? 'doc-status' : undefined}>
+                          <StatusBadge status={file.submissionStatus || 'Pending'} />
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-[13px] font-semibold leading-snug line-clamp-2 ${themeConfig.textColor}`} title={file.name}>
+                          {file.name}
+                        </p>
+                        <p className={`text-[11px] font-mono mt-1 ${themeConfig.textMuted}`}>
+                          {file.type.split('/').pop()?.toUpperCase()} · {formatBytes(file.size)} · {new Date(file.uploadDate).toLocaleDateString('fr-FR')}
+                        </p>
+                        {file.uploadedBy === 'admin' && (
+                          <span className="inline-block mt-2 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
+                            Déposé par l'administrateur
+                          </span>
+                        )}
+                        {file.reviewNote && (
+                          <p className="mt-2 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5" title="Correction demandée par votre antenne">
+                            <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
+                            <span className="min-w-0">À corriger : {file.reviewNote}</span>
+                          </p>
+                        )}
+                      </div>
+                      {/* Actions (au survol) */}
+                      <div data-tour={fileIdx === 0 ? 'doc-actions' : undefined} className="flex items-center gap-1.5 mt-auto pt-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}
+                          className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 transition-all text-slate-600 dark:text-slate-300 cursor-pointer"
+                          title="Télécharger"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                        {editable && (
+                          <>
                             <button
-                              onClick={(e) => { e.stopPropagation(); setDeletingFolder(folder); }}
-                              className="text-slate-400 dark:text-slate-500 hover:text-red-500 transition-colors p-1.5 focus:outline-none cursor-pointer"
-                              title="Supprimer le dossier"
+                              onClick={(e) => { e.stopPropagation(); setRenamingFile(file); setRenameInput(file.name); }}
+                              className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 transition-all text-azur cursor-pointer"
+                              title="Renommer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDeletingFile(file); }}
+                              className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 transition-all text-red-500 cursor-pointer"
+                              title="Supprimer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    
-                    {/* Render active Files inside directory */}
-                    {filteredFiles.map((file, fileIdx) => (
-                      <tr
-                        key={file.id}
-                        className="transition-colors group hover:bg-black/5 cursor-pointer"
-                        draggable
-                        onDragStart={(e) => handleDragStartFile(e, file)}
-                        onClick={() => setPreviewingFile(file)}
-                      >
-                        <td data-tour={fileIdx === 0 ? 'doc-row' : undefined} className="px-6 py-4 flex items-center gap-4">
-                          <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg flex items-center justify-center shrink-0">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            {(
-                              <div className="flex flex-col min-w-0 font-sans">
-                                <div className="flex items-center gap-2">
-                                  <span className={`text-xs font-bold truncate ${themeConfig.textColor}`} title={file.name}>
-                                    {file.name}
-                                  </span>
-                                  {file.uploadedBy === 'admin' ? (
-                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
-                                      Administrateur
-                                    </span>
-                                  ) : (
-                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                                      {organization.name}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono tracking-tight flex items-center gap-1 mt-1">
-                                  ID : {file.id.substring(0, 8)} | Type : {file.type.split('/').pop()?.toUpperCase()}
-                                </span>
-                                {file.reviewNote && (
-                                  <span className="mt-1.5 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5 whitespace-normal" title="Correction demandée par votre antenne">
-                                    <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
-                                    <span className="min-w-0">À corriger : {file.reviewNote}</span>
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td data-tour={fileIdx === 0 ? 'doc-status' : undefined} className="px-6 py-4 text-center whitespace-nowrap">
-                          <StatusBadge status={file.submissionStatus || 'Pending'} />
-                        </td>
-                        <td className={`px-6 py-4 text-center font-mono text-xs font-semibold ${themeConfig.textMuted}`}>
-                          {formatBytes(file.size)}
-                        </td>
-                        <td className={`px-6 py-4 text-xs ${themeConfig.textMuted}`}>
-                          {new Date(file.uploadDate).toLocaleDateString()}
-                        </td>
-                        <td data-tour={fileIdx === 0 ? 'doc-actions' : undefined} className="px-6 py-4 text-right">
-                          <div className="flex justify-end items-center space-x-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}
-                              className={`p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 dark:hover:border-slate-600 transition-all text-slate-600 dark:text-slate-300 cursor-pointer`}
-                              title="Télécharger"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                            </button>
-                            {file.orgId === user.uid && file.uploadedBy !== 'admin' && (
-                              <>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setRenamingFile(file); setRenameInput(file.name); }}
-                                  className={`p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 dark:hover:border-slate-600 transition-all text-azur cursor-pointer`}
-                                  title="Renommer"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setDeletingFile(file); }}
-                                  className={`p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-400 dark:hover:border-slate-600 transition-all text-red-500 cursor-pointer`}
-                                  title="Purger définitivement"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            )}
-                            {file.orgId === user.uid && file.uploadedBy === 'admin' && (
-                              <span
-                                className="p-1.5 text-[9px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg flex items-center"
-                                title="Déposé par un administrateur — non modifiable"
-                              >
-                                Admin
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Tuile de dépôt */}
+                {organization.submissionStatus === 'Validated' && (
+                  <label
+                    onDragOver={handleDragOverFolder}
+                    onDrop={(e) => handleDropOnFolder(e, currentFolderId)}
+                    className="rounded-3xl border-[1.5px] border-dashed border-slate-300 dark:border-slate-700 hover:border-azur dark:hover:border-azur flex flex-col items-center justify-center gap-2 p-4 min-h-[132px] text-slate-400 dark:text-slate-500 hover:text-azur text-center cursor-pointer transition-colors"
+                  >
+                    <input type="file" multiple className="hidden" onChange={handleFileChange} />
+                    <CloudUpload className="w-6 h-6" />
+                    <span className="text-xs font-semibold">Glissez vos documents ici</span>
+                  </label>
+                )}
               </div>
             )}
           </div>
