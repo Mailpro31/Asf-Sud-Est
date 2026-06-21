@@ -47,13 +47,30 @@ export default function ChooseAntenne() {
     setLoading(true);
     const now = Date.now();
 
+    // Document complet : l'écran « Choix de l'antenne » s'affiche soit pour un
+    // compte dont le document n'existe pas encore (1re connexion Google, création
+    // différée), soit pour un compte sans antenne. On écrit donc l'intégralité du
+    // profil pour que l'opération soit une « création » valide.
+    const fullDoc = {
+      name: organization?.name || user.displayName || 'Compagnie Partenaire',
+      contactName: organization?.contactName || user.displayName || 'Contact',
+      email: organization?.email || user.email || '',
+      phone: organization?.phone || '',
+      submissionStatus: organization?.submissionStatus || 'Pending',
+      role: 'organization' as const,
+      delegation_id: 'france',
+      antenne_id: selectedAntenne,
+      createdAt: organization?.createdAt || now,
+      updatedAt: now,
+    };
+
     // Mise à jour locale (sandbox), en fusionnant avec le profil courant si
     // aucun enregistrement local n'existe encore (cas d'une inscription Google).
     const persistLocal = () => {
       try {
         const existing = localDb.getOrganizations().find((o) => o.id === user.uid);
-        const base = existing || (organization ? { ...organization } : { id: user.uid });
-        localDb.saveOrganization({ ...base, id: user.uid, delegation_id: 'france', antenne_id: selectedAntenne, updatedAt: now } as any);
+        const base = existing || (organization ? { ...organization } : {});
+        localDb.saveOrganization({ ...base, ...fullDoc, id: user.uid } as any);
       } catch (err) {
         console.warn('Could not update local organization', err);
       }
@@ -61,11 +78,7 @@ export default function ChooseAntenne() {
     persistLocal();
 
     try {
-      await setDoc(
-        doc(db, 'organizations', user.uid),
-        { delegation_id: 'france', antenne_id: selectedAntenne, updatedAt: now },
-        { merge: true },
-      );
+      await setDoc(doc(db, 'organizations', user.uid), fullDoc, { merge: true });
       await refreshOrganization();
     } catch (err: any) {
       console.error('Failed to set antenne:', err);
