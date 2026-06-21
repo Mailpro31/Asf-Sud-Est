@@ -9,19 +9,21 @@ import {
   addDoc 
 } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
-import { 
-  ArrowLeft, 
-  ChevronRight, 
-  Search, 
-  CloudUpload, 
-  RefreshCw, 
-  FileText, 
-  Edit2, 
-  Download, 
-  Trash2, 
-  Plus, 
-  X, 
-  Folder as FolderIcon 
+import {
+  ArrowLeft,
+  ChevronRight,
+  Search,
+  CloudUpload,
+  RefreshCw,
+  FileText,
+  Edit2,
+  Download,
+  Trash2,
+  Plus,
+  X,
+  Folder as FolderIcon,
+  MessageSquare,
+  CheckCheck,
 } from 'lucide-react';
 
 import { db, storage } from '../lib/firebase';
@@ -29,6 +31,8 @@ import { Organization, DossierFile, Folder, SubmissionStatus } from '../types';
 import { localDb } from '../lib/localDb';
 import { useFeedback } from '../hooks/useFeedback';
 import { useAuth } from '../context/AuthContext';
+import { logAction } from '../lib/auditLog';
+import { ComplianceBar } from './ui';
 
 interface OrgCabinetModalProps {
   selectedOrgForFiles: Organization;
@@ -61,6 +65,13 @@ export default function OrgCabinetModal({
   const [orgUploadProgress, setOrgUploadProgress] = useState(0);
   const [renamingFile, setRenamingFile] = useState<DossierFile | null>(null);
   const [renameInput, setRenameInput] = useState('');
+  // Note de revue d'un fichier (ce que l'organisme doit corriger).
+  const [noteFile, setNoteFile] = useState<DossierFile | null>(null);
+  const [noteValue, setNoteValue] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
+  const allOrgFiles = files.filter((f) => f.orgId === org.id);
+  const validatedCount = allOrgFiles.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
 
   const orgFolders = folders.filter(f => f.orgId === org.id);
   const currentFolder = folders.find(fd => fd.id === orgOpenFolderId);
@@ -259,23 +270,74 @@ export default function OrgCabinetModal({
     }
   };
 
-  const handleUpdateOrgFileStatus = async (fileId: string, newStatus: SubmissionStatus) => {
+  const logFile = (action: 'file_status_change', file: DossierFile, details: string) =>
+    logAction(action, {
+      targetType: 'file',
+      targetId: file.id,
+      targetName: file.name,
+      antenne_id: file.antenne_id || org.antenne_id,
+      delegation_id: file.delegation_id || org.delegation_id,
+      details,
+    });
+
+  const handleUpdateOrgFileStatus = async (file: DossierFile, newStatus: SubmissionStatus) => {
     if (localDb.isSandboxActive()) {
-      const filesList = localDb.getFiles();
-      const target = filesList.find(f => f.id === fileId);
-      if (target) {
-        target.submissionStatus = newStatus;
-        localDb.saveFile(target);
-      }
+      const target = localDb.getFiles().find(f => f.id === file.id);
+      if (target) { target.submissionStatus = newStatus; localDb.saveFile(target); }
       setFiles(localDb.getFiles());
+      logFile('file_status_change', file, `Statut du document : ${newStatus}`);
       return;
     }
     try {
-      await updateDoc(doc(db, 'files', fileId), {
-        submissionStatus: newStatus
-      });
+      await updateDoc(doc(db, 'files', file.id), { submissionStatus: newStatus });
+      logFile('file_status_change', file, `Statut du document : ${newStatus}`);
     } catch (err) {
       console.error("Error updating status inside profile cabinet:", err);
+    }
+  };
+
+  // Valide d'un coup toutes les pièces de l'organisme.
+  const handleValidateAll = async () => {
+    const targets = allOrgFiles.filter((f) => (f.submissionStatus || 'Pending') !== 'Validated');
+    if (targets.length === 0) { toast('Toutes les pièces sont déjà validées.', 'info'); return; }
+    if (!await confirm(`Valider les ${targets.length} pièce(s) non encore validées de « ${org.name} » ?`)) return;
+    for (const f of targets) {
+      if (localDb.isSandboxActive()) {
+        const t = localDb.getFiles().find((x) => x.id === f.id);
+        if (t) { t.submissionStatus = 'Validated'; localDb.saveFile(t); }
+      } else {
+        try { await updateDoc(doc(db, 'files', f.id), { submissionStatus: 'Validated' }); } catch (e) { console.error(e); }
+      }
+      logFile('file_status_change', f, 'Statut du document : Validated (validation groupée)');
+    }
+    if (localDb.isSandboxActive()) setFiles(localDb.getFiles());
+    toast(`${targets.length} pièce(s) validée(s).`, 'success');
+  };
+
+  // Note de revue : ce que l'organisme doit corriger (lisible par lui).
+  const openNote = (file: DossierFile) => { setNoteFile(file); setNoteValue(file.reviewNote || ''); };
+  const saveNote = async () => {
+    if (!noteFile) return;
+    setSavingNote(true);
+    const note = noteValue.trim();
+    if (localDb.isSandboxActive()) {
+      const t = localDb.getFiles().find((f) => f.id === noteFile.id);
+      if (t) { (t as any).reviewNote = note; localDb.saveFile(t); }
+      setFiles(localDb.getFiles());
+      logFile('file_status_change', noteFile, note ? `Note de revue : ${note}` : 'Note de revue effacée');
+      setNoteFile(null); setSavingNote(false);
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'files', noteFile.id), { reviewNote: note });
+      logFile('file_status_change', noteFile, note ? `Note de revue : ${note}` : 'Note de revue effacée');
+      toast(note ? 'Note enregistrée.' : 'Note effacée.', 'success');
+      setNoteFile(null);
+    } catch (err) {
+      console.error('Save note failed:', err);
+      toast("Impossible d'enregistrer la note.", 'error');
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -356,6 +418,26 @@ export default function OrgCabinetModal({
             className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Conformité + validation groupée */}
+        <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 flex flex-wrap items-center gap-4 shrink-0">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Conformité des documents</span>
+              <span className="text-[11px] font-mono font-bold text-azur">
+                {allOrgFiles.length ? Math.round((validatedCount / allOrgFiles.length) * 100) : 0}% ({validatedCount}/{allOrgFiles.length})
+              </span>
+            </div>
+            <ComplianceBar validated={validatedCount} total={allOrgFiles.length} />
+          </div>
+          <button
+            onClick={handleValidateAll}
+            disabled={allOrgFiles.length === 0}
+            className="text-sm font-bold px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-2 disabled:opacity-50 shrink-0"
+          >
+            <CheckCheck className="w-4 h-4" /> Tout valider
           </button>
         </div>
 
@@ -488,6 +570,11 @@ export default function OrgCabinetModal({
                                   <p className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
                                     {formatBytes(file.size)} | {file.type.split('/').pop()?.toUpperCase()} | Versé le {new Date(file.uploadDate).toLocaleDateString()}
                                   </p>
+                                  {file.reviewNote && (
+                                    <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5 max-w-sm">
+                                      <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" /><span className="min-w-0">{file.reviewNote}</span>
+                                    </p>
+                                  )}
                                 </div>
                               )}
                             </td>
@@ -520,7 +607,7 @@ export default function OrgCabinetModal({
                                         : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-amber-500/15 hover:text-amber-600 hover:border-amber-500/30"
                                     }`}
                                   >
-                                    {file.sharedWithPartner !== false ? "🔓 Partagé with Partner" : "🔒 Privé Coordinateur"}
+                                    {file.sharedWithPartner !== false ? "🔓 Partagé" : "🔒 Privé"}
                                   </button>
                                 )}
                               </div>
@@ -529,7 +616,7 @@ export default function OrgCabinetModal({
                             <td className="px-4 py-3">
                               <select
                                 value={file.submissionStatus || 'Pending'}
-                                onChange={(e) => handleUpdateOrgFileStatus(file.id, e.target.value as SubmissionStatus)}
+                                onChange={(e) => handleUpdateOrgFileStatus(file, e.target.value as SubmissionStatus)}
                                 className={`text-[11px] font-extrabold p-1 rounded-lg border focus:outline-none ${
                                   (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' :
                                   (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' :
@@ -546,6 +633,13 @@ export default function OrgCabinetModal({
 
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-1">
+                                <button
+                                  onClick={() => openNote(file)}
+                                  className={`p-1 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded cursor-pointer ${file.reviewNote ? 'text-amber-600 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400 hover:text-amber-600'}`}
+                                  title={file.reviewNote ? 'Modifier la note de revue' : "Ajouter une note (ce qu'il faut corriger)"}
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                </button>
                                 <button
                                   onClick={() => handleStartRenaming(file)}
                                   className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
@@ -707,10 +801,32 @@ export default function OrgCabinetModal({
                         {files.filter(f => f.orgId === org.id && (!f.folderId || f.folderId === null)).map(file => (
                           <tr key={file.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                             <td className="px-4 py-3 text-left">
-                              <p className="font-bold text-slate-900 dark:text-slate-100 max-w-sm truncate">{file.name}</p>
-                              <p className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
-                                {formatBytes(file.size)} | {file.type.split('/').pop()?.toUpperCase()} | Versé le {new Date(file.uploadDate).toLocaleDateString()}
-                              </p>
+                              {renamingFile?.id === file.id ? (
+                                <div className="flex items-center gap-1.5 focus-within:ring-1 focus-within:ring-azur rounded p-1 bg-white dark:bg-slate-900 border dark:border-slate-700">
+                                  <input
+                                    type="text"
+                                    value={renameInput}
+                                    onChange={(e) => setRenameInput(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleConfirmRename(); if (e.key === 'Escape') setRenamingFile(null); }}
+                                    className="w-full text-xs font-bold bg-transparent border-none outline-none text-slate-900 dark:text-white"
+                                    autoFocus
+                                  />
+                                  <button onClick={handleConfirmRename} className="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded cursor-pointer font-bold">OK</button>
+                                  <button onClick={() => setRenamingFile(null)} className="text-[10px] bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2 py-1 rounded cursor-pointer">Annuler</button>
+                                </div>
+                              ) : (
+                                <>
+                                  <p className="font-bold text-slate-900 dark:text-slate-100 max-w-sm truncate">{file.name}</p>
+                                  <p className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                                    {formatBytes(file.size)} | {file.type.split('/').pop()?.toUpperCase()} | Versé le {new Date(file.uploadDate).toLocaleDateString()}
+                                  </p>
+                                  {file.reviewNote && (
+                                    <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5 max-w-sm">
+                                      <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" /><span className="min-w-0">{file.reviewNote}</span>
+                                    </p>
+                                  )}
+                                </>
+                              )}
                             </td>
                             <td className="px-4 py-3">
                               <span className="bg-azur/10 dark:bg-azur/15 text-azur border border-azur/20 px-1.5 py-0.5 text-[9.5px] font-black uppercase rounded">
@@ -720,7 +836,7 @@ export default function OrgCabinetModal({
                             <td className="px-4 py-3">
                               <select
                                 value={file.submissionStatus || 'Pending'}
-                                onChange={(e) => handleUpdateOrgFileStatus(file.id, e.target.value as SubmissionStatus)}
+                                onChange={(e) => handleUpdateOrgFileStatus(file, e.target.value as SubmissionStatus)}
                                 className={`text-[11px] font-extrabold p-1 rounded-lg border focus:outline-none ${
                                   (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' :
                                   (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' :
@@ -736,6 +852,20 @@ export default function OrgCabinetModal({
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-1">
+                                <button
+                                  onClick={() => openNote(file)}
+                                  className={`p-1 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded cursor-pointer ${file.reviewNote ? 'text-amber-600 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400 hover:text-amber-600'}`}
+                                  title={file.reviewNote ? 'Modifier la note de revue' : "Ajouter une note (ce qu'il faut corriger)"}
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleStartRenaming(file)}
+                                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                                  title="Renommer"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
                                 {file.fallbackDataUrl && (
                                   <a
                                     href={file.fallbackDataUrl}
@@ -783,6 +913,41 @@ export default function OrgCabinetModal({
         </div>
 
       </motion.div>
+
+      {/* Note de revue d'un fichier (ce qu'il faut corriger) */}
+      {noteFile && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-4" onClick={() => !savingNote && setNoteFile(null)}>
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs" />
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-300 flex items-center justify-center shrink-0">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Note de revue</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{noteFile.name}</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Indiquez à l'organisme ce qu'il doit corriger sur cette pièce. La note s'affiche dans son espace.
+            </p>
+            <textarea
+              autoFocus
+              value={noteValue}
+              onChange={(e) => setNoteValue(e.target.value)}
+              rows={4}
+              className="input-asf w-full resize-none"
+              placeholder="Ex. : document illisible, signature manquante, version périmée…"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setNoteFile(null)} disabled={savingNote} className="btn-secondary text-sm">Annuler</button>
+              <button onClick={saveNote} disabled={savingNote} className="btn-asf text-sm">
+                {savingNote ? 'Enregistrement…' : 'Enregistrer la note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
