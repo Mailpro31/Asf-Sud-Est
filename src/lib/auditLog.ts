@@ -104,11 +104,15 @@ export function getCurrentActor(): AuditActor | null {
   return currentActor;
 }
 
-/** Enregistre une action dans le journal. Échec silencieux (non bloquant). */
-export async function logAction(action: AuditAction, opts: LogOptions = {}): Promise<void> {
+/**
+ * Enregistre une action dans le journal. Échec silencieux (non bloquant).
+ * Retourne `true` si l'entrée a bien été persistée, `false` sinon — utile
+ * lorsqu'on veut confirmer une notification à l'utilisateur (ex. soumission).
+ */
+export async function logAction(action: AuditAction, opts: LogOptions = {}): Promise<boolean> {
   try {
     const actor = opts.actor || currentActor;
-    if (!actor || !actor.uid) return; // impossible d'attribuer l'action
+    if (!actor || !actor.uid) return false; // impossible d'attribuer l'action
 
     const entry = {
       timestamp: Date.now(),
@@ -129,11 +133,13 @@ export async function logAction(action: AuditAction, opts: LogOptions = {}): Pro
         id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         ...entry,
       } as AuditLog);
-      return;
+      return true;
     }
     await addDoc(collection(db, 'audit_logs'), entry);
+    return true;
   } catch (err) {
     console.warn('logAction échec (non bloquant) :', err);
+    return false;
   }
 }
 
