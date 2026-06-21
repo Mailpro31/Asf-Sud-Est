@@ -206,6 +206,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setOrganization({ ...eff, id: docSnap.id } as Organization);
         }
       } else {
+        // Compte partenaire sans antenne de rattachement (cas typique de la
+        // 1re connexion via Google) : on DIFFÈRE la création du document
+        // Firestore jusqu'au choix de l'antenne. Ainsi l'enregistrement de
+        // l'antenne est une opération « create » (autorisée par les règles)
+        // et non un « update » (qui exigerait le déploiement d'une règle
+        // supplémentaire). On vérifie d'abord qu'aucune invitation
+        // gestionnaire d'antenne ne s'applique à cet e-mail.
+        if (!isAdminUser && !antenneId) {
+          let invite: any = null;
+          try {
+            invite = await getMyInvite((email || '').trim().toLowerCase());
+          } catch {
+            invite = null;
+          }
+          if (!invite || !invite.antenne_id) {
+            // État transitoire, NON persisté : déclenche l'écran « Choix de
+            // l'antenne ». Le document sera créé au moment du choix.
+            setOrganization({
+              id: uid,
+              name: defaultName,
+              contactName: defaultContact,
+              email: defaultEmail,
+              phone: defaultPhone,
+              submissionStatus: 'Pending',
+              role: 'organization',
+              delegation_id: '',
+              antenne_id: '',
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            } as Organization);
+            return;
+          }
+        }
         const newOrgData = {
           name: defaultName,
           contactName: defaultContact,
