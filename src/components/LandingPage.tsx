@@ -16,18 +16,23 @@ interface LandingPageProps {
 
 // Logo SVG conforme à la charte graphique (mains entrelacées formant des ailes)
 export function LogoASF({ className = 'w-16 h-16', variant = 'color' }: { className?: string; variant?: 'color' | 'white' }) {
+  const { mode } = useTheme();
   const azur = '#1b98c4';
   const azurPastel = '#83d0f5';
   const white = '#ffffff';
 
-  const mainColor = variant === 'color' ? azur : white;
-  const pastelColor = variant === 'color' ? azurPastel : white;
+  // En mode sombre, même le variant « color » bascule sur le logo blanc pour
+  // rester lisible : le logo s'adapte donc automatiquement au thème.
+  const useWhite = variant === 'white' || mode === 'dark';
+  const mainColor = useWhite ? white : azur;
+  const pastelColor = useWhite ? white : azurPastel;
 
   // Logo officiel (image fournie). On l'affiche en priorité ; si le fichier
   // n'est pas encore présent dans le dépôt, on retombe sur le logo vectoriel
-  // intégré ci-dessous (aucune image cassée).
+  // intégré ci-dessous (aucune image cassée). Le logo clair (« clear ») est
+  // une version nette destinée aux fonds clairs.
   const [imgFailed, setImgFailed] = useState(false);
-  const src = variant === 'white' ? '/logo-asf-white.png' : '/logo-asf.png';
+  const src = useWhite ? '/logo-asf-white.png' : '/logo-asf-clear.png';
   if (!imgFailed) {
     return (
       <img

@@ -299,6 +299,11 @@
     box-shadow: var(--shadow-asf-sm);
     transition: box-shadow 0.25s var(--ease-asf), border-color 0.25s var(--ease-asf), transform 0.25s var(--ease-asf);
   }
+  /* Survol doux et homogène (les survols Tailwind explicites priment). */
+  .card-asf:hover {
+    box-shadow: var(--shadow-asf-md);
+    transform: translateY(-2px);
+  }
 
   /* Badge de statut — base + variantes sémantiques */
   .badge {
