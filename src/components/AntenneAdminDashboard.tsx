@@ -26,7 +26,6 @@ import {
   TrendingUp,
   Search,
   Eye,
-  ChevronDown,
   ChevronRight,
   ChevronLeft,
   Upload,
@@ -60,7 +59,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
+import { StatusBadge, StatusActions, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -1216,15 +1215,6 @@ export default function AntenneAdminDashboard() {
     if (dropped.length) handleUploadFiles(dropped as File[]);
   };
 
-  // Couleur de la pastille de statut (lecture en un coup d'œil).
-  const STATUS_SELECT_CLS: Record<SubmissionStatus, string> = {
-    Pending: 'border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300',
-    'Under review': 'border-azur/40 bg-azur/10 text-azur',
-    Validated: 'border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    Incomplete: 'border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300',
-  };
-  const statusSelectCls = (s?: SubmissionStatus) => STATUS_SELECT_CLS[s || 'Pending'] || STATUS_SELECT_CLS.Pending;
-
   // Ligne de document réutilisable (liste principale + fiche organisme).
   const renderFileRow = (file: DossierFile, opts?: { selectable?: boolean; tourExample?: boolean }) => {
    const fileNew = file.uploadedBy !== 'admin' && isUnseen(file.id, fileStamp(file));
@@ -1275,19 +1265,14 @@ export default function AntenneAdminDashboard() {
 
       {/* Actions : restent groupées et passent sous le nom sur mobile si besoin */}
       <div className="flex flex-wrap items-center gap-1.5 ml-auto shrink-0">
-        {/* Sélecteur de statut */}
-        <div data-tour={opts?.tourExample ? 'org-doc-validate' : undefined} className="relative shrink-0">
-          <select
-            value={file.submissionStatus || 'Pending'}
-            onChange={(e) => handleUpdateStatus(file, e.target.value as SubmissionStatus)}
-            className={`appearance-none cursor-pointer text-xs font-bold rounded-full border pl-3 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-azur/30 ${statusSelectCls(file.submissionStatus)}`}
-            title="Changer le statut du document"
-          >
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>{getStatusMeta(s).label}</option>
-            ))}
-          </select>
-          <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+        {/* Validation unifiée : Valider / Refuser + motif transmis au partenaire */}
+        <div data-tour={opts?.tourExample ? 'org-doc-validate' : undefined} className="shrink-0">
+          <StatusActions
+            status={file.submissionStatus}
+            onChange={(s) => handleUpdateStatus(file, s)}
+            onAddNote={() => openNote(file)}
+            hasNote={!!file.reviewNote}
+          />
         </div>
 
         {/* Partage avec le partenaire (uniquement pour les dépôts gestionnaire) */}
@@ -1305,13 +1290,6 @@ export default function AntenneAdminDashboard() {
           </button>
         )}
 
-        <button
-          onClick={() => openNote(file)}
-          className={`btn-ghost p-2 shrink-0 ${file.reviewNote ? 'text-amber-600 dark:text-amber-300' : ''}`}
-          title={file.reviewNote ? 'Modifier la note de revue' : 'Ajouter une note (ce qu\'il faut corriger)'}
-        >
-          <MessageSquare className="w-4 h-4" />
-        </button>
         <button onClick={() => { if (fileNew) markSeen(file.id); setPreviewFile(file); }} className="btn-ghost p-2 shrink-0" title="Aperçu">
           <Eye className="w-4 h-4" />
         </button>
@@ -1341,7 +1319,7 @@ export default function AntenneAdminDashboard() {
     { label: 'Documents', value: stats.total, icon: FileText, tone: 'text-azur bg-azur/10' },
     { label: 'Organismes', value: stats.organisms, icon: Building2, tone: 'text-deep dark:text-azur-pastel bg-azur-light dark:bg-azur/15' },
     { label: 'En attente', value: stats.pending, icon: Clock, tone: 'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10' },
-    { label: 'En révision', value: stats.review, icon: AlertCircle, tone: 'text-azur bg-azur/10' },
+    { label: 'Refusés', value: stats.incomplete, icon: AlertCircle, tone: 'text-rose-600 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10' },
     { label: 'Validés', value: stats.validated, icon: CheckCircle2, tone: 'text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10' },
   ];
 
@@ -2155,11 +2133,11 @@ export default function AntenneAdminDashboard() {
                   <span className="text-slate-300 dark:text-slate-600">·</span>
                   {orgModalFiles.length} document{orgModalFiles.length > 1 ? 's' : ''}
                 </span>
-                {(['Validated', 'Pending', 'Under review', 'Incomplete'] as SubmissionStatus[]).map((s) => {
+                {(['Validated', 'Pending', 'Incomplete'] as SubmissionStatus[]).map((s) => {
                   const n = orgModalFiles.filter((f) => (f.submissionStatus || 'Pending') === s).length;
                   if (!n) return null;
                   return (
-                    <span key={s} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusSelectCls(s)}`}>
+                    <span key={s} className={`badge ${getStatusMeta(s).badge} !text-[10px]`}>
                       {n} {getStatusMeta(s).label}
                     </span>
                   );

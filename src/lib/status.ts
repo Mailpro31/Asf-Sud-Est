@@ -23,6 +23,9 @@ export const STATUS_META: Record<SubmissionStatus, StatusMeta> = {
     dot: 'bg-status-pending',
     badge: 'badge-pending',
   },
+  // Statut hérité (workflow simplifié à 3 états) : conservé pour afficher
+  // proprement d'anciennes pièces encore marquées « En révision ». N'est plus
+  // proposé dans les contrôles de validation.
   'Under review': {
     label: 'En révision',
     dot: 'bg-status-review',
@@ -34,16 +37,19 @@ export const STATUS_META: Record<SubmissionStatus, StatusMeta> = {
     badge: 'badge-validated',
   },
   Incomplete: {
-    label: 'Incomplet',
+    label: 'Refusé',
     dot: 'bg-status-incomplete',
     badge: 'badge-incomplete',
   },
 };
 
-/** Ordre canonique des statuts (utile pour les filtres / onglets). */
+/**
+ * Workflow de validation simplifié à 3 états : En attente · Validé · Refusé.
+ * (« En révision » reste défini dans STATUS_META pour l'historique mais n'est
+ * plus proposé à l'admin.)
+ */
 export const STATUS_ORDER: SubmissionStatus[] = [
   'Pending',
-  'Under review',
   'Validated',
   'Incomplete',
 ];

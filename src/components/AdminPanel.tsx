@@ -39,7 +39,6 @@ import {
   Edit2,
   Settings,
   HelpCircle,
-  ChevronDown,
   CornerLeftUp,
   Search,
   X,
@@ -65,8 +64,8 @@ import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
-import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
-import { STATUS_META, STATUS_ORDER } from '../lib/status';
+import { StatusBadge, StatusActions, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
+import { STATUS_ORDER } from '../lib/status';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
@@ -2397,28 +2396,9 @@ export default function AdminPanel() {
                                   </td>
 
                                   <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                                    <div className="relative inline-block w-44 text-left group">
-                                      <div tabIndex={0} role="button" className="flex items-center justify-between gap-1.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-azur/40 rounded">
-                                        <StatusBadge status={activeStatus} />
-                                        <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-                                      </div>
-
-                                      {/* Quick Status Selection list */}
-                                      <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-900 border rounded-lg shadow-lg z-30 hidden group-hover:block group-focus-within:block hover:block font-sans">
-                                        {(Object.keys(STATUS_META) as SubmissionStatus[]).map((st) => {
-                                          const subSc = STATUS_META[st];
-                                          return (
-                                            <button
-                                              key={st}
-                                              onClick={() => handleUpdateStatus(file.id, st)}
-                                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11.5px] text-slate-800 dark:text-slate-100 flex items-center gap-2 cursor-pointer font-bold"
-                                            >
-                                              <span className={`w-1.5 h-1.5 rounded-full ${subSc.dot}`}></span>
-                                              <span>{subSc.label}</span>
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
+                                    <div className="flex items-center gap-2.5">
+                                      <StatusBadge status={activeStatus} />
+                                      <StatusActions compact status={activeStatus} onChange={(s) => handleUpdateStatus(file.id, s)} />
                                     </div>
                                   </td>
 

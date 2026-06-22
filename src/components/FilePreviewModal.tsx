@@ -22,8 +22,7 @@ import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc } from '
 import { ref, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { DossierFile } from '../types';
-import { StatusBadge } from './ui';
-import { STATUS_META, STATUS_ORDER } from '../lib/status';
+import { StatusBadge, StatusActions } from './ui';
 
 interface FilePreviewModalProps {
   isOpen: boolean;
@@ -88,12 +87,6 @@ export default function FilePreviewModal({
     }
   };
 
-  // Sélecteur de statut unifié sur la source de vérité STATUS_META.
-  const STATUS_OPTIONS = STATUS_ORDER.map((value) => ({
-    value,
-    label: STATUS_META[value].label,
-    dot: STATUS_META[value].dot,
-  }));
 
   const isPdf = file ? (file.type === 'application/pdf' || file.name.endsWith('.pdf')) : false;
   const isDocx = file ? (file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') : false;
@@ -889,26 +882,10 @@ export default function FilePreviewModal({
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 block mt-0.5">Changez le statut réglementaire :</span>
                   </div>
 
-                  <div className="space-y-1.5">
-                    {STATUS_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => handleUpdateLocalStatus(opt.value)}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all border flex items-center justify-between cursor-pointer ${
-                          localStatus === opt.value
-                            ? 'bg-white dark:bg-slate-900 border-azur dark:border-azur shadow-sm ring-2 ring-azur/15'
-                            : 'bg-transparent border-transparent text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-900/50 dark:text-slate-400'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className={`w-2.5 h-2.5 rounded-full ${opt.dot} ${localStatus === opt.value ? 'animate-pulse' : ''}`} />
-                          <span className={localStatus === opt.value ? 'font-black' : ''}>{opt.label}</span>
-                        </span>
-                        {localStatus === opt.value && <span className="text-[10px] font-bold text-azur dark:text-azur-pastel">✓ Actif</span>}
-                      </button>
-                    ))}
-                  </div>
+                  <StatusActions
+                    status={localStatus}
+                    onChange={handleUpdateLocalStatus}
+                  />
                 </div>
               )}
 
