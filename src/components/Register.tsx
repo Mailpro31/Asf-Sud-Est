@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { authErrorMessage } from '../lib/authErrors';
 import { LogoASF } from './LandingPage';
+import { ThemeToggle } from './ui';
 import { localDb } from '../lib/localDb';
 
 interface RegisterProps {
@@ -251,6 +252,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
           ← Retour à l'accueil
         </button>
       )}
+      <ThemeToggle className="absolute top-4 right-4 sm:top-6 sm:right-6 shadow-3xs" />
       <div className="w-full max-w-lg text-left">
         {/* Modern Minimal Headings */}
         <div className="mb-6 text-center flex flex-col items-center">

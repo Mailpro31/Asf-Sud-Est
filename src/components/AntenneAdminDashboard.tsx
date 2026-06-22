@@ -60,7 +60,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, ComplianceBar, GuidedTour, StatusFilterChips, type TourStep } from './ui';
+import { StatusBadge, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -1404,6 +1404,7 @@ export default function AntenneAdminDashboard() {
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Déconnexion</span>
           </button>
+          <ThemeToggle />
         </div>
       </header>
 

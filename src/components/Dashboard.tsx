@@ -48,7 +48,7 @@ import { notifyAntenneOnUpload } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
-import { StatusBadge, GuidedTour, StatusFilterChips, type TourStep } from './ui';
+import { StatusBadge, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 
@@ -1266,7 +1266,8 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="flex items-center gap-1.5">
-            <button 
+            <ThemeToggle className="w-8 h-8 !rounded-lg bg-white/10 border-transparent text-slate-200 hover:bg-white/20 hover:text-white dark:bg-white/10 dark:border-transparent dark:text-slate-200 dark:hover:bg-white/20 dark:hover:text-white" />
+            <button
               type="button"
               onClick={() => setIsProfileOpen(true)}
               className="p-1.5 bg-white/10 text-slate-200 hover:text-white rounded-lg transition-colors cursor-pointer"
@@ -1308,6 +1309,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <ThemeToggle className="hidden md:inline-flex" />
             <button
               onClick={() => setTourOpen(true)}
               data-tour="tutoriel"

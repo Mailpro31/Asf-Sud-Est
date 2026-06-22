@@ -17,6 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { localDb } from '../lib/localDb';
 import { notifyAntenneOnNewOrg } from '../lib/antenneSettings';
 import { LogoASF } from './LandingPage';
+import { ThemeToggle } from './ui';
 
 export default function ChooseAntenne() {
   const { user, organization, antennes, refreshOrganization, signOut } = useAuth();
@@ -120,7 +121,8 @@ export default function ChooseAntenne() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col justify-center items-center ${themeConfig.bg} ${themeConfig.fontFamily} p-4 md:p-8 transition-all duration-300`}>
+    <div className={`min-h-screen flex flex-col justify-center items-center ${themeConfig.bg} ${themeConfig.fontFamily} p-4 md:p-8 transition-all duration-300 relative`}>
+      <ThemeToggle className="absolute top-4 right-4 sm:top-6 sm:right-6 shadow-3xs" />
       <div className="w-full max-w-lg">
         <div className="flex flex-col items-center text-center mb-6">
           <div className="w-14 h-14 rounded-2xl bg-azur-light dark:bg-azur/15 flex items-center justify-center mb-3">
