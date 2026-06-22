@@ -37,7 +37,7 @@ export const STATUS_META: Record<SubmissionStatus, StatusMeta> = {
     badge: 'badge-validated',
   },
   Incomplete: {
-    label: 'Refusé',
+    label: 'À corriger',
     dot: 'bg-status-incomplete',
     badge: 'badge-incomplete',
   },

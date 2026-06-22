@@ -111,7 +111,7 @@ function SectionHead({ eyebrow, title, sub }: { eyebrow?: string; title: string;
 function PortalPreview() {
   const rows: { name: string; meta: string; status: SubmissionStatus }[] = [
     { name: 'Récépissé préfectoral', meta: 'PDF · 2,4 Mo', status: 'Validated' },
-    { name: "Attestation d'assurance", meta: 'PDF · 1,1 Mo', status: 'Under review' },
+    { name: "Attestation d'assurance", meta: 'PDF · 1,1 Mo', status: 'Validated' },
     { name: 'Licence de pilote', meta: 'En attente de dépôt', status: 'Pending' },
     { name: 'Fiche bénéficiaire', meta: 'Champ manquant', status: 'Incomplete' },
   ];
@@ -185,7 +185,6 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
 
   const flow: { status: SubmissionStatus; desc: string }[] = [
     { status: 'Pending', desc: "La pièce est attendue ou vient d'être déposée par le partenaire." },
-    { status: 'Under review', desc: "L'antenne examine la conformité du document transmis." },
     { status: 'Validated', desc: "La pièce est conforme : elle compte pour l'autorisation de vol." },
     { status: 'Incomplete', desc: 'Un élément manque ou doit être corrigé avant nouvelle revue.' },
   ];
@@ -362,7 +361,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
             <SectionHead
               eyebrow="Transparence"
               title="Le suivi des dossiers, en temps réel"
-              sub="Quatre statuts, partagés entre le partenaire et son antenne, donnent à chacun une vision claire de l'avancement de chaque pièce."
+              sub="Trois statuts, partagés entre le partenaire et son antenne, donnent à chacun une vision claire de l'avancement de chaque pièce."
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {flow.map((f, i) => (

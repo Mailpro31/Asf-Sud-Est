@@ -381,7 +381,6 @@ export default function AntenneAdminDashboard() {
     return {
       total,
       pending: by('Pending'),
-      review: by('Under review'),
       validated,
       incomplete: by('Incomplete'),
       organisms: partnerOrgs.length,
@@ -1319,7 +1318,7 @@ export default function AntenneAdminDashboard() {
     { label: 'Documents', value: stats.total, icon: FileText, tone: 'text-azur bg-azur/10' },
     { label: 'Organismes', value: stats.organisms, icon: Building2, tone: 'text-deep dark:text-azur-pastel bg-azur-light dark:bg-azur/15' },
     { label: 'En attente', value: stats.pending, icon: Clock, tone: 'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10' },
-    { label: 'Refusés', value: stats.incomplete, icon: AlertCircle, tone: 'text-rose-600 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10' },
+    { label: 'À corriger', value: stats.incomplete, icon: AlertCircle, tone: 'text-rose-600 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10' },
     { label: 'Validés', value: stats.validated, icon: CheckCircle2, tone: 'text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10' },
   ];
 
