@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "deploy": "npm run build && firebase deploy --only hosting",
     "deploy:full": "npm run build && firebase deploy",
-    "deploy:rules": "firebase deploy --only firestore:rules,storage"
+    "deploy:rules": "firebase deploy --only firestore:rules,storage",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-asf-rules \"node scripts/rules.test.mjs\""
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -30,8 +31,10 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
+    "firebase-tools": "^15.22.0",
     "tailwindcss": "^4.1.14",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
