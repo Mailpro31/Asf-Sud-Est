@@ -331,13 +331,17 @@ export default function AntenneAdminDashboard() {
     const unsub = subscribeAuditLogs({ antenneId }, (logs) => {
       const m: Record<string, number> = {};
       const nameById: Record<string, string> = {};
+      const nameTs: Record<string, number> = {};
       for (const l of logs) {
         const isSubmit = l.action === 'dossier_submit' || l.targetType === 'dossier_submission';
         if (!isSubmit) continue;
         const oid = l.targetId || l.actorUid;
         if (!oid) continue;
-        if (!m[oid] || (l.timestamp || 0) > m[oid]) m[oid] = l.timestamp || 0;
-        if (l.targetName) nameById[oid] = l.targetName;
+        const ts = l.timestamp || 0;
+        if (!m[oid] || ts > m[oid]) m[oid] = ts;
+        // Retient le nom porté par la soumission la plus récente (et non le
+        // dernier rencontré dans l'ordre des logs).
+        if (l.targetName && ts >= (nameTs[oid] ?? -1)) { nameById[oid] = l.targetName; nameTs[oid] = ts; }
       }
       // Notifie d'une soumission réellement nouvelle (après le 1er chargement).
       const prev = prevSubsRef.current;
@@ -472,12 +476,21 @@ export default function AntenneAdminDashboard() {
     if (!selectedOrgId) return [];
     const q = orgDocSearch.trim().toLowerCase();
     const rank: Record<string, number> = { Pending: 0, 'Under review': 1, Incomplete: 2, Validated: 3 };
+    // La racine affiche les fichiers sans dossier OU dont le dossier n'existe
+    // plus (orphelins) — filet de sécurité pour ne jamais « perdre » un fichier.
+    const existingFolderIds = new Set(folders.map((f) => f.id));
     const list = files.filter(
-      (f) =>
-        f.orgId === selectedOrgId &&
-        ((f.folderId || null) === orgFolderId) &&
-        (orgStatusFilter === 'all' || (f.submissionStatus || 'Pending') === orgStatusFilter) &&
-        (!q || f.name.toLowerCase().includes(q)),
+      (f) => {
+        const inScope = orgFolderId
+          ? (f.folderId || null) === orgFolderId
+          : (!f.folderId || !existingFolderIds.has(f.folderId));
+        return (
+          f.orgId === selectedOrgId &&
+          inScope &&
+          (orgStatusFilter === 'all' || (f.submissionStatus || 'Pending') === orgStatusFilter) &&
+          (!q || f.name.toLowerCase().includes(q))
+        );
+      },
     );
     list.sort((a, b) => {
       switch (orgSortBy) {
@@ -489,7 +502,7 @@ export default function AntenneAdminDashboard() {
       }
     });
     return list;
-  }, [files, selectedOrgId, orgDocSearch, orgFolderId, orgStatusFilter, orgSortBy]);
+  }, [files, folders, selectedOrgId, orgDocSearch, orgFolderId, orgStatusFilter, orgSortBy]);
 
   // Dossiers propres à l'organisme affiché (rangement privé par organisme).
   const orgFolders = useMemo(
@@ -826,13 +839,27 @@ export default function AntenneAdminDashboard() {
       delegation_id: folder.delegation_id || delegationId,
     });
     if (activeFolderId === folder.id) setActiveFolderId(null);
+    if (orgFolderId === folder.id) setOrgFolderId(null);
+    // Les fichiers du dossier reviennent à la racine (folderId = null) — sinon
+    // ils resteraient orphelins (invisibles à la racine ET sans dossier parent).
+    const contained = files.filter((f) => (f.folderId || null) === folder.id);
     if (localDb.isSandboxActive()) {
+      for (const f of contained) {
+        const t = localDb.getFiles().find((x) => x.id === f.id);
+        if (t) { t.folderId = null; localDb.saveFile(t); }
+      }
       localDb.deleteFolder(folder.id);
       logIt();
       reloadFoldersLocal();
       return;
     }
     try {
+      // Réaffectation des fichiers à la racine AVANT la suppression du dossier.
+      await Promise.all(
+        contained.map((f) => updateDoc(doc(db, 'files', f.id), { folderId: null }).catch((e) => {
+          console.warn('Réaffectation à la racine échouée pour', f.id, e);
+        })),
+      );
       await deleteDoc(doc(db, 'folders', folder.id));
       logIt();
       toast('Dossier supprimé.', 'success');
@@ -1205,9 +1232,8 @@ export default function AntenneAdminDashboard() {
     <div
       key={file.id}
       data-tour={opts?.tourExample ? 'org-doc' : undefined}
-      onClickCapture={() => { if (fileNew) markSeen(file.id); }}
       className={`relative flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70 dark:hover:bg-slate-800'} ${fileNew ? 'ring-2 ring-inset ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
-      title={fileNew ? 'Nouveau document — cliquez pour le marquer comme vu' : undefined}
+      title={fileNew ? 'Nouveau document — ouvrez-le pour le marquer comme vu' : undefined}
     >
       {opts?.selectable && (
         <input
@@ -1225,7 +1251,7 @@ export default function AntenneAdminDashboard() {
       <div className="min-w-0 flex-1 basis-40">
         <div className="flex items-center gap-2 min-w-0">
           <button
-            onClick={() => setPreviewFile(file)}
+            onClick={() => { if (fileNew) markSeen(file.id); setPreviewFile(file); }}
             className="font-medium text-slate-800 dark:text-slate-100 hover:text-azur truncate block text-left min-w-0"
           >
             {file.name}
@@ -1286,7 +1312,7 @@ export default function AntenneAdminDashboard() {
         >
           <MessageSquare className="w-4 h-4" />
         </button>
-        <button onClick={() => setPreviewFile(file)} className="btn-ghost p-2 shrink-0" title="Aperçu">
+        <button onClick={() => { if (fileNew) markSeen(file.id); setPreviewFile(file); }} className="btn-ghost p-2 shrink-0" title="Aperçu">
           <Eye className="w-4 h-4" />
         </button>
         <button onClick={() => handleDownload(file)} className="btn-ghost p-2 shrink-0" title="Télécharger">
