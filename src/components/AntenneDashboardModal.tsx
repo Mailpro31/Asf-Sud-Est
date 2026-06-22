@@ -186,7 +186,7 @@ export default function AntenneDashboardModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
         {/* Backdrop overlay */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -202,10 +202,10 @@ export default function AntenneDashboardModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
           transition={{ type: 'spring', duration: 0.4 }}
-          className="relative w-full max-w-4xl h-[90vh] max-h-[800px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl z-10 flex flex-col overflow-hidden text-left"
+          className="relative w-full max-w-4xl h-[90vh] max-h-[800px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl z-10 flex flex-col overflow-hidden text-left"
         >
           {/* Header Banner - Sky or local customized layout */}
-          <div className="relative bg-gradient-to-r from-deep via-azur to-deep-dark p-6 text-white shrink-0">
+          <div className="relative bg-gradient-to-r from-deep via-azur to-deep-dark p-4 sm:p-6 text-white shrink-0">
             {/* Ambient flight vectors */}
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
             
@@ -269,10 +269,10 @@ export default function AntenneDashboardModal({
           </div>
 
           {/* Tab Selection Row */}
-          <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/20 px-6 py-1 shrink-0 gap-1.5">
+          <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/20 px-4 sm:px-6 py-1 shrink-0 gap-1.5 overflow-x-auto">
             <button
               onClick={() => setActiveTab('stats')}
-              className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+              className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'stats'
                   ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -282,7 +282,7 @@ export default function AntenneDashboardModal({
             </button>
             <button
               onClick={() => setActiveTab('orgs')}
-              className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+              className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'orgs'
                   ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -292,7 +292,7 @@ export default function AntenneDashboardModal({
             </button>
             <button
               onClick={() => setActiveTab('documents')}
-              className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+              className={`px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'documents'
                   ? 'border-azur text-azur dark:text-azur-pastel'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -303,7 +303,7 @@ export default function AntenneDashboardModal({
           </div>
 
           {/* Modal Content - Scrollable Box */}
-          <div className="flex-grow overflow-y-auto p-6 bg-slate-50/30 dark:bg-slate-950/10">
+          <div className="flex-grow overflow-y-auto p-4 sm:p-6 bg-slate-50/30 dark:bg-slate-950/10">
             <AnimatePresence mode="wait">
               {/* TAB 1: STATS & LOCAL ACTIVITIES */}
               {activeTab === 'stats' && (
@@ -521,8 +521,8 @@ export default function AntenneDashboardModal({
                       Aucun document réglementaire n'est présent dans les bases pour l'instant dans l'antenne locale de {antenne.name}.
                     </div>
                   ) : (
-                    <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800 shadow-3xs bg-white dark:bg-slate-900">
-                      <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800 shadow-3xs bg-white dark:bg-slate-900">
+                      <table className="w-full text-left border-collapse min-w-[640px]">
                         <thead>
                           <tr className="bg-slate-50 dark:bg-slate-950 text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                             <th className="px-4 py-2.5">Titre du fichier</th>

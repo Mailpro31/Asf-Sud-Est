@@ -513,15 +513,15 @@ export default function FilePreviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/80 bg-slate-900/70 dark:bg-slate-950/80 backdrop-blur-md transition-opacity">
-      <div 
-        className="relative w-full max-w-[95vw] h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+      <div
+        className="relative w-full max-w-[95vw] h-[90vh] sm:h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Header bar */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950 shrink-0">
-          <div className="flex items-center gap-3 min-w-0 text-left">
-            <div className="p-2.5 bg-azur-light dark:bg-azur/10 text-azur dark:text-azur-pastel rounded-xl">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 text-left">
+            <div className="p-2 sm:p-2.5 bg-azur-light dark:bg-azur/10 text-azur dark:text-azur-pastel rounded-xl shrink-0">
               <FileText className="w-5.5 h-5.5" />
             </div>
             <div className="min-w-0">
@@ -544,10 +544,10 @@ export default function FilePreviewModal({
         </div>
 
         {/* Workspace body */}
-        <div className="flex-grow flex-1 overflow-hidden flex flex-col lg:flex-row p-6 gap-6 bg-slate-100/30 dark:bg-slate-950/20">
-          
+        <div className="flex-grow flex-1 overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row p-3 sm:p-6 gap-4 sm:gap-6 bg-slate-100/30 dark:bg-slate-950/20">
+
           {/* Main Preview Screen (Left) */}
-          <div className="flex-1 h-full flex flex-col justify-center items-center bg-slate-950 rounded-2xl border border-slate-900 p-4 overflow-hidden relative shadow-inner">
+          <div className="flex-1 min-h-[50vh] lg:min-h-0 lg:h-full flex flex-col justify-center items-center bg-slate-950 rounded-2xl border border-slate-900 p-2.5 sm:p-4 overflow-hidden relative shadow-inner">
             
             {loading ? (
               <div className="flex flex-col items-center gap-3 text-slate-300">
@@ -566,7 +566,7 @@ export default function FilePreviewModal({
                 {isImage && (
                   <div className="w-full h-full flex flex-col justify-between overflow-hidden">
                     {/* Controls Bar for Images */}
-                    <div className="flex items-center justify-between w-full bg-slate-900 border border-slate-800 p-2 rounded-xl mb-3 gap-2 select-none shrink-0 text-white">
+                    <div className="flex flex-wrap items-center justify-between w-full bg-slate-900 border border-slate-800 p-2 rounded-xl mb-3 gap-2 select-none shrink-0 text-white">
                       
                       <div className="flex items-center gap-1.5">
                         <button
@@ -639,7 +639,7 @@ export default function FilePreviewModal({
                 {isPdf && (
                   <div className="w-full h-full flex flex-col justify-between overflow-hidden">
                     {/* Controls Bar */}
-                    <div className="flex items-center justify-between w-full bg-slate-900 border border-slate-800 p-2 rounded-xl mb-3 gap-2 select-none shrink-0 text-white">
+                    <div className="flex flex-wrap items-center justify-between w-full bg-slate-900 border border-slate-800 p-2 rounded-xl mb-3 gap-2 select-none shrink-0 text-white">
                       
                       <div className="flex items-center gap-1.5">
                         <button
@@ -878,7 +878,7 @@ export default function FilePreviewModal({
           </div>
 
           {/* Sidebar Metrics Sheet (Right 30%) */}
-          <div className="w-full lg:w-80 shrink-0 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 pt-6 lg:pt-0 lg:pl-6 basis-80 overflow-y-auto">
+          <div className="w-full lg:w-80 shrink-0 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 pt-4 lg:pt-0 lg:pl-6 lg:basis-80 lg:overflow-y-auto">
             <div className="flex flex-col gap-5 text-left">
               
               {/* ADMIN ACTION PANEL - VALIDER LE DOSSIER */}

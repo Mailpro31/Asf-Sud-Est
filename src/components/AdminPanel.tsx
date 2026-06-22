@@ -1399,7 +1399,7 @@ export default function AdminPanel() {
     <div className={`min-h-screen flex flex-col ${themeConfig.bg} ${themeConfig.fontFamily} transition-colors duration-300`}>
       
       {localDb.isSandboxActive() && (
-        <div className="bg-amber-500 text-white text-xs px-6 py-2.5 flex items-center justify-between gap-4 font-bold tracking-wide shadow-sm text-center select-none z-50 shrink-0">
+        <div className="bg-amber-500 text-white text-xs px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 sm:gap-4 font-bold tracking-wide shadow-sm text-center select-none z-50 shrink-0">
           <div className="flex items-center gap-2 mx-auto justify-center">
             <span className="text-base">💡</span>
             <span>Mode Bac à sable activé : Le quota d'écriture journalier de Google Firestore étant dépassé, vos modifications de dossiers et actions d'antennes sont de retour en mémoire locale !</span>
@@ -1417,15 +1417,15 @@ export default function AdminPanel() {
       )}
 
       {/* 2. Main Platform Header */}
-      <header className="px-6 py-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shrink-0 flex justify-between items-center">
-        <div className="flex items-center gap-3">
+      <header className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shrink-0 flex justify-between items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <LogoASF className="w-10 h-10 shrink-0" variant="color" />
-          <div>
-            <h1 className="text-md font-bold text-deep dark:text-white leading-tight font-display flex items-center gap-1.5">
+          <div className="min-w-0">
+            <h1 className="text-sm sm:text-md font-bold text-deep dark:text-white leading-tight font-display flex flex-wrap items-center gap-1.5">
               <span>{isSuperAdminMode ? 'Portail de Coordination Nationale' : 'Portail de Coordination Régionale'}</span>
               <span className="text-[10px] bg-azur-light dark:bg-azur/15 text-azur border border-azur/15 font-mono tracking-wider uppercase px-1.5 py-0.5 rounded font-black">{isSuperAdminMode ? 'Admin' : 'Coordinateur'}</span>
             </h1>
-            <p className="text-[10.5px] text-slate-400 dark:text-slate-400">
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 hidden sm:block">
               {isSuperAdminMode
                 ? 'Aviation Sans Frontières France — Pilotage des délégations et autorisations de vol.'
                 : `Aviation Sans Frontières — Coordination de ${selectedDelegationData?.name || 'votre délégation'}.`}
@@ -1433,7 +1433,7 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="hidden sm:flex flex-col items-end text-right">
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
               {organization?.contactName || "Administrateur National"}
@@ -1466,7 +1466,7 @@ export default function AdminPanel() {
 
 
       {/* 3. Main Operational Content */}
-      <main className="flex-1 overflow-y-auto p-5 space-y-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-6">
 
         {/* --- PORTAL HUB VIEW --- */}
         {navigationView === 'hub' && (
@@ -1776,7 +1776,7 @@ export default function AdminPanel() {
                 </p>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 shrink-0 text-left min-w-[220px] relative z-10">
+              <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 shrink-0 text-left w-full md:w-auto md:min-w-[220px] relative z-10">
                 <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Total des Fichiers Nationaux</p>
                 <p className="text-3xl font-black font-display tracking-tight mt-1 text-azur">{files.length}</p>
                 <div className="flex gap-2.5 mt-2.5 text-[10.5px]">
@@ -2187,7 +2187,7 @@ export default function AdminPanel() {
                       </div>
 
                       {/* Drop File Input buttons */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                         <button
                           onClick={() => handleExportZip(filteredFiles)}
                           disabled={filteredFiles.length === 0 || zipping}
@@ -2271,7 +2271,7 @@ export default function AdminPanel() {
                           value={fileStatusFilter}
                           onChange={setFileStatusFilter}
                           keepDotColorWhenActive
-                          className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl flex-nowrap"
+                          className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl flex-nowrap overflow-x-auto max-w-full"
                           chipClass={(active) =>
                             `px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center whitespace-nowrap ${active ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100'}`
                           }
@@ -2323,7 +2323,7 @@ export default function AdminPanel() {
                       </div>
                     ) : (
                       <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[820px] text-left border-collapse">
                           <thead>
                             <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400">
                               <th className="px-5 py-3">Document de vol</th>
@@ -2522,7 +2522,7 @@ export default function AdminPanel() {
                             className="w-full pl-9 pr-3 py-2.5 text-xs border rounded-2xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-azur/40"
                           />
                         </div>
-                        <div className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl shrink-0">
+                        <div className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl shrink-0 overflow-x-auto">
                           {([
                             { id: 'all', label: 'Tous' },
                             { id: 'organization', label: 'Partenaires' },
@@ -2544,7 +2544,7 @@ export default function AdminPanel() {
                           counts={memberStatusCounts}
                           allLabel="Tous statuts"
                           keepDotColorWhenActive
-                          className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl flex-nowrap shrink-0"
+                          className="flex gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl flex-nowrap shrink-0 overflow-x-auto"
                           chipClass={(active) =>
                             `px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center whitespace-nowrap ${active ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-3xs font-black' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100'}`
                           }
@@ -2563,7 +2563,7 @@ export default function AdminPanel() {
                     ) : (
                       <div data-tour="members-table" className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900">
                         <p className="px-5 py-2 text-[11px] text-slate-400 dark:text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-800">{filteredMembers.length} membre{filteredMembers.length > 1 ? 's' : ''} affiché{filteredMembers.length > 1 ? 's' : ''}</p>
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[900px] text-left border-collapse">
                           <thead>
                             <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400">
                               <th className="px-5 py-3">Raison sociale / Organisme</th>
@@ -2792,7 +2792,7 @@ export default function AdminPanel() {
                       </div>
                     ) : (
                       <div className="overflow-x-auto border border-amber-200 dark:border-amber-500/30 rounded-2xl bg-white dark:bg-slate-900">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[760px] text-left border-collapse">
                           <thead>
                             <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300">
                               <th className="px-5 py-3">Adresse de connexion</th>

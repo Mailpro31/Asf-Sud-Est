@@ -373,7 +373,7 @@ export default function OrgCabinetModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -388,7 +388,7 @@ export default function OrgCabinetModal({
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden"
+        className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl z-10 flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden"
       >
         {/* Header colored banner indicating active delegation theme */}
         <div className={`h-1.5 w-full ${
@@ -399,9 +399,9 @@ export default function OrgCabinetModal({
         }`} />
 
         {/* Top Title Bar */}
-        <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-          <div className="space-y-1 text-left">
-            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
+        <div className="flex justify-between items-start sm:items-center gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+          <div className="space-y-1 text-left min-w-0">
+            <span className={`inline-block max-w-full truncate text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
               org.delegation_id === 'ouest' ? 'bg-indigo-50 border-indigo-100 text-indigo-600 dark:bg-indigo-950/40 dark:border-indigo-900/40 dark:text-indigo-400' :
               org.delegation_id === 'occitanie' ? 'bg-rose-50 border-rose-100 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900/40 dark:text-rose-400' :
               org.delegation_id === 'sud-est' ? 'bg-blue-50 border-blue-100 text-blue-600 dark:bg-blue-950/40 dark:border-blue-900/40 dark:text-blue-400' :
@@ -409,20 +409,20 @@ export default function OrgCabinetModal({
             }`}>
               📍 {org.delegation_id?.toUpperCase()} - {org.antenne_id ? (ANTENNES_BY_DELEGATION[org.delegation_id || '']?.find((a: any) => a.id === org.antenne_id)?.name || org.antenne_id) : 'SANS VILLE'}
             </span>
-            <h3 className="text-lg font-display font-black text-deep dark:text-white flex items-center gap-2">
-              📁 Cabinet Documentaire : <span className="text-azur font-black">{org.name}</span>
+            <h3 className="text-base sm:text-lg font-display font-black text-deep dark:text-white flex flex-wrap items-center gap-1.5 sm:gap-2">
+              📁 Cabinet Documentaire : <span className="text-azur font-black break-words">{org.name}</span>
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Conformité + validation groupée */}
-        <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 flex flex-wrap items-center gap-4 shrink-0">
+        <div className="px-4 sm:px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 flex flex-wrap items-center gap-3 sm:gap-4 shrink-0">
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Conformité des documents</span>
@@ -442,7 +442,7 @@ export default function OrgCabinetModal({
         </div>
 
         {/* Content Inner Area Scrollable */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6 text-left">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6 text-left">
           
           {/* NAVIGATION OR OVERVIEW */}
           {orgOpenFolderId ? (
@@ -523,7 +523,8 @@ export default function OrgCabinetModal({
                 </div>
               ) : (
                 <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-950">
-                  <table className="w-full text-left border-collapse">
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-left border-collapse">
                     <thead>
                       <tr className="text-[10px] font-bold uppercase bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                         <th className="px-4 py-3">Document</th>
@@ -673,6 +674,7 @@ export default function OrgCabinetModal({
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
             </div>
@@ -696,7 +698,7 @@ export default function OrgCabinetModal({
                     <Plus className="w-4 h-4" /> Nouveau Dossier
                   </button>
                 ) : (
-                  <form onSubmit={handleCreateOrgFolder} className="flex gap-2 w-full sm:w-auto text-left">
+                  <form onSubmit={handleCreateOrgFolder} className="flex flex-wrap gap-2 w-full sm:w-auto text-left">
                     <input
                       type="text"
                       name="name"
@@ -788,7 +790,8 @@ export default function OrgCabinetModal({
                   </div>
                 ) : (
                   <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-950">
-                    <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto">
+                    <table className="w-full min-w-[640px] text-left border-collapse">
                       <thead>
                         <tr className="text-[10px] font-bold uppercase bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                           <th className="px-4 py-3">Document</th>
@@ -890,6 +893,7 @@ export default function OrgCabinetModal({
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 )}
               </div>
@@ -900,13 +904,13 @@ export default function OrgCabinetModal({
         </div>
 
         {/* Footer and controls */}
-        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between shrink-0">
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <span className="hidden sm:inline text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
             Système de Synchronisation Réseau d'ARCHIVAGE ASF
           </span>
           <button
             onClick={onClose}
-            className="btn-secondary text-xs px-5 py-2.5 shrink-0"
+            className="btn-secondary text-xs px-5 py-2.5 shrink-0 ml-auto"
           >
             Fermer le Cabinet
           </button>

@@ -159,7 +159,7 @@ export default function AntenneAdminsManager({ orgProfiles, delegations, antenne
   };
 
   return (
-    <div className="card-asf p-6 space-y-6">
+    <div className="card-asf p-4 sm:p-6 space-y-6">
       <div className="flex items-start gap-3">
         <span className="w-10 h-10 rounded-xl bg-azur-light dark:bg-azur/15 text-azur flex items-center justify-center shrink-0">
           <UserCog className="w-5 h-5" />

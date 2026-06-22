@@ -241,11 +241,11 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
   };
 
   return (
-    <div className={`min-h-screen flex flex-col justify-center items-center ${themeConfig.bg} ${themeConfig.fontFamily} p-4 md:p-8 transition-all duration-300 relative`}>
+    <div className={`min-h-screen flex flex-col justify-center items-center ${themeConfig.bg} ${themeConfig.fontFamily} px-4 py-20 sm:py-16 md:p-8 transition-all duration-300 relative`}>
       {onNavigateHome && (
-        <button 
+        <button
           onClick={onNavigateHome}
-          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-azur transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-azur transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
           id="back-to-home-btn"
         >
           ← Retour à l'accueil
@@ -255,7 +255,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
         {/* Modern Minimal Headings */}
         <div className="mb-6 text-center flex flex-col items-center">
           <LogoASF className="w-16 h-16 mb-3 hover:scale-105 transition-transform duration-200" variant="color" />
-          <h1 className="text-2xl font-black tracking-tight text-deep dark:text-white font-display">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-deep dark:text-white font-display">
             Aviation Sans Frontières
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm leading-relaxed text-center">
@@ -300,7 +300,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
         </div>
 
         {/* Register Form Wrapper Card */}
-        <div className={`w-full p-8 sm:p-10 ${themeConfig.cardBg} ${borderStyle} rounded-3xl ${themeConfig.accentGlow} shadow-xl transition-all duration-300 relative overflow-hidden`}>
+        <div className={`w-full p-6 sm:p-10 ${themeConfig.cardBg} ${borderStyle} rounded-3xl ${themeConfig.accentGlow} shadow-xl transition-all duration-300 relative overflow-hidden`}>
           
           {/* Subtle watermarked decorative tag */}
           <div className="absolute top-0 right-0 p-3 bg-azur/10 text-azur rounded-bl-2xl text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
@@ -467,7 +467,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
             )}
 
             {/* ACTION BUTTONS ROW */}
-            <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-100/60 dark:border-slate-800/80">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100/60 dark:border-slate-800/80">
               {step > 1 ? (
                 <button
                   type="button"
@@ -492,7 +492,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-asf flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider cursor-pointer ml-auto"
+                  className="btn-asf flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider cursor-pointer ml-auto grow sm:grow-0"
                 >
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

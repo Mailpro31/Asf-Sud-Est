@@ -214,7 +214,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -228,10 +228,10 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: 20 }}
             transition={{ type: 'spring', duration: 0.45 }}
-            className="relative w-full max-w-3xl h-[85vh] md:h-[72vh] max-h-[680px] overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl z-10 flex flex-col md:flex-row"
+            className="relative w-full max-w-3xl h-[90vh] md:h-[72vh] max-h-[680px] overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl z-10 flex flex-col md:flex-row"
           >
             {/* Barre latérale */}
-            <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-950 p-6 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 flex flex-col shrink-0">
+            <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 flex flex-col shrink-0 overflow-y-auto md:overflow-visible">
               <div className="flex flex-col items-center text-center pb-6 border-b border-slate-200/60 dark:border-slate-800">
                 <div className={`w-16 h-16 rounded-2xl ${activeAvatar.bgColor} flex items-center justify-center text-3xl shadow-sm mb-3`}>
                   <span>{activeAvatar.emoji}</span>
@@ -283,7 +283,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
             {/* Contenu */}
             <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 relative">
-              <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
                 <h3 className="text-base font-display font-extrabold text-deep dark:text-slate-100">
                   {activeTab === 'profile' ? 'Informations personnelles' : 'Sécurité et accès'}
                 </h3>
@@ -295,7 +295,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 </button>
               </div>
 
-              <div className="flex-grow p-6 overflow-y-auto">
+              <div className="flex-grow p-4 sm:p-6 overflow-y-auto">
                 <AnimatePresence mode="wait">
                   {/* ONGLET PROFIL */}
                   {activeTab === 'profile' && (
