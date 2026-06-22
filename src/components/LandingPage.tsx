@@ -6,7 +6,7 @@ import {
   ArrowRight, ChevronRight, Mail, FileText,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import { StatusBadge } from './ui';
+import { StatusBadge, ThemeToggle } from './ui';
 import type { SubmissionStatus } from '../types';
 
 interface LandingPageProps {
@@ -235,6 +235,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
             ))}
           </nav>
           <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggle />
             <button onClick={onNavigateLogin} id="cta-top-login" className="btn-ghost text-xs cursor-pointer">Se connecter</button>
             <button onClick={onNavigateRegister} id="cta-top-register" className="btn-sourire text-xs !py-2 !px-4 cursor-pointer">Créer un compte</button>
           </div>

@@ -65,7 +65,7 @@ import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
-import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, type TourStep } from './ui';
+import { StatusBadge, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
 import { STATUS_META, STATUS_ORDER } from '../lib/status';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
@@ -1434,6 +1434,7 @@ export default function AdminPanel() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <ThemeToggle />
           <div className="hidden sm:flex flex-col items-end text-right">
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
               {organization?.contactName || "Administrateur National"}

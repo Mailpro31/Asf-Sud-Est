@@ -10,6 +10,7 @@ import { auth } from '../lib/firebase';
 import { useTheme } from '../context/ThemeContext';
 import { authErrorMessage } from '../lib/authErrors';
 import { LogoASF } from './LandingPage';
+import { ThemeToggle } from './ui';
 import CessnaPlane from './CessnaPlane';
 
 interface LoginProps {
@@ -102,6 +103,8 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
           <ArrowLeft className="w-3.5 h-3.5" /> Retour à l'accueil
         </button>
       )}
+
+      <ThemeToggle className="absolute top-4 right-4 sm:top-6 sm:right-6 shadow-3xs" />
 
       <div className="w-full max-w-md relative">
         {/* En-tête */}
