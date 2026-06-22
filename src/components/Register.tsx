@@ -245,7 +245,7 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
       {onNavigateHome && (
         <button
           onClick={onNavigateHome}
-          className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-azur transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-azur dark:hover:text-azur-pastel transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
           id="back-to-home-btn"
         >
           ← Retour à l'accueil

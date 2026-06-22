@@ -1813,7 +1813,7 @@ export default function AdminPanel() {
                       <h3 className="text-base font-bold text-deep dark:text-white font-sans tracking-tight group-hover:text-azur transition-colors">
                         {del.name}
                       </h3>
-                      <p className="text-xs text-slate-400 dark:text-slate-400 mt-1 lines-clamp-2 leading-relaxed">
+                      <p className="text-xs text-slate-400 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                         {del.desc}
                       </p>
                     </div>
@@ -1977,7 +1977,7 @@ export default function AdminPanel() {
                             <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
                               active 
                                 ? `${themeAttr.colorClass} border border-current/10` 
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate400'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                             }`}>
                               {countFolders} {countFolders !== 1 ? 'organismes' : 'organisme'}
                             </span>
@@ -2397,13 +2397,13 @@ export default function AdminPanel() {
 
                                   <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                                     <div className="relative inline-block w-44 text-left group">
-                                      <div className="flex items-center justify-between gap-1.5 cursor-pointer">
+                                      <div tabIndex={0} role="button" className="flex items-center justify-between gap-1.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-azur/40 rounded">
                                         <StatusBadge status={activeStatus} />
                                         <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                                       </div>
 
                                       {/* Quick Status Selection list */}
-                                      <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-900 border rounded-lg shadow-lg z-30 hidden group-hover:block hover:block font-sans">
+                                      <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-900 border rounded-lg shadow-lg z-30 hidden group-hover:block group-focus-within:block hover:block font-sans">
                                         {(Object.keys(STATUS_META) as SubmissionStatus[]).map((st) => {
                                           const subSc = STATUS_META[st];
                                           return (

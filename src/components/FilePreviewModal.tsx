@@ -512,7 +512,7 @@ export default function FilePreviewModal({
   const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogv)$/i.test(file.name);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/80 bg-slate-900/70 dark:bg-slate-950/80 backdrop-blur-md transition-opacity">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/70 dark:bg-slate-950/80 backdrop-blur-md transition-opacity">
       <div
         className="relative w-full max-w-[95vw] h-[90vh] sm:h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -598,19 +598,19 @@ export default function FilePreviewModal({
                         <button
                           type="button"
                           onClick={() => setImageZoom(z => Math.max(0.4, z - 0.2))}
-                          disabled={imageZoom <= 0.5}
+                          disabled={imageZoom <= 0.4}
                           className="p-1.5 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 border border-slate-700 disabled:opacity-40 cursor-pointer text-xs"
                           title="Zoom arrière"
                         >
                           <ZoomOut className="w-3.5 h-3.5" />
                         </button>
                         <span className="text-[11px] font-semibold text-slate-300 font-mono select-none w-10 text-center">
-                          {Math.round(imageZoom * 105)}%
+                          {Math.round(imageZoom * 100)}%
                         </span>
                         <button
                           type="button"
                           onClick={() => setImageZoom(z => Math.min(5.0, z + 0.2))}
-                          disabled={imageZoom >= 4.8}
+                          disabled={imageZoom >= 5.0}
                           className="p-1.5 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 border border-slate-700 disabled:opacity-40 cursor-pointer text-xs"
                           title="Zoom avant"
                         >

@@ -410,7 +410,7 @@ export default function Dashboard() {
           uploadTask.on(
             'state_changed',
             (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 105;
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               setUploadProgress(Math.min(progress, 100));
             },
             (error) => reject(error),
@@ -1052,12 +1052,12 @@ export default function Dashboard() {
               </div>
               <p className="text-[10px] text-slate-400 truncate font-sans font-semibold text-left">{organization.name}</p>
               {organization.delegation_id && (
-                <p className="text-[9px] text-azur truncate font-sans font-black mt-0.5 flex items-center gap-1 text-left">
-                  <span>📍 {getDelegationName(organization.delegation_id)}</span>
+                <p className="text-[9px] text-azur font-sans font-black mt-0.5 flex items-center gap-1 text-left min-w-0">
+                  <span className="truncate min-w-0">📍 {getDelegationName(organization.delegation_id)}</span>
                   {organization.antenne_id && (
                     <>
                       <span className="opacity-40">•</span>
-                      <span>{getAntenneName(organization.delegation_id, organization.antenne_id)}</span>
+                      <span className="truncate min-w-0">{getAntenneName(organization.delegation_id, organization.antenne_id)}</span>
                     </>
                   )}
                 </p>
@@ -1213,12 +1213,12 @@ export default function Dashboard() {
                 </div>
                 <p className="text-[10px] text-slate-400 truncate font-sans font-semibold text-left">{organization.name}</p>
                 {organization.delegation_id && (
-                  <p className="text-[9px] text-azur truncate font-sans font-black mt-0.5 flex items-center gap-1 text-left">
-                    <span>📍 {getDelegationName(organization.delegation_id)}</span>
+                  <p className="text-[9px] text-azur font-sans font-black mt-0.5 flex items-center gap-1 text-left min-w-0">
+                    <span className="truncate min-w-0">📍 {getDelegationName(organization.delegation_id)}</span>
                     {organization.antenne_id && (
                       <>
                         <span className="opacity-40">•</span>
-                        <span>{getAntenneName(organization.delegation_id, organization.antenne_id)}</span>
+                        <span className="truncate min-w-0">{getAntenneName(organization.delegation_id, organization.antenne_id)}</span>
                       </>
                     )}
                   </p>
@@ -1282,7 +1282,7 @@ export default function Dashboard() {
 
         {/* Dashboard Header Bar */}
         <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 shrink-0 gap-4">
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1.5 text-left">
               <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded bg-azur/10 text-azur border border-azur/20">
                 Autorisation de mission Aviation Sans Frontières
@@ -1294,7 +1294,7 @@ export default function Dashboard() {
                 </span>
               )}
               {organization.antenne_id && (
-                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-500 dark:text-emerald-300 text-emerald-400 border border-emerald-500/20">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
                   🏢 {getAntenneName(organization.delegation_id, organization.antenne_id)}
                 </span>
               )}

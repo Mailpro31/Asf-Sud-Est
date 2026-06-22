@@ -477,7 +477,7 @@ export default function OrgCabinetModal({
               </div>
 
               {/* File Uploader for this folder */}
-              <div className="bg-emerald-500/5 border border-emerald-200/30 rounded-2xl p-4 space-y-3 text-left">
+              <div className="bg-emerald-500/5 border border-emerald-200/30 dark:border-emerald-500/20 rounded-2xl p-4 space-y-3 text-left">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div className="text-left">
                     <span className="text-xs font-black text-emerald-800 dark:text-emerald-400 block">📥 Téléverser un justificatif réglementaire</span>
@@ -685,7 +685,7 @@ export default function OrgCabinetModal({
               {/* Sub-header inside Modal */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="text-left">
-                  <h4 className="text-sm font-display font-black text-deep dark:text-slate-500">📁 REPERTOIRES ASSOCIES ET JUSTIFICATIFS REGLEMENTAIRES</h4>
+                  <h4 className="text-sm font-display font-black text-deep dark:text-white">📁 REPERTOIRES ASSOCIES ET JUSTIFICATIFS REGLEMENTAIRES</h4>
                   <p className="text-xs text-slate-400 dark:text-slate-500">Duffers de stockage virtuel contenant les récépissés de douane, assurances de bord et brevets de navigation.</p>
                 </div>
                 
@@ -744,7 +744,7 @@ export default function OrgCabinetModal({
                         onClick={() => setOrgOpenFolderId(folder.id)}
                         className="group p-5 bg-slate-50 dark:bg-slate-950 hover:bg-white dark:hover:bg-slate-900 border border-slate-100 hover:border-azur/40 dark:border-slate-800 rounded-2xl shadow-xs cursor-pointer transition-all flex justify-between items-start relative overflow-hidden"
                       >
-                        <div className="space-y-1 text-left">
+                        <div className="space-y-1 text-left min-w-0">
                           <div className="flex items-center gap-1.5">
                             <FolderIcon className="w-8 h-8 text-azur dark:text-azur-pastel animate-pulse duration-2000" />
                             {folder.createdBy === 'admin' ? (
@@ -757,7 +757,7 @@ export default function OrgCabinetModal({
                               </span>
                             )}
                           </div>
-                          <p className="font-extrabold text-deep dark:text-slate-200 text-xs tracking-tight group-hover:text-azur dark:group-hover:text-azur-pastel transition-colors mt-2">{folder.name}</p>
+                          <p className="font-extrabold text-deep dark:text-slate-200 text-xs tracking-tight group-hover:text-azur dark:group-hover:text-azur-pastel transition-colors mt-2 truncate">{folder.name}</p>
                           <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono font-bold uppercase">{folFiles.length} fichiers justificatifs</span>
                         </div>
                         <button

@@ -133,7 +133,7 @@ export default function AilesDuSourireDashboard({
       {/* Filter and Search Bar */}
       <div className="relative mb-5">
         <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-          <Search className="h-4 h-4 text-slate-400" />
+          <Search className="h-4 w-4 text-slate-400" />
         </span>
         <input
           type="text"
@@ -188,14 +188,14 @@ export default function AilesDuSourireDashboard({
                       {/* Document details column */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 shadow-3xs">
+                          <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 shadow-3xs shrink-0">
                             <FileText className="w-4 h-4 text-slate-400 group-hover:text-azur transition-colors" />
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-xs font-display font-black text-deep dark:text-slate-200 line-clamp-1 leading-snug">
                               {file.name}
                             </p>
-                            <p className="text-[10px] font-black text-azur dark:text-azur mt-0.5 uppercase tracking-wide">
+                            <p className="text-[10px] font-black text-azur dark:text-azur mt-0.5 uppercase tracking-wide truncate">
                               🏢 {org?.name || 'Compagnie Partenaire'}
                             </p>
                           </div>
@@ -262,7 +262,7 @@ export default function AilesDuSourireDashboard({
                           {/* Validate completely */}
                           <button
                             onClick={() => onUpdateFileStatus(file.id, 'Validated')}
-                            className="p-1 px-1.5 rounded-lg border border-emerald-100 hover:border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100/60 cursor-pointer transition-all shadow-3xs"
+                            className="p-1 px-1.5 rounded-lg border border-emerald-100 hover:border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100/60 dark:border-emerald-500/30 dark:text-emerald-300 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 cursor-pointer transition-all shadow-3xs"
                             title="Marquer comme conforme & validé"
                           >
                             <Check className="w-4 h-4 stroke-[2.5]" />
@@ -271,7 +271,7 @@ export default function AilesDuSourireDashboard({
                           {/* Refuse/Reject */}
                           <button
                             onClick={() => onUpdateFileStatus(file.id, 'Incomplete')}
-                            className="p-1 px-1.5 rounded-lg border border-rose-100 hover:border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100/60 cursor-pointer transition-all shadow-3xs"
+                            className="p-1 px-1.5 rounded-lg border border-rose-100 hover:border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100/60 dark:border-rose-500/30 dark:text-rose-300 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 cursor-pointer transition-all shadow-3xs"
                             title="Rejeter ou déclarer incomplet"
                           >
                             <X className="w-4 h-4 stroke-[2.5]" />
