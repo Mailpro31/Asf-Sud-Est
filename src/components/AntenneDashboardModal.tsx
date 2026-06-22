@@ -10,7 +10,6 @@ import {
   Building2, 
   FileText, 
   Download, 
-  Check, 
   ExternalLink,
   Users,
   Compass,
@@ -25,7 +24,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
-import { StatusBadge } from './ui';
+import { StatusBadge, StatusActions } from './ui';
 
 interface AntenneDashboardModalProps {
   isOpen: boolean;
@@ -580,20 +579,11 @@ export default function AntenneDashboardModal({
                                         <Download className="w-3.5 h-3.5" />
                                       </a>
                                     )}
-                                    <button
-                                      onClick={() => onUpdateFileStatus(file.id, 'Validated')}
-                                      className="p-1 rounded-md border border-emerald-100 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/15 cursor-pointer transition-colors"
-                                      title="Valider de suite"
-                                    >
-                                      <Check className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      onClick={() => onUpdateFileStatus(file.id, 'Incomplete')}
-                                      className="p-1 rounded-md border border-rose-100 dark:border-rose-500/30 text-rose-600 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/15 cursor-pointer transition-colors"
-                                      title="Rejeter"
-                                    >
-                                      <X className="w-3.5 h-3.5" />
-                                    </button>
+                                    <StatusActions
+                                      compact
+                                      status={fileStatus}
+                                      onChange={(s) => onUpdateFileStatus(file.id, s)}
+                                    />
                                   </div>
                                 </td>
                               </tr>

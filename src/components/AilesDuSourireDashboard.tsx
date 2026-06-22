@@ -3,17 +3,15 @@ import {
   FileText,
   Download,
   Check,
-  X,
   ExternalLink,
   Search,
-  RotateCw,
   TrendingUp,
   FolderOpen,
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
-import { StatusBadge } from './ui';
+import { StatusBadge, StatusActions } from './ui';
 import AntenneDashboardModal from './AntenneDashboardModal';
 
 interface AilesDuSourireDashboardProps {
@@ -83,17 +81,6 @@ export default function AilesDuSourireDashboard({
   const totalFilesCount = files.length;
   const validatedFilesCount = files.filter(f => f.submissionStatus === 'Validated').length;
   const validationRate = totalFilesCount > 0 ? Math.round((validatedFilesCount / totalFilesCount) * 100) : 0;
-
-  const handleCycleStatus = (fileId: string, currentStatus?: SubmissionStatus) => {
-    // Cycles between Under review (En cours d'analyse) -> Incomplete -> Pending -> Under review
-    const statusCycle: Record<string, SubmissionStatus> = {
-      'Pending': 'Under review',
-      'Under review': 'Incomplete',
-      'Incomplete': 'Pending'
-    };
-    const nextStatus = statusCycle[currentStatus || 'Pending'] || 'Under review';
-    onUpdateFileStatus(fileId, nextStatus);
-  };
 
   return (
     <div className="bg-white dark:bg-slate-900/60 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800/80 p-4 sm:p-6 shadow-sm overflow-hidden text-left relative">
@@ -250,32 +237,12 @@ export default function AilesDuSourireDashboard({
                             </a>
                           )}
 
-                          {/* Cycle or Reevaluate action */}
-                          <button
-                            onClick={() => handleCycleStatus(file.id, file.submissionStatus)}
-                            className="p-1 px-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 cursor-pointer transition-all shadow-3xs"
-                            title="Changer le statut temporaire"
-                          >
-                            <RotateCw className="w-4 h-4 stroke-[2]" />
-                          </button>
-
-                          {/* Validate completely */}
-                          <button
-                            onClick={() => onUpdateFileStatus(file.id, 'Validated')}
-                            className="p-1 px-1.5 rounded-lg border border-emerald-100 hover:border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100/60 dark:border-emerald-500/30 dark:text-emerald-300 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 cursor-pointer transition-all shadow-3xs"
-                            title="Marquer comme conforme & validé"
-                          >
-                            <Check className="w-4 h-4 stroke-[2.5]" />
-                          </button>
-
-                          {/* Refuse/Reject */}
-                          <button
-                            onClick={() => onUpdateFileStatus(file.id, 'Incomplete')}
-                            className="p-1 px-1.5 rounded-lg border border-rose-100 hover:border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100/60 dark:border-rose-500/30 dark:text-rose-300 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 cursor-pointer transition-all shadow-3xs"
-                            title="Rejeter ou déclarer incomplet"
-                          >
-                            <X className="w-4 h-4 stroke-[2.5]" />
-                          </button>
+                          {/* Validation unifiée : Valider / Refuser */}
+                          <StatusActions
+                            compact
+                            status={file.submissionStatus}
+                            onChange={(s) => onUpdateFileStatus(file.id, s)}
+                          />
 
                         </div>
                       </td>

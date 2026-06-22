@@ -32,7 +32,7 @@ import { localDb } from '../lib/localDb';
 import { useFeedback } from '../hooks/useFeedback';
 import { useAuth } from '../context/AuthContext';
 import { logAction } from '../lib/auditLog';
-import { ComplianceBar } from './ui';
+import { ComplianceBar, StatusActions } from './ui';
 
 interface OrgCabinetModalProps {
   selectedOrgForFiles: Organization;
@@ -615,32 +615,16 @@ export default function OrgCabinetModal({
                             </td>
 
                             <td className="px-4 py-3">
-                              <select
-                                value={file.submissionStatus || 'Pending'}
-                                onChange={(e) => handleUpdateOrgFileStatus(file, e.target.value as SubmissionStatus)}
-                                className={`text-[11px] font-extrabold p-1 rounded-lg border focus:outline-none ${
-                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' :
-                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' :
-                                  (file.submissionStatus === 'Under review') ? 'bg-azur-light dark:bg-azur/10 text-deep dark:text-azur-pastel border-azur-pastel' :
-                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'
-                                }`}
-                              >
-                                <option value="Pending">⌛ En attente</option>
-                                <option value="Under review">🔍 En cours d'analyse</option>
-                                <option value="Validated">✓ Validé / Autorisé</option>
-                                <option value="Incomplete">✗ Non-conforme / Inacceptable</option>
-                              </select>
+                              <StatusActions
+                                status={file.submissionStatus}
+                                onChange={(s) => handleUpdateOrgFileStatus(file, s)}
+                                onAddNote={() => openNote(file)}
+                                hasNote={!!file.reviewNote}
+                              />
                             </td>
 
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-1">
-                                <button
-                                  onClick={() => openNote(file)}
-                                  className={`p-1 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded cursor-pointer ${file.reviewNote ? 'text-amber-600 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400 hover:text-amber-600'}`}
-                                  title={file.reviewNote ? 'Modifier la note de revue' : "Ajouter une note (ce qu'il faut corriger)"}
-                                >
-                                  <MessageSquare className="w-3.5 h-3.5" />
-                                </button>
                                 <button
                                   onClick={() => handleStartRenaming(file)}
                                   className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
@@ -837,31 +821,15 @@ export default function OrgCabinetModal({
                               </span>
                             </td>
                             <td className="px-4 py-3">
-                              <select
-                                value={file.submissionStatus || 'Pending'}
-                                onChange={(e) => handleUpdateOrgFileStatus(file, e.target.value as SubmissionStatus)}
-                                className={`text-[11px] font-extrabold p-1 rounded-lg border focus:outline-none ${
-                                  (file.submissionStatus === 'Validated') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' :
-                                  (file.submissionStatus === 'Incomplete') ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30' :
-                                  (file.submissionStatus === 'Under review') ? 'bg-azur-light dark:bg-azur/10 text-deep dark:text-azur-pastel border-azur-pastel' :
-                                  'bg-amber-50 dark:bg-slate-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'
-                                }`}
-                              >
-                                <option value="Pending">⌛ En attente</option>
-                                <option value="Under review">🔍 En cours d'analyse</option>
-                                <option value="Validated">✓ Validé / Autorisé</option>
-                                <option value="Incomplete">✗ Non-conforme / Inacceptable</option>
-                              </select>
+                              <StatusActions
+                                status={file.submissionStatus}
+                                onChange={(s) => handleUpdateOrgFileStatus(file, s)}
+                                onAddNote={() => openNote(file)}
+                                hasNote={!!file.reviewNote}
+                              />
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-1">
-                                <button
-                                  onClick={() => openNote(file)}
-                                  className={`p-1 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded cursor-pointer ${file.reviewNote ? 'text-amber-600 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400 hover:text-amber-600'}`}
-                                  title={file.reviewNote ? 'Modifier la note de revue' : "Ajouter une note (ce qu'il faut corriger)"}
-                                >
-                                  <MessageSquare className="w-3.5 h-3.5" />
-                                </button>
                                 <button
                                   onClick={() => handleStartRenaming(file)}
                                   className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
