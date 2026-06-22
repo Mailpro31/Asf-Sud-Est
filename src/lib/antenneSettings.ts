@@ -4,6 +4,21 @@ import { localDb } from './localDb';
 import { queueEmail } from './antenneAdmins';
 
 /**
+ * Échappe les caractères HTML d'une valeur fournie par un utilisateur (nom
+ * d'organisme, contact, nom de fichier…) avant de l'insérer dans le corps HTML
+ * d'un e-mail. Empêche l'injection de balises/liens (phishing) dans la boîte
+ * mail du gestionnaire d'antenne.
+ */
+function escHtml(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Réglages par antenne, configurés par le gestionnaire d'antenne (admin_antenne).
  *
  * Principal usage : activer une notification e-mail envoyée à une adresse choisie
@@ -144,9 +159,9 @@ export async function notifyAntenneOnUpload(
     const html =
       `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
       `<p>Bonjour,</p>` +
-      `<p><strong>${what.charAt(0).toUpperCase()}${what.slice(1)}</strong> vient d'être déposé${partner} ` +
-      `sur l'antenne <strong>${antenne}</strong> :</p>` +
-      `<p style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600">📄 ${name}</p>` +
+      `<p><strong>${what.charAt(0).toUpperCase()}${what.slice(1)}</strong> vient d'être déposé${escHtml(partner)} ` +
+      `sur l'antenne <strong>${escHtml(antenne)}</strong> :</p>` +
+      `<p style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600">📄 ${escHtml(name)}</p>` +
       `<p>Connectez-vous au portail ASF pour le consulter.</p>` +
       `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
       `</div>`;
@@ -194,10 +209,10 @@ export async function notifyAntenneOnNewOrg(
     const html =
       `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
       `<p>Bonjour,</p>` +
-      `<p><strong>Un nouvel organisme</strong> vient de rejoindre votre antenne <strong>${antenne}</strong> :</p>` +
-      `<p style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600">🏢 ${who}</p>` +
+      `<p><strong>Un nouvel organisme</strong> vient de rejoindre votre antenne <strong>${escHtml(antenne)}</strong> :</p>` +
+      `<p style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600">🏢 ${escHtml(who)}</p>` +
       (lines.length
-        ? `<p style="color:#334155;font-size:13px">${lines.map((l) => l.replace(/</g, '&lt;')).join('<br>')}</p>`
+        ? `<p style="color:#334155;font-size:13px">${lines.map((l) => escHtml(l)).join('<br>')}</p>`
         : '') +
       `<p>Son compte est <strong>en attente de validation</strong>. Connectez-vous au portail ASF pour le valider.</p>` +
       `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
