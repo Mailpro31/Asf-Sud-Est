@@ -57,7 +57,7 @@ export default function DeleteConfirmModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           {/* Backdrop with elegant blur */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -73,12 +73,12 @@ export default function DeleteConfirmModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 15 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className="relative w-full max-w-md overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl z-10"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl z-10"
           >
             {/* Header border stripe representing priority warning */}
             <div className="h-1.5 w-full bg-gradient-to-r from-red-500 to-amber-500" />
 
-            <div className="p-6">
+            <div className="p-5 sm:p-6">
               {/* Alert Icon & Header */}
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400">
@@ -115,7 +115,7 @@ export default function DeleteConfirmModal({
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-6 flex items-center justify-end gap-3">
+              <div className="mt-6 flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                 <button
                   type="button"
                   disabled={isSubmitting}

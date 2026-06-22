@@ -1182,7 +1182,7 @@ export default function AntenneAdminDashboard() {
       key={file.id}
       data-tour={opts?.tourExample ? 'org-doc' : undefined}
       onClickCapture={() => { if (fileNew) markSeen(file.id); }}
-      className={`relative flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70 dark:hover:bg-slate-800'} ${fileNew ? 'ring-2 ring-inset ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
+      className={`relative flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 transition-colors ${selectedIds.has(file.id) ? 'bg-azur/5' : 'hover:bg-slate-50/70 dark:hover:bg-slate-800'} ${fileNew ? 'ring-2 ring-inset ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
       title={fileNew ? 'Nouveau document — cliquez pour le marquer comme vu' : undefined}
     >
       {opts?.selectable && (
@@ -1198,7 +1198,7 @@ export default function AntenneAdminDashboard() {
         <FileText className="w-4 h-4" />
         {fileNew && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />}
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-40">
         <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={() => setPreviewFile(file)}
@@ -1223,59 +1223,62 @@ export default function AntenneAdminDashboard() {
         )}
       </div>
 
-      {/* Sélecteur de statut */}
-      <div data-tour={opts?.tourExample ? 'org-doc-validate' : undefined} className="relative shrink-0">
-        <select
-          value={file.submissionStatus || 'Pending'}
-          onChange={(e) => handleUpdateStatus(file, e.target.value as SubmissionStatus)}
-          className={`appearance-none cursor-pointer text-xs font-bold rounded-full border pl-3 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-azur/30 ${statusSelectCls(file.submissionStatus)}`}
-          title="Changer le statut du document"
-        >
-          {STATUS_ORDER.map((s) => (
-            <option key={s} value={s}>{getStatusMeta(s).label}</option>
-          ))}
-        </select>
-        <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-      </div>
+      {/* Actions : restent groupées et passent sous le nom sur mobile si besoin */}
+      <div className="flex flex-wrap items-center gap-1.5 ml-auto shrink-0">
+        {/* Sélecteur de statut */}
+        <div data-tour={opts?.tourExample ? 'org-doc-validate' : undefined} className="relative shrink-0">
+          <select
+            value={file.submissionStatus || 'Pending'}
+            onChange={(e) => handleUpdateStatus(file, e.target.value as SubmissionStatus)}
+            className={`appearance-none cursor-pointer text-xs font-bold rounded-full border pl-3 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-azur/30 ${statusSelectCls(file.submissionStatus)}`}
+            title="Changer le statut du document"
+          >
+            {STATUS_ORDER.map((s) => (
+              <option key={s} value={s}>{getStatusMeta(s).label}</option>
+            ))}
+          </select>
+          <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
 
-      {/* Partage avec le partenaire (uniquement pour les dépôts gestionnaire) */}
-      {file.uploadedBy === 'admin' && (
+        {/* Partage avec le partenaire (uniquement pour les dépôts gestionnaire) */}
+        {file.uploadedBy === 'admin' && (
+          <button
+            onClick={() => handleToggleShare(file)}
+            className={`text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 transition-colors ${
+              file.sharedWithPartner !== false
+                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+            }`}
+            title={file.sharedWithPartner !== false ? 'Partagé avec le partenaire (cliquer pour rendre privé)' : 'Privé (cliquer pour partager)'}
+          >
+            {file.sharedWithPartner !== false ? '🔓 Partagé' : '🔒 Privé'}
+          </button>
+        )}
+
         <button
-          onClick={() => handleToggleShare(file)}
-          className={`text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 transition-colors ${
-            file.sharedWithPartner !== false
-              ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-          }`}
-          title={file.sharedWithPartner !== false ? 'Partagé avec le partenaire (cliquer pour rendre privé)' : 'Privé (cliquer pour partager)'}
+          onClick={() => openNote(file)}
+          className={`btn-ghost p-2 shrink-0 ${file.reviewNote ? 'text-amber-600 dark:text-amber-300' : ''}`}
+          title={file.reviewNote ? 'Modifier la note de revue' : 'Ajouter une note (ce qu\'il faut corriger)'}
         >
-          {file.sharedWithPartner !== false ? '🔓 Partagé' : '🔒 Privé'}
+          <MessageSquare className="w-4 h-4" />
         </button>
-      )}
-
-      <button
-        onClick={() => openNote(file)}
-        className={`btn-ghost p-2 shrink-0 ${file.reviewNote ? 'text-amber-600 dark:text-amber-300' : ''}`}
-        title={file.reviewNote ? 'Modifier la note de revue' : 'Ajouter une note (ce qu\'il faut corriger)'}
-      >
-        <MessageSquare className="w-4 h-4" />
-      </button>
-      <button onClick={() => setPreviewFile(file)} className="btn-ghost p-2 shrink-0" title="Aperçu">
-        <Eye className="w-4 h-4" />
-      </button>
-      <button onClick={() => handleDownload(file)} className="btn-ghost p-2 shrink-0" title="Télécharger">
-        <Download className="w-4 h-4" />
-      </button>
-      <button onClick={() => openRename(file)} className="btn-ghost p-2 shrink-0" title="Renommer">
-        <Pencil className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => setDeletingFile(file)}
-        className="btn-ghost p-2 shrink-0 text-rose-500 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10"
-        title="Supprimer"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+        <button onClick={() => setPreviewFile(file)} className="btn-ghost p-2 shrink-0" title="Aperçu">
+          <Eye className="w-4 h-4" />
+        </button>
+        <button onClick={() => handleDownload(file)} className="btn-ghost p-2 shrink-0" title="Télécharger">
+          <Download className="w-4 h-4" />
+        </button>
+        <button onClick={() => openRename(file)} className="btn-ghost p-2 shrink-0" title="Renommer">
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setDeletingFile(file)}
+          className="btn-ghost p-2 shrink-0 text-rose-500 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+          title="Supprimer"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
    );
   };
@@ -1318,11 +1321,11 @@ export default function AntenneAdminDashboard() {
     <div className="min-h-screen bg-slate-50/60 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 font-sans">
       {/* Header */}
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200/70 dark:border-slate-700 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
           <div className="w-10 h-10 rounded-xl bg-azur-light dark:bg-azur/15 flex items-center justify-center shrink-0">
             <LogoASF className="w-6 h-6" />
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 basis-40">
             <h1 className="font-display text-base sm:text-lg font-bold text-deep dark:text-azur-pastel leading-tight truncate">
               Antenne {antenneName}
             </h1>
@@ -1755,14 +1758,14 @@ export default function AntenneAdminDashboard() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête */}
-            <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-azur/5 to-transparent">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-12 h-12 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
-                  <Building2 className="w-6 h-6" />
+            <div className="flex items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-azur/5 to-transparent">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-display text-xl font-bold text-deep dark:text-azur-pastel truncate">{selectedOrg.name}</h3>
+                    <h3 className="font-display text-lg sm:text-xl font-bold text-deep dark:text-azur-pastel truncate">{selectedOrg.name}</h3>
                     <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${isValidated ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${isValidated ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                       {isValidated ? 'Compte validé' : 'Accès suspendu'}
@@ -2027,7 +2030,7 @@ export default function AntenneAdminDashboard() {
                 >
                   <CheckCheck className="w-3.5 h-3.5" /> Tout valider
                 </button>
-                <div className="flex-1" />
+                <div className="hidden sm:block flex-1" />
                 <button
                   onClick={() => exportCsv(orgModalFiles, selectedOrg.name)}
                   disabled={orgModalFiles.length === 0}
@@ -2050,7 +2053,7 @@ export default function AntenneAdminDashboard() {
             {selectedIds.size > 0 && (
               <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 bg-azur/10 border-b border-azur/25">
                 <span className="text-sm font-bold text-deep dark:text-azur-pastel">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
-                <div className="flex-1" />
+                <div className="hidden sm:block flex-1" />
                 <button onClick={() => handleBulkStatus('Validated')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5">
                   <CheckCheck className="w-3.5 h-3.5" /> Valider
                 </button>
@@ -2288,7 +2291,7 @@ export default function AntenneAdminDashboard() {
             {selectedIds.size > 0 && (
               <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 bg-azur/10 border-b border-azur/25">
                 <span className="text-sm font-bold text-deep dark:text-azur-pastel">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
-                <div className="flex-1" />
+                <div className="hidden sm:block flex-1" />
                 <button onClick={() => handleBulkStatus('Validated')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5">
                   <CheckCheck className="w-3.5 h-3.5" /> Valider
                 </button>

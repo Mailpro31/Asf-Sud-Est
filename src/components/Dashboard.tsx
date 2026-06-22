@@ -28,7 +28,8 @@ import {
   Send,
   ArrowRight,
   Upload,
-  X
+  X,
+  Menu
 } from 'lucide-react';
 import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable } from 'firebase/storage';
@@ -76,6 +77,7 @@ export default function Dashboard() {
   const [isWarningDismissed, setIsWarningDismissed] = useState(() => localStorage.getItem('asf_sandbox_warn_dismissed') === 'true');
   const [showWarningDetails, setShowWarningDetails] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   const refreshLocalState = useCallback(() => {
     if (!user || !organization) return;
@@ -929,7 +931,7 @@ export default function Dashboard() {
   const borderStyle = `border ${themeConfig.cardBorder}`;
 
   return (
-    <div className={`flex min-h-screen lg:h-screen ${themeConfig.bg} overflow-y-auto lg:overflow-hidden ${themeConfig.fontFamily} text-[#1a1a1a] transition-colors duration-500`}>
+    <div className={`flex min-h-screen lg:h-screen ${themeConfig.bg} overflow-x-hidden overflow-y-auto lg:overflow-hidden ${themeConfig.fontFamily} text-[#1a1a1a] transition-colors duration-500`}>
       
       {/* Sidebar */}
       <aside className={`w-72 ${themeConfig.sidebarBg} flex flex-col hidden md:flex shrink-0 transition-colors duration-500`}>
@@ -1073,18 +1075,189 @@ export default function Dashboard() {
         </div>
       </aside>
 
+      {/* Mobile Drawer (slide-in sidebar) */}
+      <div className={`md:hidden fixed inset-0 z-50 ${isMobileDrawerOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isMobileDrawerOpen}>
+        {/* Backdrop */}
+        <div
+          onClick={() => setIsMobileDrawerOpen(false)}
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${isMobileDrawerOpen ? 'opacity-100' : 'opacity-0'}`}
+        />
+        {/* Drawer panel */}
+        <aside
+          className={`absolute top-0 left-0 h-full w-[82%] max-w-xs ${themeConfig.sidebarBg} flex flex-col shadow-2xl transition-transform duration-300 ease-out ${isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        >
+          <div className="p-6 pb-8 overflow-y-auto flex-1">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <LogoASF className="w-9 h-9 shrink-0" variant="white" />
+                <div>
+                  <span className="text-xs font-black tracking-wide text-white uppercase block leading-tight">
+                    AVIATION
+                  </span>
+                  <span className="text-[10px] text-azur-pastel font-medium block">
+                    Sans Frontières France
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="p-1.5 bg-white/10 text-slate-200 hover:text-white rounded-lg transition-colors cursor-pointer shrink-0"
+                title="Fermer le menu"
+                aria-label="Fermer le menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <nav className="space-y-6">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] mb-4 text-slate-400 font-bold">Menu principal</p>
+                <ul className="space-y-1.5">
+                  <li>
+                    <button
+                      onClick={() => { setCurrentFolderId(null); setIsMobileDrawerOpen(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all text-left font-bold ${
+                        !currentFolderId
+                          ? themeConfig.sidebarActive
+                          : `${themeConfig.sidebarText}`
+                      }`}
+                    >
+                      <FileText className="w-4 h-4 text-azur" />
+                      <span className="font-medium">Mes Fichiers & Dossiers</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Dossiers — création et navigation */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Dossiers</p>
+                  {organization.submissionStatus === 'Validated' && (
+                    <button
+                      type="button"
+                      onClick={() => { setIsCreatingFolder(true); setIsMobileDrawerOpen(false); }}
+                      title="Nouveau dossier"
+                      aria-label="Nouveau dossier"
+                      className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      <FolderPlus className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+                {folders.length === 0 ? (
+                  <p className="text-[11px] text-slate-500 leading-relaxed px-1">
+                    Aucun dossier pour l'instant.
+                    {organization.submissionStatus === 'Validated' && ' Créez-en un avec le bouton +.'}
+                  </p>
+                ) : (
+                  <ul className="space-y-1">
+                    {folders.map((folder) => {
+                      const count = files.filter((f) => f.folderId === folder.id).length;
+                      const active = currentFolderId === folder.id;
+                      return (
+                        <li key={folder.id}>
+                          <button
+                            type="button"
+                            onClick={() => { setCurrentFolderId(folder.id); setIsMobileDrawerOpen(false); }}
+                            className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm transition-all text-left ${
+                              active ? themeConfig.sidebarActive : themeConfig.sidebarText
+                            }`}
+                          >
+                            <FolderIcon className="w-4 h-4 text-azur-pastel shrink-0" />
+                            <span className="flex-1 truncate font-medium">{folder.name}</span>
+                            <span className="text-[11px] font-mono text-slate-400 shrink-0">{count}</span>
+                            {folder.createdBy === 'admin' && (
+                              <span className="px-1 py-0.5 rounded text-[7px] font-extrabold uppercase tracking-widest bg-amber-500/20 text-amber-300 shrink-0">Adm</span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </nav>
+          </div>
+
+          {/* Drawer Footer with storage + profile + logout */}
+          <div className="mt-auto p-5 border-t border-white/10 bg-black/5 shrink-0">
+            {/* Indicateur de stockage compact */}
+            <div className="mb-4 px-1">
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-1.5 text-slate-400">
+                <span className="flex items-center gap-1"><HardDrive className="w-3 h-3" /> Stockage</span>
+                <span>{Math.round(storagePercent)}%</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-300 ${storagePercent > 90 ? 'bg-rose-500' : 'bg-azur'}`}
+                  style={{ width: `${storagePercent}%` }}
+                ></div>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1 font-mono">{formatBytes(totalStorageUsed)} / 100 Mo</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setIsProfileOpen(true); setIsMobileDrawerOpen(false); }}
+              className="w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 text-left transition-all mb-3 cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-full bg-slate-300 text-deep flex items-center justify-center text-xs font-bold shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                {organization.contactName.charAt(0).toUpperCase()}
+              </div>
+              <div className="overflow-hidden flex-grow text-left">
+                <div className="flex items-center gap-1">
+                  <p className="text-xs font-semibold truncate text-white">{organization.contactName}</p>
+                  <Settings className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </div>
+                <p className="text-[10px] text-slate-400 truncate font-sans font-semibold text-left">{organization.name}</p>
+                {organization.delegation_id && (
+                  <p className="text-[9px] text-azur truncate font-sans font-black mt-0.5 flex items-center gap-1 text-left">
+                    <span>📍 {getDelegationName(organization.delegation_id)}</span>
+                    {organization.antenne_id && (
+                      <>
+                        <span className="opacity-40">•</span>
+                        <span>{getAntenneName(organization.delegation_id, organization.antenne_id)}</span>
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={signOut}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Se déconnecter
+            </button>
+          </div>
+        </aside>
+      </div>
+
       {/* Main Content Pane */}
       <main className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto min-w-0">
         
         {/* Mobile Navbar */}
         <div className="md:hidden p-4 flex justify-between items-center rounded-xl mb-4 shrink-0 shadow-xs bg-slate-900 text-white">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="p-1.5 bg-white/10 text-slate-200 hover:text-white rounded-lg transition-colors cursor-pointer shrink-0"
+              title="Ouvrir le menu"
+              aria-label="Ouvrir le menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <LogoASF className="w-8 h-8 shrink-0" variant="white" />
             <button
               type="button"
               onClick={() => setIsProfileOpen(true)}
               data-tour="account"
-              className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-white/10 transition-all cursor-pointer text-left"
+              className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-white/10 transition-all cursor-pointer text-left min-w-0"
             >
               <div className="w-7 h-7 rounded-full bg-azur text-white flex items-center justify-center text-xs font-bold shrink-0">
                 {organization.contactName.charAt(0).toUpperCase()}
@@ -1134,7 +1307,7 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
               onClick={() => setTourOpen(true)}
               data-tour="tutoriel"
@@ -1320,7 +1493,7 @@ export default function Dashboard() {
             <button
               onClick={handleSubmitDossier}
               disabled={submittingDossier}
-              className={`${dossierSubmittedAt ? 'btn-secondary' : 'btn-asf'} text-sm justify-center shrink-0 disabled:opacity-60 group`}
+              className={`${dossierSubmittedAt ? 'btn-secondary' : 'btn-asf'} text-sm justify-center shrink-0 w-full sm:w-auto disabled:opacity-60 group`}
               title={dossierSubmittedAt ? 'Renvoyer le dossier après modification' : 'Soumettre votre dossier pour revue'}
             >
               {submittingDossier ? 'Envoi…' : dossierSubmittedAt ? 'Soumettre à nouveau' : 'Soumettre'}
@@ -1565,7 +1738,7 @@ export default function Dashboard() {
                         )}
                       </div>
                       {/* Actions (au survol) */}
-                      <div data-tour={fileIdx === 0 ? 'doc-actions' : undefined} className="flex items-center gap-1.5 mt-auto pt-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      <div data-tour={fileIdx === 0 ? 'doc-actions' : undefined} className="flex items-center gap-1.5 mt-auto pt-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}
                           className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 transition-all text-slate-600 dark:text-slate-300 cursor-pointer"

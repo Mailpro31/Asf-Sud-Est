@@ -71,7 +71,7 @@ export default function CreateFolderModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           {/* Elegant Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -87,7 +87,7 @@ export default function CreateFolderModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 15 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className="relative w-full max-w-md overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl z-10"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl z-10"
           >
             {/* Header border stripe representing action priority */}
             <div className="h-1.5 w-full bg-azur" />
@@ -101,7 +101,7 @@ export default function CreateFolderModal({
               <X className="w-4 h-4" />
             </button>
 
-            <div className="p-6">
+            <div className="p-5 sm:p-6">
               {/* Header Icon + Title */}
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-azur-light dark:bg-azur/10 text-azur dark:text-azur-pastel">
@@ -151,7 +151,7 @@ export default function CreateFolderModal({
                 </div>
 
                 {/* Footer Controls */}
-                <div className="flex items-center justify-end gap-3 pt-2">
+                <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 pt-2">
                   <button
                     type="button"
                     disabled={isSubmitting}

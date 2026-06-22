@@ -222,10 +222,10 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
 
       {/* Navigation */}
       <header className="sticky top-0 z-40 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border-b border-slate-200/70 dark:border-white/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-5 sm:px-7 py-2.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-7 py-2.5">
           <a href="#top" className="flex items-center gap-2.5 shrink-0">
-            <img src="/logo-asf-clear.png" alt="Aviation Sans Frontières France" className="h-11 w-auto object-contain select-none dark:hidden" draggable={false} />
-            <img src="/logo-asf-white.png" alt="Aviation Sans Frontières France" className="h-11 w-auto object-contain select-none hidden dark:block" draggable={false} />
+            <img src="/logo-asf-clear.png" alt="Aviation Sans Frontières France" className="h-9 sm:h-11 w-auto object-contain select-none dark:hidden" draggable={false} />
+            <img src="/logo-asf-white.png" alt="Aviation Sans Frontières France" className="h-9 sm:h-11 w-auto object-contain select-none hidden dark:block" draggable={false} />
           </a>
           <nav className="hidden lg:flex items-center gap-7">
             {NAV.map((n) => (
@@ -246,7 +246,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
         {/* ===================== HERO ===================== */}
         <section id="top" className="relative overflow-hidden bg-gradient-to-b from-azur-light to-white dark:from-slate-900 dark:to-slate-950">
           <div className="absolute -top-28 -left-24 w-[26rem] h-[26rem] bg-azur/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative max-w-7xl mx-auto px-6 py-14 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+          <div className="relative max-w-7xl mx-auto px-5 sm:px-6 py-12 sm:py-14 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
 
             {/* Colonne texte */}
             <div className="lg:col-span-6 flex flex-col items-start text-left gap-6">
@@ -260,7 +260,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
 
               <motion.h1
                 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05 }}
-                className="text-4xl md:text-6xl font-black tracking-tight text-deep dark:text-white font-display leading-[1.05]"
+                className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-deep dark:text-white font-display leading-[1.05]"
               >
                 Le portail des dossiers de vol d'
                 <span className="bg-gradient-to-r from-azur to-deep dark:from-azur-pastel dark:to-azur bg-clip-text text-transparent">Aviation Sans Frontières</span>

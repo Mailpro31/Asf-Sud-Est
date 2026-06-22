@@ -96,7 +96,7 @@ export default function AilesDuSourireDashboard({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-slate-800/80 p-6 shadow-sm overflow-hidden text-left relative">
+    <div className="bg-white dark:bg-slate-900/60 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800/80 p-4 sm:p-6 shadow-sm overflow-hidden text-left relative">
       
       {/* Decorative gradient header backdrop */}
       <div className={`absolute top-0 left-0 right-0 h-[5px] ${themeAttr?.gradientClass || 'bg-azur'}`} />

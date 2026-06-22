@@ -85,7 +85,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
   const borderStyle = `border ${themeConfig.cardBorder}`;
 
   return (
-    <div className={`min-h-screen flex flex-col justify-center items-center ${themeConfig.bg} ${themeConfig.fontFamily} p-4 md:p-8 transition-all duration-300 relative overflow-hidden`}>
+    <div className={`min-h-screen flex flex-col justify-center items-center ${themeConfig.bg} ${themeConfig.fontFamily} px-4 py-20 sm:py-16 md:p-8 transition-all duration-300 relative overflow-hidden`}>
       {/* Décor : halo + Cessna qui traverse discrètement le haut de l'écran */}
       <div className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 bg-azur/10 rounded-full blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -left-24 w-96 h-96 bg-azur/10 rounded-full blur-3xl" />
@@ -96,7 +96,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
       {onNavigateHome && (
         <button
           onClick={onNavigateHome}
-          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-azur transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-azur transition-colors cursor-pointer bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-3xs"
           id="back-to-home-btn"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Retour à l'accueil
@@ -107,7 +107,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
         {/* En-tête */}
         <div className="mb-8 text-center flex flex-col items-center">
           <LogoASF className="w-16 h-16 mb-4 hover:scale-105 transition-transform duration-200" variant="color" />
-          <h1 className="text-2xl font-bold tracking-tight text-deep dark:text-azur-pastel font-display">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-deep dark:text-azur-pastel font-display">
             Aviation Sans Frontières
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-xs leading-relaxed">
@@ -116,7 +116,7 @@ export default function Login({ onNavigateRegister, onNavigateHome }: LoginProps
         </div>
 
         {/* Carte */}
-        <div className={`w-full p-8 sm:p-10 ${themeConfig.cardBg} ${borderStyle} rounded-2xl ${themeConfig.accentGlow} transition-all duration-300`}>
+        <div className={`w-full p-6 sm:p-10 ${themeConfig.cardBg} ${borderStyle} rounded-2xl ${themeConfig.accentGlow} transition-all duration-300`}>
           <div className="mb-6">
             <h2 className="text-lg font-bold text-deep dark:text-azur-pastel font-display">
               {mode === 'login' ? 'Se connecter' : 'Mot de passe oublié'}

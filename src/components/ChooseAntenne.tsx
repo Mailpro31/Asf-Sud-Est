@@ -114,7 +114,7 @@ export default function ChooseAntenne() {
           <div className="w-14 h-14 rounded-2xl bg-azur-light dark:bg-azur/15 flex items-center justify-center mb-3">
             <LogoASF className="w-9 h-9" />
           </div>
-          <h1 className="font-display text-2xl font-bold text-deep dark:text-white tracking-tight">
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-deep dark:text-white tracking-tight">
             Dernière étape : votre antenne
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-md">
