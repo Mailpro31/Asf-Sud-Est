@@ -532,6 +532,30 @@ export default function AntenneAdminDashboard() {
     orgProfiles.find((o) => o.id === orgId)?.name ||
     (orgId === 'admin_created' || orgId === 'public' ? 'Document interne' : 'Organisme');
 
+  // Notification (toast) à l'arrivée d'un nouveau fichier / dossier déposé par
+  // un organisme — au niveau du tableau de bord, pour ne plus « rien voir ».
+  // Ne se déclenche que pour des dépôts postérieurs à l'ouverture de la page.
+  const prevUploadsRef = useRef<{ files: Set<string>; folders: Set<string> } | null>(null);
+  useEffect(() => {
+    const partnerFiles = files.filter((f) => f.uploadedBy !== 'admin');
+    const partnerFolders = folders.filter((f) => f.createdBy !== 'admin' && f.orgId !== 'admin_created' && f.orgId !== 'public');
+    const fIds = new Set(partnerFiles.map((f) => f.id));
+    const dIds = new Set(partnerFolders.map((f) => f.id));
+    const prev = prevUploadsRef.current;
+    if (prev) {
+      const newFiles = partnerFiles.filter((f) => !prev.files.has(f.id) && fileStamp(f) >= mountTimeRef.current);
+      const newFolders = partnerFolders.filter((f) => !prev.folders.has(f.id) && (f.createdAt || 0) >= mountTimeRef.current);
+      const total = newFiles.length + newFolders.length;
+      if (total > 2) {
+        toast(`📥 ${total} nouveaux dépôts d'organismes`, 'info');
+      } else {
+        for (const f of newFiles) toast(`📎 ${orgName(f.orgId)} a déposé « ${f.name} »`, 'info');
+        for (const d of newFolders) toast(`📁 ${orgName(d.orgId)} a créé le dossier « ${d.name} »`, 'info');
+      }
+    }
+    prevUploadsRef.current = { files: fIds, folders: dIds };
+  }, [files, folders, toast]);
+
   const handleUpdateStatus = async (file: DossierFile, newStatus: SubmissionStatus) => {
     const logIt = () => logAction('file_status_change', {
       targetType: 'file',
@@ -1570,13 +1594,19 @@ export default function AntenneAdminDashboard() {
                 const orgFiles = files.filter((f) => f.orgId === org.id);
                 const validated = orgFiles.filter((f) => (f.submissionStatus || 'Pending') === 'Validated').length;
                 const orgSubmitTs = submittedMap[org.id] || org.dossierSubmittedAt || 0;
-                const orgNew = isUnseen(org.id, orgSubmitTs);
+                // Dépôts récents (fichiers/dossiers de l'organisme) non consultés.
+                const latestUploadTs = orgFiles.reduce((m, f) => (f.uploadedBy !== 'admin' ? Math.max(m, fileStamp(f)) : m), 0);
+                const latestFolderTs = folders.reduce((m, fol) => (fol.orgId === org.id && fol.createdBy !== 'admin' ? Math.max(m, fol.createdAt || 0) : m), 0);
+                const orgActivityTs = Math.max(orgSubmitTs, latestUploadTs, latestFolderTs);
+                const orgNew = isUnseen(org.id, orgActivityTs);
+                // Le badge reflète l'activité la plus récente (soumission vs dépôt).
+                const newIsSubmit = orgNew && orgSubmitTs > 0 && orgSubmitTs >= latestUploadTs && orgSubmitTs >= latestFolderTs;
                 return (
                   <button
                     key={org.id}
                     onClick={() => openOrg(org.id)}
                     className={`card-asf p-4 text-left hover:border-azur hover:shadow-md transition-all cursor-pointer group relative ${orgNew ? 'ring-2 ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
-                    title={orgNew ? 'Nouveau dossier soumis — cliquez pour le traiter' : 'Voir les documents et gérer ce compte'}
+                    title={orgNew ? (newIsSubmit ? 'Nouveau dossier soumis — cliquez pour le traiter' : 'Nouveau dépôt de l’organisme — cliquez pour consulter') : 'Voir les documents et gérer ce compte'}
                   >
                     {orgNew && <span className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />}
                     <div className="flex items-start justify-between gap-2">
@@ -1586,17 +1616,16 @@ export default function AntenneAdminDashboard() {
                       </div>
                       <StatusBadge status={org.submissionStatus} />
                     </div>
-                    {orgSubmitTs > 0 && (
-                      orgNew ? (
-                        <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-extrabold uppercase tracking-wider text-white bg-rose-500 rounded-full px-2 py-0.5">
-                          <Send className="w-3 h-3" /> Nouveau · dossier soumis
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
-                          <CheckCircle2 className="w-3 h-3" /> Dossier soumis
-                        </span>
-                      )
-                    )}
+                    {orgNew ? (
+                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-extrabold uppercase tracking-wider text-white bg-rose-500 rounded-full px-2 py-0.5">
+                        {newIsSubmit ? <Send className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
+                        {newIsSubmit ? 'Nouveau · dossier soumis' : 'Nouveau · dépôt'}
+                      </span>
+                    ) : orgSubmitTs > 0 ? (
+                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
+                        <CheckCircle2 className="w-3 h-3" /> Dossier soumis
+                      </span>
+                    ) : null}
                     <div className="mt-3">
                       <ComplianceBar validated={validated} total={orgFiles.length} />
                     </div>
