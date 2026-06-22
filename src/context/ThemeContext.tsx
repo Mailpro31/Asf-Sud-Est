@@ -49,12 +49,12 @@ const LS_KEY = 'asf_theme';
 
 /** Configuration partagée — mode CLAIR. */
 const lightConfig: ThemeConfig = {
-  bg: 'bg-slate-50/60',
+  bg: 'bg-transparent',
   sidebarBg: 'bg-slate-900 border-r border-slate-200/5',
   sidebarText: 'text-slate-400 hover:text-white hover:bg-white/5',
   sidebarActive: 'bg-azur/15 text-azur border-l-4 border-azur font-semibold',
   cardBg: 'bg-white',
-  cardBorder: 'border-slate-200/60',
+  cardBorder: 'border-slate-200/70',
   textColor: 'text-slate-800',
   textMuted: 'text-slate-500',
   accent: 'blue',
@@ -74,12 +74,12 @@ const lightConfig: ThemeConfig = {
 
 /** Configuration partagée — mode SOMBRE (contrastes garantis). */
 const darkConfig: ThemeConfig = {
-  bg: 'bg-slate-950',
-  sidebarBg: 'bg-slate-950 border-r border-white/10',
+  bg: 'bg-transparent',
+  sidebarBg: 'bg-[#060c16] border-r border-white/10',
   sidebarText: 'text-slate-400 hover:text-white hover:bg-white/10',
   sidebarActive: 'bg-azur/20 text-azur-pastel border-l-4 border-azur font-semibold',
-  cardBg: 'bg-slate-900',
-  cardBorder: 'border-slate-700/70',
+  cardBg: 'bg-[#0f1c2e]',
+  cardBorder: 'border-white/10',
   textColor: 'text-slate-100',
   textMuted: 'text-slate-400',
   accent: 'blue',

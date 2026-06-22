@@ -52,15 +52,29 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    background-color: #ffffff;
+    min-height: 100vh;
     color: #0f172a;
+    /* Fond ambiant clair, teinté de la charte ASF (azur en haut, touche
+       sourire en bas) — donne une profondeur « designée » plutôt qu'un aplat. */
+    background-color: #f4f8fb;
+    background-image:
+      radial-gradient(1100px 560px at 100% -8%, rgba(131, 208, 245, 0.20), transparent 58%),
+      radial-gradient(900px 520px at -8% 108%, rgba(243, 146, 0, 0.05), transparent 55%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    /* Transition douce lors du basculement clair/sombre. */
+    transition: background-color 0.45s var(--ease-asf), color 0.45s var(--ease-asf);
   }
 
-  /* Fond et couleur de texte par défaut en mode sombre (filet de sécurité :
-     même un écran non converti reste lisible). */
+  /* Fond et couleur de texte par défaut en mode sombre. Bleu nuit ASF (et non
+     un noir pur), avec une lueur azur cohérente avec l'identité — filet de
+     sécurité : même un écran non converti reste lisible et « intégré ». */
   .dark body {
-    background-color: #020617; /* slate-950 */
-    color: #e2e8f0;            /* slate-200 */
+    background-color: #070e1a;
+    color: #e2e8f0;
+    background-image:
+      radial-gradient(1100px 600px at 100% -8%, rgba(27, 152, 196, 0.18), transparent 58%),
+      radial-gradient(950px 560px at -10% 108%, rgba(14, 94, 118, 0.22), transparent 55%);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -117,7 +131,7 @@
     background-clip: content-box;
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: rgb(100 116 139);
+    background: rgb(27 152 196 / 0.75); /* azur ASF au survol */
     background-clip: content-box;
   }
   .dark ::selection {
@@ -347,8 +361,13 @@
 
   /* ===================== Variantes MODE SOMBRE ===================== */
   .dark .card-asf {
-    background: #0f172a;            /* slate-900 */
-    border-color: rgb(51 65 85 / 0.7); /* slate-700 */
+    background: #0f1c2e;            /* navy ASF, légèrement relevé au-dessus du fond */
+    border-color: rgb(148 163 184 / 0.12); /* contour doux, premium */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px -14px rgba(0, 0, 0, 0.7);
+  }
+  .dark .card-asf:hover {
+    border-color: rgb(27 152 196 / 0.4);  /* survol teinté azur */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 16px 36px -16px rgba(0, 0, 0, 0.75);
   }
 
   .dark .btn-secondary {

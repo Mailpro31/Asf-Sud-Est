@@ -931,7 +931,7 @@ export default function Dashboard() {
   const borderStyle = `border ${themeConfig.cardBorder}`;
 
   return (
-    <div className={`flex min-h-screen lg:h-screen ${themeConfig.bg} overflow-x-hidden overflow-y-auto lg:overflow-hidden ${themeConfig.fontFamily} text-[#1a1a1a] transition-colors duration-500`}>
+    <div className={`flex min-h-screen lg:h-screen ${themeConfig.bg} overflow-x-hidden overflow-y-auto lg:overflow-hidden ${themeConfig.fontFamily} text-slate-800 dark:text-slate-100 transition-colors duration-500`}>
       
       {/* Sidebar */}
       <aside className={`w-72 ${themeConfig.sidebarBg} flex flex-col hidden md:flex shrink-0 transition-colors duration-500`}>

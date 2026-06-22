@@ -57,9 +57,9 @@ export function FloatingThemeToggle() {
       title={isDark ? 'Mode clair' : 'Mode sombre'}
       className={cn(
         'fixed bottom-5 left-5 z-[9980] inline-flex items-center justify-center w-12 h-12 rounded-full',
-        'border shadow-asf-lg backdrop-blur transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95',
-        'border-slate-200 bg-white/90 text-slate-700 hover:text-deep',
-        'dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-200 dark:hover:text-white',
+        'border shadow-asf-lg backdrop-blur-md transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95',
+        'border-azur/20 bg-white/85 text-sourire hover:text-sourire-dark hover:border-azur/40 ring-1 ring-azur/5',
+        'dark:border-white/10 dark:bg-[#0f1c2e]/85 dark:text-azur-pastel dark:hover:text-white dark:ring-azur/10',
       )}
     >
       {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
