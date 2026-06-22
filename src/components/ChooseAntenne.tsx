@@ -9,7 +9,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { MapPin, LogOut, ArrowRight } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
@@ -79,16 +79,28 @@ export default function ChooseAntenne() {
     persistLocal();
 
     try {
+      // Un setDoc(merge) ne distingue pas création et mise à jour : on vérifie
+      // d'abord l'existence pour ne notifier QUE pour un compte réellement
+      // nouveau (et pas un organisme existant qui (re)choisit son antenne).
+      let docAlreadyExists = false;
+      try {
+        docAlreadyExists = (await getDoc(doc(db, 'organizations', user.uid))).exists();
+      } catch { /* lecture best-effort */ }
+
       await setDoc(doc(db, 'organizations', user.uid), fullDoc, { merge: true });
+
       // Prévient le gestionnaire de l'antenne choisie qu'un nouvel organisme
       // l'a rejointe (best-effort, selon ses réglages de notification).
-      notifyAntenneOnNewOrg(selectedAntenne, {
-        orgName: fullDoc.name,
-        contactName: fullDoc.contactName,
-        email: fullDoc.email,
-        phone: fullDoc.phone,
-        antenneName: getAntenneName(selectedAntenne),
-      });
+      if (!docAlreadyExists) {
+        notifyAntenneOnNewOrg(selectedAntenne, {
+          orgId: user.uid,
+          orgName: fullDoc.name,
+          contactName: fullDoc.contactName,
+          email: fullDoc.email,
+          phone: fullDoc.phone,
+          antenneName: getAntenneName(selectedAntenne),
+        });
+      }
       await refreshOrganization();
     } catch (err: any) {
       console.error('Failed to set antenne:', err);

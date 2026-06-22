@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, AlertTriangle, AlertCircle, X, HelpCircle } from 'lucide-react';
 
@@ -26,7 +26,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
 
-  const toast = (message: string, type: ToastType) => {
+  // Références STABLES (mémoïsées) : des effets consommateurs s'abonnent à des
+  // listeners Firestore avec `toast` en dépendance — une nouvelle référence à
+  // chaque render provoquerait un ré-abonnement permanent.
+  const toast = useCallback((message: string, type: ToastType) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
 
@@ -34,16 +37,16 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
-  };
+  }, []);
 
-  const confirm = (message: string): Promise<boolean> => {
+  const confirm = useCallback((message: string): Promise<boolean> => {
     return new Promise((resolve) => {
       setConfirmState({
         message,
         resolve,
       });
     });
-  };
+  }, []);
 
   const handleConfirmClose = (value: boolean) => {
     if (confirmState) {
@@ -68,8 +71,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [confirmState]);
 
+  const value = useMemo(() => ({ toast, confirm }), [toast, confirm]);
+
   return (
-    <FeedbackContext.Provider value={{ toast, confirm }}>
+    <FeedbackContext.Provider value={value}>
       {children}
 
       {/* TOASTS PORTAL LAYER */}

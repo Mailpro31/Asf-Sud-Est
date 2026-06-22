@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -125,6 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [delegations, setDelegations] = useState<{ id: string; name: string }[]>(DEFAULT_DELEGATIONS);
   const [antennes, setAntennes] = useState<Record<string, { id: string; name: string }[]>>(DEFAULT_ANTENNES);
+  // Référence toujours à jour des antennes : `fetchOrg` est capturé par le
+  // listener onAuthStateChanged (deps []) et verrait sinon les valeurs par
+  // défaut figées au 1er render (nom d'antenne erroné dans l'e-mail).
+  const antennesRef = useRef(antennes);
+  useEffect(() => { antennesRef.current = antennes; }, [antennes]);
   const [antenneGroups, setAntenneGroups] = useState<AntenneGroup[]>([]);
 
 
@@ -257,8 +262,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Notifie le gestionnaire d'antenne d'un nouvel organisme (best-effort,
           // si la notification « nouvel organisme » est activée pour l'antenne).
           if (!isAdminUser && antenneId) {
-            const antName = (Object.values(antennes).flat().find((a: any) => a.id === antenneId) as any)?.name || antenneId;
+            const antName = (Object.values(antennesRef.current).flat().find((a: any) => a.id === antenneId) as any)?.name || antenneId;
             notifyAntenneOnNewOrg(antenneId, {
+              orgId: uid,
               orgName: newOrgData.name,
               contactName: newOrgData.contactName,
               email: newOrgData.email,

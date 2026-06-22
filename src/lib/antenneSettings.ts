@@ -161,11 +161,20 @@ export async function notifyAntenneOnUpload(
  * rejoindre son antenne, si la notification « nouvel organisme » est activée.
  * Échec silencieux (ne bloque jamais la création de compte).
  */
+/** Organismes déjà notifiés pendant cette session (anti-doublon : plusieurs
+ *  chemins — AuthContext, ChooseAntenne, repli sandbox — peuvent appeler la
+ *  notification pour le même compte). */
+const notifiedNewOrgIds = new Set<string>();
+
 export async function notifyAntenneOnNewOrg(
   antenneId: string | undefined | null,
-  context: { orgName?: string; contactName?: string; email?: string; phone?: string; antenneName?: string } = {},
+  context: { orgId?: string; orgName?: string; contactName?: string; email?: string; phone?: string; antenneName?: string } = {},
 ): Promise<void> {
   if (!antenneId) return;
+  if (context.orgId) {
+    if (notifiedNewOrgIds.has(context.orgId)) return; // déjà notifié
+    notifiedNewOrgIds.add(context.orgId);
+  }
   try {
     const settings = await getAntenneSettings(antenneId);
     if (!settings.notifyNewUserEnabled || !settings.notifyEmail) return;
