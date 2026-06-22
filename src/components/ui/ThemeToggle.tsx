@@ -56,7 +56,7 @@ export function FloatingThemeToggle() {
       aria-label={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
       title={isDark ? 'Mode clair' : 'Mode sombre'}
       className={cn(
-        'fixed top-5 right-5 z-[9980] inline-flex items-center justify-center w-12 h-12 rounded-full',
+        'fixed top-4 left-1/2 -translate-x-1/2 z-[9980] inline-flex items-center justify-center w-12 h-12 rounded-full',
         'border shadow-asf-lg backdrop-blur-md transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95',
         'border-azur/20 bg-white/85 text-sourire hover:text-sourire-dark hover:border-azur/40 ring-1 ring-azur/5',
         'dark:border-white/10 dark:bg-[#0f1c2e]/85 dark:text-azur-pastel dark:hover:text-white dark:ring-azur/10',
