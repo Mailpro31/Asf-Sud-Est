@@ -60,6 +60,7 @@ export function StatusActions({
           onClick={() => toggle('Validated')}
           disabled={disabled}
           aria-pressed={isValidated}
+          aria-label="Valider la pièce"
           title="Valider la pièce"
           className={cn(
             seg,
@@ -77,7 +78,8 @@ export function StatusActions({
           onClick={() => toggle('Incomplete')}
           disabled={disabled}
           aria-pressed={isRefused}
-          title="Refuser la pièce"
+          aria-label="Marquer la pièce à corriger"
+          title="Marquer la pièce à corriger"
           className={cn(
             seg,
             pad,
@@ -87,7 +89,7 @@ export function StatusActions({
           )}
         >
           <X className={cn('shrink-0', compact ? 'w-4 h-4' : 'w-3.5 h-3.5', isRefused && 'stroke-[3]')} />
-          {!compact && <span>Refuser</span>}
+          {!compact && <span>À corriger</span>}
         </button>
       </div>
 
@@ -96,6 +98,7 @@ export function StatusActions({
           type="button"
           onClick={onAddNote}
           disabled={disabled}
+          aria-label={hasNote ? 'Modifier le motif transmis au partenaire' : 'Ajouter un motif pour le partenaire'}
           title={hasNote ? 'Modifier le motif transmis au partenaire' : 'Ajouter un motif pour le partenaire'}
           className={cn(
             'inline-flex items-center justify-center w-8 h-8 rounded-full border transition-all cursor-pointer shrink-0',
