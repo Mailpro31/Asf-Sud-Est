@@ -407,7 +407,7 @@ export default function AntenneDashboardModal({
                   {/* Right Action column */}
                   <div className="space-y-6">
                     {/* Workspace redirection */}
-                    <div className="bg-azur-light dark:from-slate-950/20 dark:to-slate-950/50 dark:bg-none border border-azur/20 dark:border-slate-800 p-4.5 rounded-2xl text-left space-y-3 text-xs font-medium">
+                    <div className="bg-azur-light dark:bg-slate-950/40 border border-azur/20 dark:border-slate-800 p-4.5 rounded-2xl text-left space-y-3 text-xs font-medium">
                       <Compass className="w-5 h-5 text-azur" />
                       <h4 className="font-extrabold text-azur">Accéder aux dossiers</h4>
                       <p className="text-slate-500 dark:text-slate-400 leading-normal">
@@ -475,9 +475,9 @@ export default function AntenneDashboardModal({
                               </div>
 
                               <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 font-mono">ID : {org.id.substring(0, 10)}</p>
-                              <div className="mt-3.5 space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                                <p>🧑‍💼 Liaison : <strong>{org.contactName}</strong></p>
-                                <p>📧 Email : {org.email}</p>
+                              <div className="mt-3.5 space-y-1 text-xs text-slate-500 dark:text-slate-400 min-w-0">
+                                <p className="truncate" title={org.contactName}>🧑‍💼 Liaison : <strong>{org.contactName}</strong></p>
+                                <p className="truncate" title={org.email}>📧 Email : {org.email}</p>
                               </div>
                             </div>
 
@@ -542,14 +542,14 @@ export default function AntenneDashboardModal({
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-2">
                                     <FileText className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
-                                    <div className="flex flex-col min-w-[200px] max-w-[420px]">
+                                    <div className="flex flex-col min-w-0 max-w-[420px]">
                                       <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block" title={file.name}>{file.name}</span>
                                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                         <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono">ID: {file.id.substring(0, 8)}</span>
                                         <span className="text-[9px] text-slate-300 dark:text-slate-600">•</span>
                                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
                                           <span>Déposé par :</span>
-                                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-tight ${
+                                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight ${
                                             file.uploadedBy === 'admin'
                                               ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50'
                                               : 'bg-azur/10 text-azur dark:bg-azur/15 border border-azur/20'
