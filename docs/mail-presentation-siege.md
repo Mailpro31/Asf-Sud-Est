@@ -22,6 +22,8 @@ Il s'agit d'une **application web sécurisée** où chaque acteur dispose de son
 
 Le tout est **accessible depuis un navigateur** (ordinateur, tablette, téléphone), sans aucune installation.
 
+👉 **Le portail est en ligne et consultable dès maintenant : https://asf-sud-est.vercel.app**
+
 ## Trois espaces, trois rôles
 
 Le portail s'articule autour de **trois panneaux d'administration** complémentaires :
@@ -77,6 +79,8 @@ Vue d'ensemble nationale / par délégation :
 - **Image** : un outil à la hauteur de la première ONG aéronautique d'utilité publique.
 
 ## Prochaine étape
+
+Vous pouvez d'ores et déjà découvrir le portail en ligne : **https://asf-sud-est.vercel.app**
 
 Je serais ravi de vous faire une **démonstration en visioconférence** (15-20 minutes) pour vous montrer le portail en conditions réelles et recueillir vos retours, notamment sur une éventuelle généralisation au niveau national.
 
