@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { subscribeAntenneSettings, type AntenneSettings } from '../lib/antenneSettings';
+import { downloadFile } from '../lib/fileTransfer';
 import {
   X, 
   MapPin, 
@@ -470,16 +471,14 @@ export default function AntenneDashboardModal({
 
                                 <td className="px-4 py-3 text-right">
                                   <div className="flex justify-end gap-1">
-                                    {file.fallbackDataUrl && (
-                                      <a
-                                        href={file.fallbackDataUrl}
-                                        download={file.name}
-                                        className="p-1 rounded-md border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
-                                        title="Télécharger"
-                                      >
-                                        <Download className="w-3.5 h-3.5" />
-                                      </a>
-                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => downloadFile(file).catch(() => {})}
+                                      className="p-1 rounded-md border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                                      title="Télécharger"
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                    </button>
                                     <StatusActions
                                       compact
                                       status={fileStatus}

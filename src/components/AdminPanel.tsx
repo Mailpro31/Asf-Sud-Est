@@ -60,7 +60,7 @@ import AntenneAdminsManager from './AntenneAdminsManager';
 import AuditLogPanel from './AuditLogPanel';
 import { localDb } from '../lib/localDb';
 import { logAction, subscribeAuditLogs, type AuditLog } from '../lib/auditLog';
-import { readFileAsDataUrl, deleteFileArtifacts } from '../lib/fileTransfer';
+import { readFileAsDataUrl, deleteFileArtifacts, downloadFile } from '../lib/fileTransfer';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
@@ -2446,25 +2446,23 @@ export default function AdminPanel() {
 
                                   <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex justify-end gap-1.5">
-                                      {file.fallbackDataUrl && (
-                                        <a
-                                          href={file.fallbackDataUrl}
-                                          download={file.name}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          onClick={() => logAction('file_download', {
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          logAction('file_download', {
                                             targetType: 'file',
                                             targetId: file.id,
                                             targetName: file.name,
                                             antenne_id: file.antenne_id,
                                             delegation_id: file.delegation_id,
-                                          })}
-                                          className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer"
-                                          title="Télécharger ou Ouvrir"
-                                        >
-                                          <Download className="w-4 h-4" />
-                                        </a>
-                                      )}
+                                          });
+                                          downloadFile(file).catch(() => toast('Téléchargement impossible.', 'error'));
+                                        }}
+                                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer"
+                                        title="Télécharger ou Ouvrir"
+                                      >
+                                        <Download className="w-4 h-4" />
+                                      </button>
                                       <button
                                         onClick={() => {
                                           setRenamingFile(file);
