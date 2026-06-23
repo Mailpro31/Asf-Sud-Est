@@ -33,9 +33,49 @@ export interface AntenneSettings {
   /** E-mail quand un nouvel organisme rejoint l'antenne. */
   notifyNewUserEnabled: boolean;
   notifyEmail: string;
+  // --- Profil public de l'antenne : renseigné par le gestionnaire d'antenne,
+  //     visible (lecture seule) par tous les membres rattachés. ---
+  /** Aérodrome / aéroport de rattachement. */
+  airport: string;
+  /** Nom du coordinateur référent. */
+  coordinatorName: string;
+  /** Téléphone de contact de l'antenne. */
+  phone: string;
+  /** E-mail public de contact de l'antenne. */
+  publicEmail: string;
+  /** Flotte / aéronefs (texte libre). */
+  aircraft: string;
+  /** Présentation / note libre de l'antenne. */
+  description: string;
 }
 
-const DEFAULT_SETTINGS: AntenneSettings = { notifyEnabled: false, notifyNewUserEnabled: false, notifyEmail: '' };
+const DEFAULT_SETTINGS: AntenneSettings = {
+  notifyEnabled: false,
+  notifyNewUserEnabled: false,
+  notifyEmail: '',
+  airport: '',
+  coordinatorName: '',
+  phone: '',
+  publicEmail: '',
+  aircraft: '',
+  description: '',
+};
+
+/** Convertit un document Firestore en réglages typés (champs sûrs). */
+function mapDoc(d: any): AntenneSettings {
+  const str = (v: any) => (typeof v === 'string' ? v : '');
+  return {
+    notifyEnabled: !!d.notifyEnabled,
+    notifyNewUserEnabled: !!d.notifyNewUserEnabled,
+    notifyEmail: str(d.notifyEmail),
+    airport: str(d.airport),
+    coordinatorName: str(d.coordinatorName),
+    phone: str(d.phone),
+    publicEmail: str(d.publicEmail),
+    aircraft: str(d.aircraft),
+    description: str(d.description),
+  };
+}
 
 const LS_KEY = 'asf_antenne_settings';
 
@@ -61,12 +101,7 @@ export async function getAntenneSettings(antenneId: string): Promise<AntenneSett
   try {
     const snap = await getDoc(doc(db, 'antenne_settings', antenneId));
     if (!snap.exists()) return { ...DEFAULT_SETTINGS };
-    const d = snap.data();
-    return {
-      notifyEnabled: !!d.notifyEnabled,
-      notifyNewUserEnabled: !!d.notifyNewUserEnabled,
-      notifyEmail: typeof d.notifyEmail === 'string' ? d.notifyEmail : '',
-    };
+    return mapDoc(snap.data());
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -95,12 +130,7 @@ export function subscribeAntenneSettings(
           cb({ ...DEFAULT_SETTINGS });
           return;
         }
-        const d = snap.data();
-        cb({
-          notifyEnabled: !!d.notifyEnabled,
-          notifyNewUserEnabled: !!d.notifyNewUserEnabled,
-          notifyEmail: typeof d.notifyEmail === 'string' ? d.notifyEmail : '',
-        });
+        cb(mapDoc(snap.data()));
       },
       () => cb({ ...DEFAULT_SETTINGS }),
     );
@@ -110,19 +140,25 @@ export function subscribeAntenneSettings(
   }
 }
 
-/** Enregistre les réglages d'une antenne. */
+/**
+ * Enregistre (par fusion) tout ou partie des réglages d'une antenne. On accepte
+ * un patch partiel pour que la sauvegarde des notifications n'écrase pas le
+ * profil public (et inversement).
+ */
 export async function saveAntenneSettings(
   antenneId: string,
-  settings: AntenneSettings,
+  patch: Partial<AntenneSettings>,
 ): Promise<void> {
-  const clean: AntenneSettings = {
-    notifyEnabled: !!settings.notifyEnabled,
-    notifyNewUserEnabled: !!settings.notifyNewUserEnabled,
-    notifyEmail: settings.notifyEmail.trim(),
-  };
+  const clean: Record<string, any> = {};
+  if ('notifyEnabled' in patch) clean.notifyEnabled = !!patch.notifyEnabled;
+  if ('notifyNewUserEnabled' in patch) clean.notifyNewUserEnabled = !!patch.notifyNewUserEnabled;
+  const textKeys = ['notifyEmail', 'airport', 'coordinatorName', 'phone', 'publicEmail', 'aircraft', 'description'] as const;
+  for (const k of textKeys) {
+    if (k in patch) clean[k] = ((patch as any)[k] || '').trim();
+  }
   if (localDb.isSandboxActive()) {
     const map = readLocal();
-    map[antenneId] = clean;
+    map[antenneId] = { ...DEFAULT_SETTINGS, ...(map[antenneId] || {}), ...clean };
     writeLocal(map);
     return;
   }
