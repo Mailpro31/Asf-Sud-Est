@@ -54,8 +54,35 @@ export default function OrgCabinetModal({
   setFiles,
   setFolders,
 }: OrgCabinetModalProps) {
-  const { antennes: ANTENNES_BY_DELEGATION } = useAuth();
+  const { antennes: ANTENNES_BY_DELEGATION, organization } = useAuth();
   const { toast, confirm } = useFeedback();
+
+  // Notifications « nouveau » (par admin, localStorage — aucune écriture
+  // Firestore) : un fichier récemment déposé/modifié par le partenaire et non
+  // encore consulté est signalé en rouge ; l'ouvrir l'efface.
+  const seenKey = `asf_cabinet_seen_${organization?.id || 'anon'}`;
+  const [seen, setSeen] = useState<{ baseline: number; items: Record<string, number> }>(() => {
+    try {
+      const raw = localStorage.getItem(seenKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && typeof p.baseline === 'number' && p.items) return p;
+      }
+    } catch { /* ignore */ }
+    const init = { baseline: Date.now(), items: {} as Record<string, number> };
+    try { localStorage.setItem(seenKey, JSON.stringify(init)); } catch { /* ignore */ }
+    return init;
+  });
+  const fileStamp = (f: DossierFile) => Math.max(f.uploadDate || 0, (f as any).updatedAt || 0);
+  const isUnseen = (id: string, ts: number) => !!id && ts > 0 && ts > (seen.items[id] ?? seen.baseline);
+  const markSeen = (id: string) => {
+    if (!id) return;
+    setSeen((prev) => {
+      const next = { ...prev, items: { ...prev.items, [id]: Date.now() } };
+      try { localStorage.setItem(seenKey, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   // Localized states to clean up AdminPanel
   const [orgOpenFolderId, setOrgOpenFolderId] = useState<string | null>(null);
@@ -722,39 +749,39 @@ export default function OrgCabinetModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {orgFolders.map(folder => {
                     const folFiles = files.filter(f => f.folderId === folder.id);
+                    const folderHasNew = folFiles.some(f => f.uploadedBy !== 'admin' && isUnseen(f.id, fileStamp(f)));
                     return (
                       <div
                         key={folder.id}
-                        onClick={() => setOrgOpenFolderId(folder.id)}
-                        className="group p-5 bg-slate-50 dark:bg-slate-950 hover:bg-white dark:hover:bg-slate-900 border border-slate-100 hover:border-azur/40 dark:border-slate-800 rounded-2xl shadow-xs cursor-pointer transition-all flex justify-between items-start relative overflow-hidden"
+                        onClick={() => { folFiles.forEach(f => { if (f.uploadedBy !== 'admin' && isUnseen(f.id, fileStamp(f))) markSeen(f.id); }); setOrgOpenFolderId(folder.id); }}
+                        className={`group relative p-5 pl-6 rounded-2xl border shadow-3xs cursor-pointer flex flex-col gap-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md overflow-hidden ${folderHasNew ? 'bg-white dark:bg-slate-900 border-rose-300 dark:border-rose-500/50 ring-2 ring-rose-200 dark:ring-rose-500/30' : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}
                       >
-                        <div className="space-y-1 text-left min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <FolderIcon className="w-8 h-8 text-azur dark:text-azur-pastel animate-pulse duration-2000" />
-                            {folder.createdBy === 'admin' ? (
-                              <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-azur/10 text-azur dark:bg-azur/15 dark:text-azur-pastel border border-azur/20">
-                                Admin
-                              </span>
-                            ) : (
-                              <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
-                                Partenaire
-                              </span>
-                            )}
+                        <span className={`absolute left-0 top-0 bottom-0 w-1 ${folderHasNew ? 'bg-rose-500' : 'bg-azur/60'}`} />
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="relative w-11 h-11 rounded-2xl bg-azur/10 text-azur dark:text-azur-pastel flex items-center justify-center shrink-0 border border-azur/15">
+                            <FolderIcon className="w-5 h-5 fill-current" />
+                            {folderHasNew && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />}
                           </div>
-                          <p className="font-extrabold text-deep dark:text-slate-200 text-xs tracking-tight group-hover:text-azur dark:group-hover:text-azur-pastel transition-colors mt-2 truncate">{folder.name}</p>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono font-bold uppercase">{folFiles.length} fichiers justificatifs</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteOrgFolder(folder.id, folder.name); }}
+                            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 text-slate-300 dark:text-slate-600 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                            title="Supprimer ce dossier"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteOrgFolder(folder.id, folder.name);
-                          }}
-                          className="text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 transition-colors rounded-lg bg-slate-100 hover:bg-rose-50 dark:bg-slate-900 dark:hover:bg-rose-900/20 cursor-pointer z-20"
-                          title="Supprimer ce dossier"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="absolute right-0 bottom-0 bg-azur w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-extrabold text-deep dark:text-slate-200 text-sm tracking-tight truncate group-hover:text-azur dark:group-hover:text-azur-pastel transition-colors">{folder.name}</p>
+                            {folderHasNew && <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-rose-500 text-white">Nouveau</span>}
+                          </div>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">{folder.createdBy === 'admin' ? 'Dossier interne' : 'Dossier partenaire'}</p>
+                        </div>
+                        <div className="mt-auto">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                            <FileText className="w-3.5 h-3.5 text-slate-400" /> {folFiles.length} doc{folFiles.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
