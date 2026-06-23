@@ -13,6 +13,7 @@ import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { StatusBadge, StatusActions } from './ui';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../hooks/useFeedback';
+import { downloadFile } from '../lib/fileTransfer';
 import AntenneDashboardModal from './AntenneDashboardModal';
 
 interface AilesDuSourireDashboardProps {
@@ -267,17 +268,14 @@ export default function AilesDuSourireDashboard({
                       {/* Validation */}
                       <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end items-center gap-1.5">
-                          {file.fallbackDataUrl && (
-                            <a
-                              href={file.fallbackDataUrl}
-                              download={file.name}
-                              onClick={() => markSeen(file.id)}
-                              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 cursor-pointer transition-all shadow-3xs"
-                              title="Télécharger"
-                            >
-                              <Download className="w-4 h-4 stroke-[2]" />
-                            </a>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => { markSeen(file.id); downloadFile(file).catch(() => toast('Téléchargement impossible.', 'error')); }}
+                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 cursor-pointer transition-all shadow-3xs"
+                            title="Télécharger"
+                          >
+                            <Download className="w-4 h-4 stroke-[2]" />
+                          </button>
                           <StatusActions
                             compact
                             status={file.submissionStatus}
