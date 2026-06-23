@@ -625,9 +625,21 @@ export default function AntenneAdminDashboard() {
           onClick: () => setSelectedOrgId(o.id),
         });
       }
+      // Dossier soumis pour revue (journal d'activité ou champ dossierSubmittedAt).
+      const submitTs = submittedMap[o.id] || o.dossierSubmittedAt || 0;
+      if (submitTs > 0 && isUnseen(o.id, submitTs)) {
+        out.push({
+          id: `submit_${o.id}`,
+          title: 'Dossier soumis pour revue',
+          description: `${o.name || 'Organisme'} a soumis son dossier — à examiner`,
+          ts: submitTs,
+          tone: 'warning',
+          onClick: () => { markSeen(o.id); setSelectedOrgId(o.id); },
+        });
+      }
     });
     return out;
-  }, [files, folders, partnerOrgs, seen]);
+  }, [files, folders, partnerOrgs, submittedMap, seen]);
 
   // Notification (toast) à l'arrivée d'un nouveau fichier / dossier déposé par
   // un organisme — au niveau du tableau de bord, pour ne plus « rien voir ».

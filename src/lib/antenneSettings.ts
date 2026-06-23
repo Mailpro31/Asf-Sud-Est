@@ -208,6 +208,40 @@ export async function notifyAntenneOnUpload(
 }
 
 /**
+ * Notifie par e-mail le gestionnaire d'antenne qu'un organisme vient de
+ * SOUMETTRE son dossier pour revue, si la notification « nouveau dépôt » est
+ * activée. Échec silencieux (ne bloque jamais la soumission).
+ */
+export async function notifyAntenneOnSubmission(
+  antenneId: string | undefined | null,
+  context: { partnerName?: string; antenneName?: string } = {},
+): Promise<void> {
+  if (!antenneId) return;
+  try {
+    const settings = await getAntenneSettings(antenneId);
+    if (!settings.notifyEnabled || !settings.notifyEmail) return;
+
+    const antenne = context.antenneName || antenneId;
+    const who = context.partnerName || 'Un organisme';
+    const subject = `ASF · Dossier soumis pour revue — ${antenne}`;
+    const text =
+      `Bonjour,\n\n${who} vient de soumettre son dossier pour revue sur l'antenne ${antenne}.\n\n` +
+      `Connectez-vous au portail ASF pour l'examiner et valider les pièces.\n\n— Portail ASF`;
+    const html =
+      `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
+      `<p>Bonjour,</p>` +
+      `<p><strong>${escHtml(who)}</strong> vient de <strong>soumettre son dossier pour revue</strong> ` +
+      `sur l'antenne <strong>${escHtml(antenne)}</strong>.</p>` +
+      `<p>Connectez-vous au portail ASF pour l'examiner et valider les pièces.</p>` +
+      `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
+      `</div>`;
+    await queueEmail(settings.notifyEmail, subject, text, html);
+  } catch (err) {
+    console.warn('notifyAntenneOnSubmission échec (non bloquant) :', err);
+  }
+}
+
+/**
  * Notifie par e-mail le gestionnaire d'antenne qu'un NOUVEL organisme vient de
  * rejoindre son antenne, si la notification « nouvel organisme » est activée.
  * Échec silencieux (ne bloque jamais la création de compte).

@@ -51,7 +51,7 @@ import CreateFolderModal from './CreateFolderModal';
 import UserProfileModal from './UserProfileModal';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
-import { notifyAntenneOnUpload, subscribeAntenneSettings, type AntenneSettings } from '../lib/antenneSettings';
+import { notifyAntenneOnUpload, notifyAntenneOnSubmission, subscribeAntenneSettings, type AntenneSettings } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
@@ -777,6 +777,9 @@ export default function Dashboard() {
       if (ok || localDb.isSandboxActive()) {
         setSubmittedAtLocal(now);
         toast('Dossier soumis à votre antenne ✓', 'success');
+        // Prévient le gestionnaire d'antenne par e-mail (si activé).
+        const antName = (antennes[organization.delegation_id || ''] || []).find(a => a.id === organization.antenne_id)?.name;
+        notifyAntenneOnSubmission(organization.antenne_id, { partnerName: organization.name, antenneName: antName });
       } else {
         toast('La soumission a échoué, réessayez.', 'error');
       }
