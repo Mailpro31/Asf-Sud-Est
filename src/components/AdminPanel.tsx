@@ -2040,18 +2040,6 @@ export default function AdminPanel() {
                               </p>
                             </div>
                           </div>
-
-                          <button
-                            onClick={() => setIsCreatingFolder(true)}
-                            className={`flex items-center gap-1.5 text-xs font-bold text-white px-5 py-3 rounded-2xl transition-all shadow-md cursor-pointer ${
-                              delegationFilterId === 'ouest' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10' :
-                              delegationFilterId === 'occitanie' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/10' :
-                              delegationFilterId === 'sud-est' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/10' :
-                              'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10'
-                            }`}
-                          >
-                            <Plus className="w-4 h-4" /> Nouveau Dossier Organisme
-                          </button>
                         </div>
 
                         {/* Search bar inside Town tab */}
@@ -2121,7 +2109,6 @@ export default function AdminPanel() {
                             {filteredFolders.map((folder) => {
                               const folderDocs = files.filter(f => f.folderId === folder.id);
                               const pendingDocs = folderDocs.filter(f => f.submissionStatus === 'Pending' || !f.submissionStatus).length;
-                              const validatedDocs = folderDocs.filter(f => (f.submissionStatus || 'Pending') === 'Validated').length;
                               // Couleur déterministe par organisme (sinon par nom de dossier),
                               // pour différencier les cabinets d'un coup d'œil.
                               const seed = folder.orgId && folder.orgId !== 'public' && folder.orgId !== 'admin_created'
@@ -2132,56 +2119,57 @@ export default function AdminPanel() {
                                 <div
                                   key={folder.id}
                                   onClick={() => { setCurrentFolderId(folder.id); setSearchQuery(''); }}
-                                  className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 pl-6 shadow-3xs cursor-pointer group flex flex-col justify-between h-44 transition-all duration-300 relative overflow-hidden ${themeAttr.hoverAccent}`}
+                                  className="group relative bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 rounded-2xl p-5 pl-6 shadow-3xs cursor-pointer flex flex-col gap-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 overflow-hidden"
                                 >
                                   {/* Accent coloré à gauche pour distinguer l'organisme */}
-                                  <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${sw.dot}`} />
-                                  <div className="flex justify-between items-start">
+                                  <span className={`absolute left-0 top-0 bottom-0 w-1 ${sw.dot}`} />
+
+                                  <div className="flex items-start justify-between gap-2">
                                     <div className={`w-11 h-11 rounded-2xl ${sw.icon} flex items-center justify-center shrink-0 border ${sw.border} shadow-3xs`}>
-                                      <FolderIcon className="w-5.5 h-5.5 fill-current" />
+                                      <FolderIcon className="w-5 h-5 fill-current" />
                                     </div>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setFolderToDelete(folder); }}
-                                      className="text-slate-400 dark:text-slate-500 hover:text-red-500 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                                      title="Supprimer définitivement"
+                                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 text-slate-300 dark:text-slate-600 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                                      title="Supprimer le dossier"
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
 
-                                  <div className="mt-3">
-                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-slate-800 dark:group-hover:text-slate-100 transition-colors truncate">
+                                  <div className="min-w-0">
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-azur dark:group-hover:text-azur-pastel transition-colors">
                                       {folder.name}
                                     </h4>
-                                    {ownerName && (
-                                      <p className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 truncate flex items-center gap-1 mt-0.5">
+                                    {ownerName ? (
+                                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
                                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${sw.dot}`} /> {ownerName}
                                       </p>
+                                    ) : (
+                                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                                        Dossier {folder.createdBy === 'admin' ? 'interne' : 'partenaire'}
+                                      </p>
                                     )}
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono flex items-center justify-between gap-2">
-                                      <span>Créé le {new Date(folder.createdAt).toLocaleDateString()}</span>
-                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 shrink-0">
-                                        {folder.createdBy === 'admin' ? 'Admin' : 'Partenaire'}
-                                      </span>
-                                    </p>
                                   </div>
 
-                                  <div className="border-t border-slate-100 dark:border-slate-800/80 pt-3 mt-3 flex justify-between items-center w-full text-[11px] text-slate-500 dark:text-slate-400 gap-2">
-                                    <span className="font-semibold text-slate-400 dark:text-slate-500 shrink-0">📄 {folderDocs.length}</span>
-                                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                                      {validatedDocs > 0 && (
-                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-900/35 font-black px-2 py-0.5 rounded-lg font-mono">
-                                          ✓ {validatedDocs}
-                                        </span>
-                                      )}
-                                      {pendingDocs > 0 ? (
-                                        <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/15 border border-amber-100 dark:border-amber-900/35 font-black px-2 py-0.5 rounded-lg font-mono">
-                                          🕒 {pendingDocs}
-                                        </span>
-                                      ) : (
-                                        <span className={`text-[10px] font-black ${themeAttr.accentText}`}>Cabinet à jour</span>
-                                      )}
-                                    </div>
+                                  <div className="mt-auto flex items-center justify-between gap-2">
+                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                      <FileText className="w-3.5 h-3.5 text-slate-400" />
+                                      {folderDocs.length} doc{folderDocs.length !== 1 ? 's' : ''}
+                                    </span>
+                                    {folderDocs.length === 0 ? (
+                                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full">
+                                        Vide
+                                      </span>
+                                    ) : pendingDocs > 0 ? (
+                                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 px-2 py-0.5 rounded-full">
+                                        {pendingDocs} à traiter
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 px-2 py-0.5 rounded-full">
+                                        <CheckCircle2 className="w-3 h-3" /> À jour
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               );
