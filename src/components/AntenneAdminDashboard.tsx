@@ -59,7 +59,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, StatusActions, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
+import { StatusBadge, StatusActions, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, type NotificationItem, type TourStep } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -585,6 +585,49 @@ export default function AntenneAdminDashboard() {
   const orgName = (orgId: string) =>
     orgProfiles.find((o) => o.id === orgId)?.name ||
     (orgId === 'admin_created' || orgId === 'public' ? 'Document interne' : 'Organisme');
+
+  // Liste des notifications de l'antenne (cloche d'en-tête) : nouveaux dépôts
+  // non consultés + organismes en attente de validation, avec une explication.
+  const notifItems = useMemo<NotificationItem[]>(() => {
+    const out: NotificationItem[] = [];
+    files.forEach((f) => {
+      if (f.uploadedBy !== 'admin' && isUnseen(f.id, fileStamp(f))) {
+        out.push({
+          id: `file_${f.id}`,
+          title: 'Nouveau document à valider',
+          description: `${f.name} — déposé par ${orgName(f.orgId)}`,
+          ts: fileStamp(f),
+          tone: 'warning',
+          onClick: () => { markSeen(f.id); setPreviewFile(f); },
+        });
+      }
+    });
+    folders.forEach((fol) => {
+      if (fol.createdBy !== 'admin' && isUnseen(fol.id, fol.createdAt || 0)) {
+        out.push({
+          id: `folder_${fol.id}`,
+          title: 'Nouveau dossier',
+          description: `${fol.name} — créé par ${orgName(fol.orgId)}`,
+          ts: fol.createdAt || 0,
+          tone: 'info',
+          onClick: () => { markSeen(fol.id); if (fol.orgId) setSelectedOrgId(fol.orgId); },
+        });
+      }
+    });
+    partnerOrgs.forEach((o) => {
+      if ((o.submissionStatus || 'Pending') !== 'Validated') {
+        out.push({
+          id: `org_${o.id}`,
+          title: 'Organisme à valider',
+          description: `${o.name || 'Organisme'} — accès ${o.submissionStatus === 'Incomplete' ? 'suspendu' : 'en attente'}`,
+          ts: (o as any).createdAt || 0,
+          tone: 'danger',
+          onClick: () => setSelectedOrgId(o.id),
+        });
+      }
+    });
+    return out;
+  }, [files, folders, partnerOrgs, seen]);
 
   // Notification (toast) à l'arrivée d'un nouveau fichier / dossier déposé par
   // un organisme — au niveau du tableau de bord, pour ne plus « rien voir ».
@@ -1403,6 +1446,7 @@ export default function AntenneAdminDashboard() {
               <MapPin className="w-3 h-3 text-azur" /> {delegationName} · Espace gestionnaire
             </p>
           </div>
+          <NotificationBell items={notifItems} />
           <button
             onClick={startTour}
             data-tour="tutoriel"

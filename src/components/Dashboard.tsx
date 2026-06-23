@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatBytes } from '../lib/utils';
 import { 
   ShieldAlert, 
@@ -48,7 +48,7 @@ import { notifyAntenneOnUpload } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
-import { StatusBadge, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
+import { StatusBadge, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, type NotificationItem, type TourStep } from './ui';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 
@@ -605,6 +605,27 @@ export default function Dashboard() {
   ];
   const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
   const [deletingFolder, setDeletingFolder] = useState<Folder | null>(null);
+
+  // Notifications du partenaire (cloche d'en-tête) : pièces à corriger
+  // signalées par l'antenne, avec le motif en explication.
+  const notifItems = useMemo<NotificationItem[]>(() => {
+    const out: NotificationItem[] = [];
+    files.forEach((f) => {
+      if (f.submissionStatus === 'Incomplete' || (f.reviewNote && f.reviewNote.trim())) {
+        out.push({
+          id: `corr_${f.id}`,
+          title: 'Document à corriger',
+          description: f.reviewNote && f.reviewNote.trim()
+            ? `${f.name} — ${f.reviewNote}`
+            : `${f.name} — correction demandée par votre antenne`,
+          ts: (f as any).updatedAt || f.uploadDate || 0,
+          tone: 'danger',
+          onClick: () => setPreviewingFile(f),
+        });
+      }
+    });
+    return out;
+  }, [files]);
   const [renamingFolder, setRenamingFolder] = useState<Folder | null>(null);
   const [renameFolderInput, setRenameFolderInput] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -1266,6 +1287,7 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="flex items-center gap-1.5">
+            <NotificationBell items={notifItems} />
             <ThemeToggle className="w-8 h-8 !rounded-lg bg-white/10 border-transparent text-slate-200 hover:bg-white/20 hover:text-white dark:bg-white/10 dark:border-transparent dark:text-slate-200 dark:hover:bg-white/20 dark:hover:text-white" />
             <button
               type="button"
@@ -1309,6 +1331,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <NotificationBell items={notifItems} className="hidden md:block" />
             <ThemeToggle className="hidden md:inline-flex" />
             <button
               onClick={() => setTourOpen(true)}

@@ -6,6 +6,7 @@
 export { Button, type ButtonProps, type ButtonVariant } from './Button';
 export { Badge, StatusBadge, type BadgeProps, type StatusBadgeProps } from './Badge';
 export { StatusActions, type StatusActionsProps } from './StatusActions';
+export { NotificationBell, type NotificationItem } from './NotificationBell';
 export { Input, type InputProps } from './Input';
 export { Modal, type ModalProps } from './Modal';
 export { ComplianceBar, type ComplianceBarProps } from './ComplianceBar';
