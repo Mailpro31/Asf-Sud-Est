@@ -2,89 +2,75 @@
 
 **À :** Responsable Les Ailes du Sourire · Responsable informatique — Aviation Sans Frontières (Siège, Paris)
 **De :** [Votre nom], ASF Sud-Est
-**Objet :** Présentation d'un portail web pour centraliser et fiabiliser les dossiers de vol — Les Ailes du Sourire
+**Objet :** Un portail web pour centraliser les dossiers de vol — Les Ailes du Sourire (démo en ligne)
 
 ---
 
 Bonjour,
 
-Je me permets de vous présenter un projet développé au sein de la délégation **ASF Sud-Est**, pensé pour le programme **Les Ailes du Sourire**, et qui pourrait, je le crois, bénéficier à l'ensemble de l'association.
+Au sein de la délégation **ASF Sud-Est**, nous avons développé un **portail web** pour simplifier la gestion des dossiers de vol des **Ailes du Sourire**. Il est aujourd'hui fonctionnel, et je souhaitais vous le présenter.
 
-## Le constat de départ
+**En une phrase :** un seul site, sécurisé, où les organismes partenaires déposent leurs documents, où chaque antenne les valide, et où la coordination suit tout en temps réel — jusqu'à l'autorisation du vol.
 
-Aujourd'hui, la gestion des **autorisations et des justificatifs de vol** des organismes partenaires repose sur des échanges dispersés (e-mails, pièces jointes, tableurs, relances manuelles). Cette dispersion fait perdre du temps aux coordinateurs, complique le suivi de la conformité d'un dossier, et retarde le moment où un vol peut être autorisé.
+🔗 **À découvrir en ligne : https://asf-sud-est.vercel.app**
 
-L'idée du projet est simple : **tout centraliser au même endroit, sur un seul site internet sécurisé**, de la transmission des documents par le partenaire jusqu'à la validation par ASF.
+---
 
-## La solution : un portail documentaire unique
+## 1. Le problème que ça résout
 
-Il s'agit d'une **application web sécurisée** où chaque acteur dispose de son propre espace, adapté à son rôle. Un partenaire dépose ses pièces, l'antenne locale les contrôle et les valide, et la coordination garde une vision d'ensemble en temps réel. Quand le dossier est complet et validé, le vol Les Ailes du Sourire peut être autorisé.
+Aujourd'hui, les justificatifs de vol des partenaires circulent par e-mails, pièces jointes et tableurs dispersés. Résultat : du temps perdu en relances, un suivi difficile, et des vols autorisés tardivement.
 
-Le tout est **accessible depuis un navigateur** (ordinateur, tablette, téléphone), sans aucune installation.
+**L'objectif : tout centraliser au même endroit.**
 
-👉 **Le portail est en ligne et consultable dès maintenant : https://asf-sud-est.vercel.app**
+## 2. Comment ça marche
 
-## Trois espaces, trois rôles
+Trois acteurs, un parcours simple :
 
-Le portail s'articule autour de **trois panneaux d'administration** complémentaires :
+1. **Le partenaire** dépose ses documents et soumet son dossier.
+2. **L'antenne locale** vérifie et valide pièce par pièce (ou demande une correction).
+3. **La coordination** garde une vue d'ensemble du réseau.
 
-### 1. L'espace Partenaire (organismes)
-Destiné aux associations et organismes qui accompagnent les bénéficiaires. Ils peuvent :
-- déposer leurs documents de vol (glisser-déposer, tous formats) et les **classer dans des dossiers** ;
-- suivre en direct l'**état de chaque pièce** (en attente, validé, à corriger) ;
-- **soumettre leur dossier** à leur antenne pour revue en un clic ;
-- recevoir les **demandes de correction** avec le motif précis ;
-- consulter les **informations de leur antenne** de rattachement (contact, coordinateur, aérodrome).
+➡️ Dossier complet et validé = **vol Les Ailes du Sourire autorisé.**
 
-### 2. L'espace Gestionnaire d'antenne
-Destiné aux coordinateurs locaux. Chaque antenne gère **ses propres** organismes partenaires :
-- validation ou demande de correction **document par document** ;
-- vue claire des **dossiers soumis à traiter** et des organismes à valider ;
-- **profil de l'antenne** modifiable (coordonnées, coordinateur, flotte) — visible par ses membres ;
-- **journal d'activité** retraçant chaque action ;
-- réglages de **notifications par e-mail** à chaque nouveau dépôt.
+Le portail s'utilise depuis un simple navigateur (ordinateur, tablette, téléphone), **sans installation**.
 
-### 3. L'espace Coordination (super administrateur)
-Vue d'ensemble nationale / par délégation :
-- **taux de conformité** et indicateurs par antenne et par organisme ;
-- tableau de bord dédié **Les Ailes du Sourire** ;
-- gestion des **implantations** (antennes sur la carte) ;
-- **dépôt de fichiers directement sur une antenne** et **export** des dossiers (CSV, archive ZIP) ;
-- supervision de l'ensemble du réseau depuis un point unique.
+## 3. Trois espaces selon le rôle
 
-## Les fonctionnalités essentielles
+| Espace | Pour qui | À quoi ça sert |
+|---|---|---|
+| **Partenaire** | Organismes | Déposer et classer les documents, suivre leur statut, soumettre le dossier, recevoir les corrections demandées |
+| **Gestionnaire d'antenne** | Coordinateurs locaux | Valider/corriger les pièces, traiter les dossiers soumis, gérer le profil de l'antenne, suivre le journal d'activité |
+| **Coordination (super admin)** | Pilotage national | Taux de conformité par antenne/organisme, tableau de bord Ailes du Sourire, gestion des antennes, exports (CSV / ZIP) |
 
-- **Centralisation** de tous les documents au même endroit, fini les pièces jointes éparpillées.
-- **Circuit de validation clair** : trois statuts (En attente · Validé · À corriger).
-- **Notifications** à chaque action importante (dépôt, création de dossier, nouvel organisme, soumission de dossier) — via une **cloche** dans l'application et par **e-mail**.
-- **Aperçu intégré** de tous les types de fichiers et **téléchargement** (individuel ou en archive).
-- **Suivi de la conformité** en temps réel, avec relances facilitées.
-- **Accès par rôle** : chacun ne voit que ce qui le concerne.
-- **Visite guidée** intégrée pour une prise en main immédiate, **mode sombre** et **affichage responsive**.
+Chacun ne voit **que ce qui le concerne**.
 
-## Le volet technique (pour le responsable informatique)
+## 4. Les fonctionnalités clés
 
-- **Front-end** : React + TypeScript (Vite), interface Tailwind CSS — moderne, rapide, maintenable.
-- **Back-end** : **Firebase** (Authentification, base de données Firestore, stockage de fichiers).
-- **Sécurité** : authentification obligatoire et **règles d'accès déployées** garantissant que chaque utilisateur n'accède qu'à ses données (cloisonnement par organisme / antenne / délégation), avec un **journal d'audit** des actions.
-- **Hébergement** web standard (déploiement continu), **sans installation** côté utilisateur.
-- **Robustesse** : un mode de sauvegarde de secours assure la continuité même en cas d'indisponibilité ponctuelle du stockage.
+- **Centralisation** de tous les documents — fini les pièces jointes éparpillées.
+- **Circuit de validation clair** : 3 statuts (En attente · Validé · À corriger).
+- **Notifications** à chaque action importante (dépôt, soumission, nouvel organisme…) — dans l'app **et** par e-mail.
+- **Aperçu et téléchargement** de tous les types de fichiers (à l'unité ou en archive).
+- **Suivi de la conformité** en temps réel.
+- **Prise en main immédiate** : visite guidée intégrée, mode sombre, affichage adapté au mobile.
 
-## Pourquoi c'est intéressant pour ASF
+## 5. En bref, côté technique (pour l'IT)
 
-- **Gain de temps logistique** pour les coordinateurs : moins de relances, moins de ressaisie.
-- **Fiabilité et traçabilité** : on sait à tout moment où en est chaque dossier et qui a fait quoi.
-- **Autorisations de vol plus rapides** : un dossier complet et validé, c'est un vol qui peut décoller plus tôt.
-- **Déjà fonctionnel** sur le périmètre Sud-Est, et **conçu pour s'étendre** aux autres délégations et programmes (Les Ailes de l'Avenir, missions avions…).
-- **Image** : un outil à la hauteur de la première ONG aéronautique d'utilité publique.
+- **Technologies** : React + TypeScript côté interface, **Firebase** côté serveur (authentification, base de données, stockage).
+- **Sécurité** : connexion obligatoire, **règles d'accès déployées** (chaque utilisateur cloisonné à son organisme / antenne / délégation), **journal d'audit** des actions.
+- **Hébergement web** avec mises à jour automatiques, **rien à installer** pour les utilisateurs.
 
-## Prochaine étape
+## 6. Pourquoi ça intéresse ASF
 
-Vous pouvez d'ores et déjà découvrir le portail en ligne : **https://asf-sud-est.vercel.app**
+- **Du temps gagné** pour les coordinateurs (moins de relances, moins de ressaisie).
+- **Fiabilité et traçabilité** : on sait toujours où en est un dossier, et qui a fait quoi.
+- **Des vols autorisés plus vite.**
+- **Déjà opérationnel** sur le Sud-Est, et **prêt à s'étendre** aux autres délégations et programmes.
 
-Je serais ravi de vous faire une **démonstration en visioconférence** (15-20 minutes) pour vous montrer le portail en conditions réelles et recueillir vos retours, notamment sur une éventuelle généralisation au niveau national.
+## Et maintenant ?
 
-Je reste à votre entière disposition.
+Le portail est consultable dès aujourd'hui : **https://asf-sud-est.vercel.app**
+
+Je vous propose une **démonstration en visio de 15-20 minutes** pour vous le montrer en conditions réelles et échanger sur une éventuelle généralisation au niveau national.
 
 Bien cordialement,
 
