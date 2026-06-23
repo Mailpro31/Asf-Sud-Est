@@ -89,6 +89,15 @@ export default function Dashboard() {
   // gestionnaire d'antenne. Visible par tous ses membres.
   const [antenneInfo, setAntenneInfo] = useState<AntenneSettings | null>(null);
   const [showAntenneInfo, setShowAntenneInfo] = useState(true);
+  const antenneCardRef = useRef<HTMLDivElement | null>(null);
+  // Déplie la carte « Votre antenne » et y fait défiler la page.
+  const revealAntenneInfo = useCallback(() => {
+    setShowAntenneInfo(true);
+    setIsMobileDrawerOpen(false);
+    requestAnimationFrame(() => {
+      antenneCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, []);
 
   const refreshLocalState = useCallback(() => {
     if (!user || !organization) return;
@@ -1311,6 +1320,17 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-1.5">
             <NotificationBell items={notifItems} />
+            {organization.antenne_id && (
+              <button
+                type="button"
+                onClick={revealAntenneInfo}
+                className="p-1.5 bg-white/10 text-slate-200 hover:text-white rounded-lg transition-colors cursor-pointer"
+                title="Voir les informations de votre antenne"
+                aria-label="Mon antenne"
+              >
+                <Building2 className="w-4 h-4" />
+              </button>
+            )}
             <ThemeToggle className="w-8 h-8 !rounded-lg bg-white/10 border-transparent text-slate-200 hover:bg-white/20 hover:text-white dark:bg-white/10 dark:border-transparent dark:text-slate-200 dark:hover:bg-white/20 dark:hover:text-white" />
             <button
               type="button"
@@ -1356,6 +1376,16 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <NotificationBell items={notifItems} className="hidden md:block" />
             <ThemeToggle className="hidden md:inline-flex" />
+            {organization.antenne_id && (
+              <button
+                onClick={revealAntenneInfo}
+                className="btn-secondary text-sm"
+                title="Voir les informations de votre antenne"
+              >
+                <Building2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Mon antenne</span>
+              </button>
+            )}
             <button
               onClick={() => setTourOpen(true)}
               data-tour="tutoriel"
@@ -1506,7 +1536,7 @@ export default function Dashboard() {
           ].filter((r) => r.value && r.value.trim());
           const hasContent = rows.length > 0 || (info?.description && info.description.trim());
           return (
-            <div className={`mb-6 shrink-0 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} overflow-hidden shadow-xs`}>
+            <div ref={antenneCardRef} className={`mb-6 shrink-0 scroll-mt-4 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} overflow-hidden shadow-xs`}>
               <button
                 type="button"
                 onClick={() => setShowAntenneInfo((v) => !v)}
