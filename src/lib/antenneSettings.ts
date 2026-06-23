@@ -19,6 +19,21 @@ function escHtml(s: unknown): string {
 }
 
 /**
+ * Enveloppe le corps HTML d'un e-mail de notification dans la mise en page
+ * standard ASF (police, salutation, pied de page). `body` doit déjà être du
+ * HTML sûr (valeurs utilisateur échappées via `escHtml`).
+ */
+function wrapEmailHtml(body: string): string {
+  return (
+    `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
+    `<p>Bonjour,</p>` +
+    body +
+    `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
+    `</div>`
+  );
+}
+
+/**
  * Réglages par antenne, configurés par le gestionnaire d'antenne (admin_antenne).
  *
  * Principal usage : activer une notification e-mail envoyée à une adresse choisie
@@ -192,15 +207,12 @@ export async function notifyAntenneOnUpload(
     const text =
       `Bonjour,\n\n${what.charAt(0).toUpperCase()}${what.slice(1)} vient d'être déposé${partner} ` +
       `sur l'antenne ${antenne} :\n\n• ${name}\n\nConnectez-vous au portail ASF pour le consulter.\n\n— Portail ASF`;
-    const html =
-      `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
-      `<p>Bonjour,</p>` +
+    const html = wrapEmailHtml(
       `<p><strong>${what.charAt(0).toUpperCase()}${what.slice(1)}</strong> vient d'être déposé${escHtml(partner)} ` +
       `sur l'antenne <strong>${escHtml(antenne)}</strong> :</p>` +
       `<p style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600">📄 ${escHtml(name)}</p>` +
-      `<p>Connectez-vous au portail ASF pour le consulter.</p>` +
-      `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
-      `</div>`;
+      `<p>Connectez-vous au portail ASF pour le consulter.</p>`,
+    );
     await queueEmail(settings.notifyEmail, subject, text, html);
   } catch (err) {
     console.warn('notifyAntenneOnUpload échec (non bloquant) :', err);
@@ -227,14 +239,11 @@ export async function notifyAntenneOnSubmission(
     const text =
       `Bonjour,\n\n${who} vient de soumettre son dossier pour revue sur l'antenne ${antenne}.\n\n` +
       `Connectez-vous au portail ASF pour l'examiner et valider les pièces.\n\n— Portail ASF`;
-    const html =
-      `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
-      `<p>Bonjour,</p>` +
+    const html = wrapEmailHtml(
       `<p><strong>${escHtml(who)}</strong> vient de <strong>soumettre son dossier pour revue</strong> ` +
       `sur l'antenne <strong>${escHtml(antenne)}</strong>.</p>` +
-      `<p>Connectez-vous au portail ASF pour l'examiner et valider les pièces.</p>` +
-      `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
-      `</div>`;
+      `<p>Connectez-vous au portail ASF pour l'examiner et valider les pièces.</p>`,
+    );
     await queueEmail(settings.notifyEmail, subject, text, html);
   } catch (err) {
     console.warn('notifyAntenneOnSubmission échec (non bloquant) :', err);
@@ -276,17 +285,14 @@ export async function notifyAntenneOnNewOrg(
     const text =
       `Bonjour,\n\nUn nouvel organisme vient de rejoindre votre antenne ${antenne} :\n\n• ${who}${details}\n\n` +
       `Son compte est en attente de validation. Connectez-vous au portail ASF pour le valider.\n\n— Portail ASF`;
-    const html =
-      `<div style="font-family:Arial,sans-serif;color:#0f172a">` +
-      `<p>Bonjour,</p>` +
+    const html = wrapEmailHtml(
       `<p><strong>Un nouvel organisme</strong> vient de rejoindre votre antenne <strong>${escHtml(antenne)}</strong> :</p>` +
       `<p style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-weight:600">🏢 ${escHtml(who)}</p>` +
       (lines.length
         ? `<p style="color:#334155;font-size:13px">${lines.map((l) => escHtml(l)).join('<br>')}</p>`
         : '') +
-      `<p>Son compte est <strong>en attente de validation</strong>. Connectez-vous au portail ASF pour le valider.</p>` +
-      `<p style="color:#64748b;font-size:13px">Aviation Sans Frontières</p>` +
-      `</div>`;
+      `<p>Son compte est <strong>en attente de validation</strong>. Connectez-vous au portail ASF pour le valider.</p>`,
+    );
     await queueEmail(settings.notifyEmail, subject, text, html);
   } catch (err) {
     console.warn('notifyAntenneOnNewOrg échec (non bloquant) :', err);

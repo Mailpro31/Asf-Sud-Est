@@ -85,6 +85,16 @@ const roleMeta = (role?: string) => ROLE_META[role || 'organization'] || ROLE_ME
 // (uploadés par un partenaire directement à la racine de son espace).
 const UNFILED_FOLDER_ID = '__unfiled__';
 
+// Couleur pleine par délégation pour les boutons de dépôt et les barres de
+// progression (un seul endroit à maintenir).
+const DELEGATION_SOLID: Record<string, { btn: string; bar: string }> = {
+  ouest: { btn: 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10', bar: 'bg-indigo-600' },
+  occitanie: { btn: 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/10', bar: 'bg-rose-600' },
+  'sud-est': { btn: 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/10', bar: 'bg-blue-600' },
+};
+const delegationSolid = (delId: string) =>
+  DELEGATION_SOLID[delId] || { btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10', bar: 'bg-emerald-600' };
+
 const DELEGATION_THEMES: Record<string, {
   colorClass: string;
   gradientClass: string;
@@ -946,17 +956,11 @@ export default function AdminPanel() {
     };
   }, []);
 
-  // Handle uploading document within designated partner/organism dossier — ou
-  // directement au niveau de l'antenne (folderId null → « Documents non classés »).
-  // `folderIdArg` : cible explicite. `undefined` → déduite du dossier ouvert
-  // (un dossier « non classés » virtuel compte comme « pas de dossier »).
-  const onUploadFiles = async (selectedFiles: File[], folderIdArg?: string | null) => {
-    const targetFolderId =
-      folderIdArg !== undefined
-        ? folderIdArg
-        : currentFolderId === UNFILED_FOLDER_ID
-          ? null
-          : currentFolderId;
+  // Handle uploading document into a designated target folder — ou directement
+  // au niveau de l'antenne (`targetFolderId` null → « Documents non classés »).
+  // La cible est toujours explicite : ce sont les gestionnaires d'`input` qui la
+  // résolvent depuis l'état de l'UI (dossier ouvert vs dépôt direct).
+  const onUploadFiles = async (selectedFiles: File[], targetFolderId: string | null) => {
     if (!delegationFilterId || !activeAntenneId) {
       toast("Veuillez d'abord sélectionner une antenne.", 'warning');
       return;
@@ -1077,7 +1081,10 @@ export default function AdminPanel() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      await onUploadFiles(Array.from(e.target.files));
+      // Dépôt depuis un dossier ouvert (le dossier virtuel « non classés »
+      // compte comme « pas de dossier »).
+      const target = currentFolderId === UNFILED_FOLDER_ID ? null : currentFolderId;
+      await onUploadFiles(Array.from(e.target.files), target);
       e.target.value = '';
     }
   };
@@ -2137,12 +2144,7 @@ export default function AdminPanel() {
 
                           {/* Dépôt direct au niveau de l'antenne, sans créer de dossier d'organisme */}
                           <label
-                            className={`flex items-center gap-1.5 text-xs font-black text-white px-4.5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer shrink-0 ${
-                              delegationFilterId === 'ouest' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10' :
-                              delegationFilterId === 'occitanie' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/10' :
-                              delegationFilterId === 'sud-est' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/10' :
-                              'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10'
-                            }`}
+                            className={`flex items-center gap-1.5 text-xs font-black text-white px-4.5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer shrink-0 ${delegationSolid(delegationFilterId).btn}`}
                             title={`Déposer des fichiers directement sur l'antenne ${selectedAntennes?.name || ''} (sans créer de dossier d'organisme). Ils iront dans « Documents non classés ».`}
                           >
                             <CloudUpload className="w-4 h-4" />
@@ -2179,12 +2181,7 @@ export default function AdminPanel() {
                               <span className="font-mono">{uploadProgress}%</span>
                             </div>
                             <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                              <div className={`h-full transition-all duration-300 ${
-                                delegationFilterId === 'ouest' ? 'bg-indigo-600' :
-                                delegationFilterId === 'occitanie' ? 'bg-rose-600' :
-                                delegationFilterId === 'sud-est' ? 'bg-blue-600' :
-                                'bg-emerald-600'
-                              }`} style={{ width: `${uploadProgress}%` }}></div>
+                              <div className={`h-full transition-all duration-300 ${delegationSolid(delegationFilterId).bar}`} style={{ width: `${uploadProgress}%` }}></div>
                             </div>
                           </div>
                         )}
@@ -2347,12 +2344,7 @@ export default function AdminPanel() {
                           <Archive className="w-4 h-4 text-azur" />
                           <span>{zipping ? 'Archivage…' : 'Tout télécharger (.zip)'}</span>
                         </button>
-                        <label className={`flex items-center gap-1.5 text-xs font-black text-white px-4.5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer ${
-                          delegationFilterId === 'ouest' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10' :
-                          delegationFilterId === 'occitanie' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/10' :
-                          delegationFilterId === 'sud-est' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/10' :
-                          'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10'
-                        }`}>
+                        <label className={`flex items-center gap-1.5 text-xs font-black text-white px-4.5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer ${delegationSolid(delegationFilterId).btn}`}>
                           <CloudUpload className="w-4 h-4" />
                           <span>Verser un justificatif réglementaire</span>
                           <input
@@ -2450,12 +2442,7 @@ export default function AdminPanel() {
                           <span className="font-mono">{uploadProgress}%</span>
                         </div>
                         <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div className={`h-full transition-all duration-300 ${
-                            delegationFilterId === 'ouest' ? 'bg-indigo-600' :
-                            delegationFilterId === 'occitanie' ? 'bg-rose-600' :
-                            delegationFilterId === 'sud-est' ? 'bg-blue-600' :
-                            'bg-emerald-600'
-                          }`} style={{ width: `${uploadProgress}%` }}></div>
+                          <div className={`h-full transition-all duration-300 ${delegationSolid(delegationFilterId).bar}`} style={{ width: `${uploadProgress}%` }}></div>
                         </div>
                       </div>
                     )}
