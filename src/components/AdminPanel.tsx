@@ -1249,8 +1249,11 @@ export default function AdminPanel() {
     }
     try {
       // 1. Delete all files linked to this folder to maintain hygiene
+      //    (y compris leurs artefacts de stockage : objet Storage natif ou
+      //    chunks Firestore — sinon ils restent orphelins après suppression).
       const relatedFiles = files.filter(f => f.folderId === folderToDelete.id);
       for (const f of relatedFiles) {
+        await deleteFileArtifacts(f);
         await deleteDoc(doc(db, 'files', f.id));
       }
       // 2. Delete folder metadata
