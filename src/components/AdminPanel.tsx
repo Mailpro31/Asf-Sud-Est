@@ -64,7 +64,7 @@ import { readFileAsDataUrl, deleteFileArtifacts, downloadFile } from '../lib/fil
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
-import { StatusBadge, StatusActions, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, type TourStep } from './ui';
+import { StatusBadge, StatusActions, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, type NotificationItem, type TourStep } from './ui';
 import { STATUS_ORDER } from '../lib/status';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
@@ -1362,6 +1362,45 @@ export default function AdminPanel() {
     () => orgProfiles.filter((p) => p.delegation_id === delegationFilterId),
     [orgProfiles, delegationFilterId],
   );
+
+  // Notifications de l'en-tête : nouveaux membres + organismes à valider +
+  // documents en attente, avec une explication.
+  const notifItems = useMemo<NotificationItem[]>(() => {
+    const out: NotificationItem[] = [];
+    delegationMembers.forEach((o) => {
+      const isNew = isMemberUnseen(o.id, (o as any).createdAt || 0);
+      const pending = (o.submissionStatus || 'Pending') !== 'Validated' && o.role === 'organization';
+      if (isNew) {
+        out.push({
+          id: `m_${o.id}`,
+          title: 'Nouveau membre inscrit',
+          description: `${o.name || 'Organisme'}${o.contactName ? ` — ${o.contactName}` : ''}`,
+          ts: (o as any).createdAt || 0,
+          tone: 'danger',
+          onClick: () => { markMemberSeen(o.id); setSelectedOrgForFiles(o); },
+        });
+      } else if (pending) {
+        out.push({
+          id: `m_${o.id}`,
+          title: 'Organisme à valider',
+          description: `${o.name || 'Organisme'} — accès ${o.submissionStatus === 'Incomplete' ? 'suspendu' : 'en attente'}`,
+          ts: (o as any).createdAt || 0,
+          tone: 'warning',
+          onClick: () => setSelectedOrgForFiles(o),
+        });
+      }
+    });
+    const pendingDocs = files.filter((f) => f.delegation_id === delegationFilterId && (f.submissionStatus === 'Pending' || !f.submissionStatus)).length;
+    if (pendingDocs > 0) {
+      out.push({
+        id: 'docs_pending',
+        title: `${pendingDocs} document${pendingDocs > 1 ? 's' : ''} à valider`,
+        description: 'Justificatifs en attente de vérification dans votre délégation.',
+        tone: 'warning',
+      });
+    }
+    return out;
+  }, [delegationMembers, files, delegationFilterId, memberSeen]);
   const memberStatusCounts = useMemo(() => {
     const c: Record<string, number> = { all: delegationMembers.length };
     for (const s of STATUS_ORDER) c[s] = 0;
@@ -1463,6 +1502,7 @@ export default function AdminPanel() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <NotificationBell items={notifItems} />
           <ThemeToggle />
           <div className="hidden sm:flex flex-col items-end text-right">
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
