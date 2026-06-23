@@ -179,6 +179,9 @@ export default function AdminPanel() {
 
   // Selected Town (onglet de ville)
   const [activeAntenneId, setActiveAntenneId] = useState<string | null>(null);
+  // Repli des antennes : par défaut on n'affiche que celles « actives » (avec
+  // organismes ou documents en attente) pour ne pas noyer l'utilisateur.
+  const [showAllAntennes, setShowAllAntennes] = useState(false);
 
   // Auto-select antenna for a national admin scoped to a single antenne.
   useEffect(() => {
@@ -1947,49 +1950,73 @@ export default function AdminPanel() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-500 font-bold uppercase tracking-wider">
                     <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    <span>Sélectionner l'antenne régionale (villes actives)</span>
+                    <span>Sélectionner l'antenne régionale</span>
                   </div>
-              
-                  <div className="flex flex-wrap gap-2.5 pt-1">
-                    {(ANTENNES_BY_DELEGATION[delegationFilterId] || []).length === 0 ? (
-                      <div className="text-xs text-slate-400 dark:text-slate-500 italic p-4 bg-slate-50/50 dark:bg-slate-900/10 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 w-full text-center">
-                        Aucune antenne n'est active actuellement. Allez dans l'onglet "Gestion des Implantations" pour en placer une sur la carte.
-                      </div>
-                    ) : (
-                      (ANTENNES_BY_DELEGATION[delegationFilterId] || []).map((ant) => {
-                        const active = activeAntenneId === ant.id;
-                        const countFolders = folders.filter(fol => fol.antenne_id === ant.id).length;
-                        const antPending = files.filter(f => f.antenne_id === ant.id && (f.submissionStatus === 'Pending' || !f.submissionStatus)).length;
-                        
-                        return (
-                          <button
-                            key={ant.id}
-                            onClick={() => setActiveAntenneId(ant.id)}
-                            className={`px-5 py-3 rounded-2xl text-xs font-bold tracking-tight transition-all duration-200 cursor-pointer flex items-center gap-2.5 border shadow-3xs ${
-                              active 
-                                ? `bg-white dark:bg-slate-900 ${themeAttr.accentText} border-slate-300 dark:border-slate-700 shadow-xs font-black`
-                                : 'bg-white/40 dark:bg-slate-950/20 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60'
-                            }`}
-                          >
-                            <span className="text-base leading-none">📍</span>
-                            <span>{ant.name}</span>
-                            
-                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
-                              active 
-                                ? `${themeAttr.colorClass} border border-current/10` 
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                            }`}>
-                              {countFolders} {countFolders !== 1 ? 'organismes' : 'organisme'}
-                            </span>
 
-                            {antPending > 0 && (
-                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title={`${antPending} documents en attente`} />
-                            )}
+                  {(() => {
+                    const allAntennes = ANTENNES_BY_DELEGATION[delegationFilterId] || [];
+                    if (allAntennes.length === 0) {
+                      return (
+                        <div className="text-xs text-slate-400 dark:text-slate-500 italic p-4 bg-slate-50/50 dark:bg-slate-900/10 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 w-full text-center">
+                          Aucune antenne n'est active actuellement. Allez dans l'onglet "Gestion des Implantations" pour en placer une sur la carte.
+                        </div>
+                      );
+                    }
+                    // « Actives » = avec organismes, ou documents en attente, ou sélectionnée.
+                    const isActiveAntenne = (ant: { id: string }) =>
+                      folders.some(fol => fol.antenne_id === ant.id) ||
+                      files.some(f => f.antenne_id === ant.id && (f.submissionStatus === 'Pending' || !f.submissionStatus)) ||
+                      activeAntenneId === ant.id;
+                    const activeList = allAntennes.filter(isActiveAntenne);
+                    const hiddenCount = allAntennes.length - activeList.length;
+                    // Par défaut : seulement les actives (sauf si l'utilisateur déplie,
+                    // ou s'il n'y a aucune active — on montre tout dans ce cas).
+                    const shown = showAllAntennes || activeList.length === 0 ? allAntennes : activeList;
+
+                    return (
+                      <div className="flex flex-wrap gap-2 pt-1 items-center">
+                        {shown.map((ant) => {
+                          const active = activeAntenneId === ant.id;
+                          const countFolders = folders.filter(fol => fol.antenne_id === ant.id).length;
+                          const antPending = files.filter(f => f.antenne_id === ant.id && (f.submissionStatus === 'Pending' || !f.submissionStatus)).length;
+
+                          return (
+                            <button
+                              key={ant.id}
+                              onClick={() => setActiveAntenneId(active ? null : ant.id)}
+                              className={`relative px-3.5 py-2 rounded-xl text-xs font-bold tracking-tight transition-all duration-200 cursor-pointer flex items-center gap-2 border shadow-3xs ${
+                                active
+                                  ? `bg-white dark:bg-slate-900 ${themeAttr.accentText} border-slate-300 dark:border-slate-700 shadow-xs font-black`
+                                  : 'bg-white/40 dark:bg-slate-950/20 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60'
+                              }`}
+                            >
+                              <span className="text-sm leading-none">📍</span>
+                              <span>{ant.name}</span>
+                              {countFolders > 0 && (
+                                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
+                                  active ? `${themeAttr.colorClass} border border-current/10` : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                }`}>
+                                  {countFolders}
+                                </span>
+                              )}
+                              {antPending > 0 && (
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title={`${antPending} document(s) en attente`} />
+                              )}
+                            </button>
+                          );
+                        })}
+
+                        {hiddenCount > 0 && (
+                          <button
+                            onClick={() => setShowAllAntennes(v => !v)}
+                            className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors cursor-pointer"
+                          >
+                            {showAllAntennes ? 'Réduire' : `+ ${hiddenCount} antenne${hiddenCount > 1 ? 's' : ''} sans organisme`}
                           </button>
-                        );
-                      })
-                    )}
-                  </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* --- SECTIONS UNDER THE ACTIVE TOWN TAB --- */}
