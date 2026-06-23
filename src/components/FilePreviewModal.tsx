@@ -1,20 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { formatBytes } from '../lib/utils';
-import { 
-  X, 
-  Download, 
-  Trash2, 
-  Calendar, 
-  User, 
-  HardDrive, 
-  Info, 
-  FileText, 
+import {
+  X,
+  Download,
+  Trash2,
+  Calendar,
+  User,
+  HardDrive,
+  Info,
+  FileText,
   Play,
   RotateCw,
   ZoomIn,
   ZoomOut,
-  ChevronLeft,
-  ChevronRight,
+  ExternalLink,
   Edit,
   Save
 } from 'lucide-react';
@@ -46,16 +45,6 @@ export default function FilePreviewModal({
   const [textContent, setTextContent] = useState<string>('');
   const [isEditingText, setIsEditingText] = useState(false);
   const [savingText, setSavingText] = useState(false);
-
-  // PDF Preview states
-  const [pdfDoc, setPdfDoc] = useState<any | null>(null);
-  const [pageNum, setPageNum] = useState(1);
-  const [numPages, setNumPages] = useState(0);
-  const [pdfZoom, setPdfZoom] = useState(1.0);
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfError, setPdfError] = useState<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const renderTaskRef = useRef<any | null>(null);
 
   // DOCX Word Preview states
   const [docxLoading, setDocxLoading] = useState(false);
@@ -91,50 +80,6 @@ export default function FilePreviewModal({
   const isPdf = file ? (file.type === 'application/pdf' || file.name.endsWith('.pdf')) : false;
   const isDocx = file ? (file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') : false;
   const isDoc = file ? (file.name.endsWith('.doc') || file.type === 'application/msword') : false;
-
-  // Helper inside to convert data URL to Uint8Array safely
-  const dataURLtoUint8Array = (dataUrlString: string): Uint8Array | null => {
-    try {
-      const arr = dataUrlString.split(',');
-      const base64 = arr[1] || arr[0];
-      const binaryString = atob(base64);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      return bytes;
-    } catch (e) {
-      console.error('Error parsing base64 string to Uint8Array', e);
-      return null;
-    }
-  };
-
-  // Helper dynamic script loader for pdf.js via unpkg/cdnjs
-  const loadPdfJS = (): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      if ((window as any).pdfjsLib) {
-        resolve((window as any).pdfjsLib);
-        return;
-      }
-      
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js';
-      script.onload = () => {
-        const libs = (window as any).pdfjsLib;
-        if (libs) {
-          libs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-          resolve(libs);
-        } else {
-          reject(new Error('pdfjsLib is undefined'));
-        }
-      };
-      script.onerror = (err) => reject(err);
-      document.body.appendChild(script);
-    });
-  };
-
-  // Parse bytes
 
   // Helper to convert base64 data URL to a native Blob URL
   const dataURLtoBlob = (dataUrlString: string) => {
@@ -268,57 +213,6 @@ export default function FilePreviewModal({
     };
   }, [isOpen, file]);
 
-  // Load PDF document when dataUrl is resolved
-  useEffect(() => {
-    if (!isOpen || !file || !isPdf || !dataUrl) {
-      setPdfDoc(null);
-      setPageNum(1);
-      setNumPages(0);
-      setPdfError(null);
-      return;
-    }
-
-    let active = true;
-
-    const loadPdfDoc = async () => {
-      try {
-        setPdfLoading(true);
-        setPdfError(null);
-
-        const response = await fetch(dataUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        const pdfjs = await loadPdfJS();
-        if (!active) return;
-
-        const loadingTask = pdfjs.getDocument({ data: uint8Array });
-        const docObj = await loadingTask.promise;
-        
-        if (active) {
-          setPdfDoc(docObj);
-          setNumPages(docObj.numPages);
-          setPageNum(1);
-        }
-      } catch (err: any) {
-        console.error('Error loading PDF document:', err);
-        if (active) {
-          setPdfError('Impossible de charger l\'aperçu du PDF. Veuillez le télécharger directement.');
-        }
-      } finally {
-        if (active) {
-          setPdfLoading(false);
-        }
-      }
-    };
-
-    loadPdfDoc();
-
-    return () => {
-      active = false;
-    };
-  }, [isOpen, file, isPdf, dataUrl]);
-
   // Load and render Word .docx when dataUrl is resolved
   useEffect(() => {
     if (!isOpen || !file || !isDocx || !dataUrl) {
@@ -380,61 +274,6 @@ export default function FilePreviewModal({
     };
   }, [isOpen, file, isDocx, dataUrl]);
 
-  // Render PDF Page onto Canvas
-  useEffect(() => {
-    if (!pdfDoc || !canvasRef.current) return;
-
-    let active = true;
-
-    const renderPage = async () => {
-      try {
-        if (renderTaskRef.current) {
-          try {
-            renderTaskRef.current.cancel();
-          } catch (e) {
-            // safe ignore
-          }
-        }
-
-        const page = await pdfDoc.getPage(pageNum);
-        if (!active || !canvasRef.current) return;
-
-        const viewport = page.getViewport({ scale: pdfZoom });
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
-        if (!context) return;
-
-        const dpr = window.devicePixelRatio || 1;
-        canvas.height = viewport.height * dpr;
-        canvas.width = viewport.width * dpr;
-        canvas.style.height = `${viewport.height}px`;
-        canvas.style.width = `${viewport.width}px`;
-
-        context.scale(dpr, dpr);
-
-        const renderContext = {
-          canvasContext: context,
-          viewport: viewport,
-        };
-
-        const renderTask = page.render(renderContext);
-        renderTaskRef.current = renderTask;
-
-        await renderTask.promise;
-      } catch (err: any) {
-        if (err.name !== 'RenderingCancelledException') {
-          console.error('Error rendering PDF page:', err);
-        }
-      }
-    };
-
-    renderPage();
-
-    return () => {
-      active = false;
-    };
-  }, [pdfDoc, pageNum, pdfZoom]);
-
   const handleDownload = () => {
     if (!dataUrl) return;
     const link = document.createElement('a');
@@ -443,6 +282,12 @@ export default function FilePreviewModal({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Ouvre le fichier dans un nouvel onglet : le navigateur affiche nativement
+  // tout ce qu'il sait rendre (PDF, images, texte…), quel que soit le type.
+  const handleOpenNewTab = () => {
+    if (dataUrl) window.open(dataUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleSaveTextChanges = async () => {
@@ -628,80 +473,13 @@ export default function FilePreviewModal({
                   </div>
                 )}
 
-                {/* PDF Previews */}
+                {/* PDF Previews — lecteur natif du navigateur (robuste, hors-ligne, sans CDN) */}
                 {isPdf && (
-                  <div className="w-full h-full flex flex-col justify-between overflow-hidden">
-                    {/* Controls Bar */}
-                    <div className="flex flex-wrap items-center justify-between w-full bg-slate-900 border border-slate-800 p-2 rounded-xl mb-3 gap-2 select-none shrink-0 text-white">
-                      
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setPageNum(p => Math.max(1, p - 1))}
-                          disabled={pageNum <= 1 || pdfLoading}
-                          className="p-1.5 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 border border-slate-700 disabled:opacity-40 cursor-pointer text-xs"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="text-xs font-bold text-slate-300 select-none min-w-[70px] text-center font-mono">
-                          {pageNum} / {numPages || '?'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setPageNum(p => Math.min(numPages, p + 1))}
-                          disabled={pageNum >= numPages || pdfLoading}
-                          className="p-1.5 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 border border-slate-700 disabled:opacity-40 cursor-pointer text-xs"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setPdfZoom(z => Math.max(0.5, z - 0.2))}
-                          disabled={pdfLoading || pdfZoom <= 0.6}
-                          className="p-1.5 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 border border-slate-700 disabled:opacity-40 cursor-pointer text-xs"
-                          title="Zoom arrière"
-                        >
-                          <ZoomOut className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="text-[11px] font-semibold text-slate-300 font-mono select-none w-10 text-center">
-                          {Math.round(pdfZoom * 100)}%
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setPdfZoom(z => Math.min(4.0, z + 0.2))}
-                          disabled={pdfLoading || pdfZoom >= 3.8}
-                          className="p-1.5 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 border border-slate-700 disabled:opacity-40 cursor-pointer text-xs"
-                          title="Zoom avant"
-                        >
-                          <ZoomIn className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex-grow w-full overflow-auto flex justify-center bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-inner relative">
-                      {pdfLoading && (
-                        <div className="absolute inset-0 flex flex-col justify-center items-center bg-slate-950/70 z-10 gap-2 text-white">
-                          <RotateCw className="w-6 h-6 text-azur-pastel animate-spin" />
-                          <span className="text-[11px] font-bold">Rendu PDF en cours...</span>
-                        </div>
-                      )}
-                      
-                      {pdfError ? (
-                        <div className="flex flex-col items-center justify-center text-center p-6 gap-2 text-slate-400">
-                          <Info className="w-7 h-7 text-rose-500" />
-                          <p className="text-xs font-bold text-white">{pdfError}</p>
-                          <p className="text-[10px] text-slate-500">Ce fichier PDF ne peut pas être rendu directement.</p>
-                        </div>
-                      ) : (
-                        <div className="shadow-2xl border border-slate-950 rounded bg-white shrink-0 self-start">
-                          <canvas ref={canvasRef} className="max-w-full" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <iframe
+                    src={dataUrl}
+                    title={file.name}
+                    className="w-full h-full rounded-xl border border-slate-800 bg-white"
+                  />
                 )}
 
                 {/* Audio Previews */}
@@ -938,6 +716,14 @@ export default function FilePreviewModal({
 
             {/* CTAs */}
             <div className="mt-8 flex flex-col gap-2 shrink-0">
+              <button
+                onClick={handleOpenNewTab}
+                disabled={!dataUrl}
+                className="btn-secondary w-full shrink-0 disabled:opacity-50"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Ouvrir dans un nouvel onglet
+              </button>
               <button
                 onClick={handleDownload}
                 disabled={!dataUrl}
