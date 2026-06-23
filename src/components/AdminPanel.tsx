@@ -946,12 +946,22 @@ export default function AdminPanel() {
     };
   }, []);
 
-  // Handle uploading document within designated partner/organism dossier
-  const onUploadFiles = async (selectedFiles: File[]) => {
-    if (!delegationFilterId || !activeAntenneId || !currentFolderId) {
-      toast("Veuillez d'abord ouvrir un dossier d'organisme.", 'warning');
+  // Handle uploading document within designated partner/organism dossier — ou
+  // directement au niveau de l'antenne (folderId null → « Documents non classés »).
+  // `folderIdArg` : cible explicite. `undefined` → déduite du dossier ouvert
+  // (un dossier « non classés » virtuel compte comme « pas de dossier »).
+  const onUploadFiles = async (selectedFiles: File[], folderIdArg?: string | null) => {
+    const targetFolderId =
+      folderIdArg !== undefined
+        ? folderIdArg
+        : currentFolderId === UNFILED_FOLDER_ID
+          ? null
+          : currentFolderId;
+    if (!delegationFilterId || !activeAntenneId) {
+      toast("Veuillez d'abord sélectionner une antenne.", 'warning');
       return;
     }
+    const targetFolder = targetFolderId ? folders.find(fd => fd.id === targetFolderId) : undefined;
     setUploading(true);
     setUploadProgress(0);
 
@@ -970,8 +980,8 @@ export default function AdminPanel() {
           const dataUrl = await readFileAsDataUrl(f);
           const mockFile: DossierFile = {
             id: `mock_file_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-            orgId: currentFolder?.orgId || 'public',
-            folderId: currentFolderId,
+            orgId: targetFolder?.orgId || 'public',
+            folderId: targetFolderId,
             delegation_id: delegationFilterId || 'france',
             antenne_id: activeAntenneId || '',
             name: f.name,
@@ -1011,8 +1021,8 @@ export default function AdminPanel() {
                 const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
                 
                 await addDoc(collection(db, 'files'), {
-                  orgId: currentFolder?.orgId || 'public', // Inherit folder's owner ID
-                  folderId: currentFolderId,
+                  orgId: targetFolder?.orgId || 'public', // Inherit folder's owner ID
+                  folderId: targetFolderId,
                   delegation_id: delegationFilterId,
                   antenne_id: activeAntenneId,
                   name: f.name,
@@ -1039,8 +1049,8 @@ export default function AdminPanel() {
           const fallbackUrl = await readFileAsDataUrl(f);
 
           await addDoc(collection(db, 'files'), {
-            orgId: currentFolder?.orgId || 'public',
-            folderId: currentFolderId,
+            orgId: targetFolder?.orgId || 'public',
+            folderId: targetFolderId,
             delegation_id: delegationFilterId,
             antenne_id: activeAntenneId,
             name: f.name,
@@ -1068,6 +1078,15 @@ export default function AdminPanel() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       await onUploadFiles(Array.from(e.target.files));
+      e.target.value = '';
+    }
+  };
+
+  // Dépôt direct au niveau de l'antenne (sans ouvrir/créer de dossier
+  // d'organisme) : les fichiers atterrissent dans « Documents non classés ».
+  const handleAntenneFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      await onUploadFiles(Array.from(e.target.files), null);
       e.target.value = '';
     }
   };
@@ -1258,11 +1277,17 @@ export default function AdminPanel() {
     return matchesDelegation && matchesAntenne && matchesSearch;
   });
 
+  // Identifiants de dossiers réellement existants : sert à repérer les fichiers
+  // « orphelins » (folderId qui ne pointe plus vers aucun dossier, p. ex. après
+  // suppression du dossier sans suppression des fichiers).
+  const existingFolderIds = new Set(folders.map(fl => fl.id));
+
   const filteredFiles = files.filter(f => {
     if (currentFolderId === UNFILED_FOLDER_ID) {
-      // Fichiers de l'antenne courante non rangés dans un dossier.
-      if (f.folderId) return false;
+      // Fichiers de l'antenne courante non rangés dans un dossier valide
+      // (sans dossier, ou dossier supprimé → orphelin).
       if (f.antenne_id !== activeAntenneId) return false;
+      if (f.folderId && existingFolderIds.has(f.folderId)) return false;
     } else if (f.folderId !== currentFolderId) {
       return false;
     }
@@ -1287,9 +1312,11 @@ export default function AdminPanel() {
     ? ANTENNES_BY_DELEGATION[delegationFilterId || ''].find(a => a.id === activeAntenneId)
     : null;
 
-  // Fichiers de l'antenne active déposés hors dossier (par un partenaire).
+  // Fichiers de l'antenne active hors dossier valide : déposés sans dossier OU
+  // dont le dossier a été supprimé (orphelins). Évite qu'un fichier reste
+  // « fantôme » (compté par la pastille de l'antenne mais affiché nulle part).
   const unfiledFiles = activeAntenneId
-    ? files.filter(f => !f.folderId && f.antenne_id === activeAntenneId)
+    ? files.filter(f => f.antenne_id === activeAntenneId && (!f.folderId || !existingFolderIds.has(f.folderId)))
     : [];
 
   const currentFolder =
@@ -2107,6 +2134,26 @@ export default function AdminPanel() {
                               </p>
                             </div>
                           </div>
+
+                          {/* Dépôt direct au niveau de l'antenne, sans créer de dossier d'organisme */}
+                          <label
+                            className={`flex items-center gap-1.5 text-xs font-black text-white px-4.5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer shrink-0 ${
+                              delegationFilterId === 'ouest' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10' :
+                              delegationFilterId === 'occitanie' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/10' :
+                              delegationFilterId === 'sud-est' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/10' :
+                              'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10'
+                            }`}
+                            title={`Déposer des fichiers directement sur l'antenne ${selectedAntennes?.name || ''} (sans créer de dossier d'organisme). Ils iront dans « Documents non classés ».`}
+                          >
+                            <CloudUpload className="w-4 h-4" />
+                            <span>Verser un fichier sur l'antenne</span>
+                            <input
+                              type="file"
+                              onChange={handleAntenneFileChange}
+                              multiple
+                              className="hidden"
+                            />
+                          </label>
                         </div>
 
                         {/* Search bar inside Town tab */}
@@ -2120,6 +2167,27 @@ export default function AdminPanel() {
                             className="input-asf pl-10 text-xs"
                           />
                         </div>
+
+                        {/* Indicateur de dépôt direct sur l'antenne */}
+                        {uploading && (
+                          <div className={`p-4 rounded-2xl space-y-2 border ${themeAttr.badgeClass} bg-slate-50/50 dark:bg-slate-800/40`}>
+                            <div className="flex justify-between items-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                              <span className="flex items-center gap-1.5">
+                                <RefreshCw className="w-4 h-4 animate-spin text-azur" />
+                                Dépôt du fichier sur l'antenne en cours...
+                              </span>
+                              <span className="font-mono">{uploadProgress}%</span>
+                            </div>
+                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                              <div className={`h-full transition-all duration-300 ${
+                                delegationFilterId === 'ouest' ? 'bg-indigo-600' :
+                                delegationFilterId === 'occitanie' ? 'bg-rose-600' :
+                                delegationFilterId === 'sud-est' ? 'bg-blue-600' :
+                                'bg-emerald-600'
+                              }`} style={{ width: `${uploadProgress}%` }}></div>
+                            </div>
+                          </div>
+                        )}
 
                         {filteredFolders.length === 0 && unfiledFiles.length === 0 ? (
                           <div className="border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-3xs">
