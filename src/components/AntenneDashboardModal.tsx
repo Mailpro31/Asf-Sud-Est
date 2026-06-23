@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import { subscribeAntenneSettings, type AntenneSettings } from '../lib/antenneSettings';
+import {
   X, 
   MapPin, 
   TrendingUp, 
@@ -17,7 +18,7 @@ import {
   Phone,
   Mail,
   UserCheck,
-  PlaneTakeoff,
+  Info,
   Eye,
   Settings,
   ChevronRight,
@@ -39,99 +40,6 @@ interface AntenneDashboardModalProps {
   delegationFilterId: string;
 }
 
-// Simulated regional facts and contacts to customize the dashboard and make it feel authentic
-const ANTENNE_METADATA: Record<string, {
-  coordinator: string;
-  phone: string;
-  email: string;
-  address: string;
-  airport: string;
-  planes: string[];
-  activeMissions: number;
-}> = {
-  nantes: {
-    coordinator: "Commandant Jean-Luc Morvan",
-    phone: "+33 2 40 89 12 77",
-    email: "antenne.nantes@asf-fr.org",
-    address: "Aéroport de Nantes Atlantique, Hangar 4, 44340 Bouguenais",
-    airport: "Nantes Atlantique (LFRS)",
-    planes: ["Cessna 172 Skyhawk (F-GASF)", "Robin DR400 (F-HASF)"],
-    activeMissions: 4,
-  },
-  paris: {
-    coordinator: "Capitaine Hélène de Saint-Exupéry",
-    phone: "+33 1 49 75 15 00",
-    email: "antenne.paris@asf-fr.org",
-    address: "Aéroport de Paris-Orly, Bureau d'aviation générale, 94390 Orly",
-    airport: "Paris-Orly (LFPO)",
-    planes: ["Socata TB-20 Trinidad (F-GBSF)", "Cessna Caravan (F-OASF)"],
-    activeMissions: 8,
-  },
-  toulouse: {
-    coordinator: "Commandant Antoine Mercier",
-    phone: "+33 5 61 71 11 00",
-    email: "antenne.toulouse@asf-fr.org",
-    address: "Aéroport de Toulouse-Blagnac, Zone Aviation d'Affaires, 31700 Blagnac",
-    airport: "Toulouse-Blagnac (LFBO)",
-    planes: ["Cessna 172 Skyhawk (F-TBSF)", "Diamond DA40 (F-DSF)"],
-    activeMissions: 6,
-  },
-  marseille: {
-    coordinator: "Capitaine Marc Audibert",
-    phone: "+33 4 42 14 00 12",
-    email: "antenne.marseille@asf-fr.org",
-    address: "Aéroport Marseille Provence, Zone de fret maritime, 13700 Marignane",
-    airport: "Marseille Provence (LFML)",
-    planes: ["Cessna 172 Skyhawk (F-MSF)"],
-    activeMissions: 3,
-  },
-  lyon: {
-    coordinator: "Commandant Valéry Bernard",
-    phone: "+34 4 72 22 56 00",
-    email: "antenne.lyon@asf-fr.org",
-    address: "Aéroport de Lyon-Bron, Hangar Aviation Générale, 69500 Bron",
-    airport: "Lyon-Bron (LFLY)",
-    planes: ["Robin DR400 (F-LYSF)", "Cessna Caravan (F-PNSF)"],
-    activeMissions: 5,
-  },
-  bordeaux: {
-    coordinator: "Capitaine Sophie Giraud",
-    phone: "+33 5 56 34 20 20",
-    email: "antenne.bordeaux@asf-fr.org",
-    address: "Aéroport de Bordeaux-Mérignac, Zone Nord Hangar 12, 33700 Mérignac",
-    airport: "Bordeaux-Mérignac (LFBD)",
-    planes: ["Diamond DA42 (F-BOSF)"],
-    activeMissions: 4,
-  },
-  lille: {
-    coordinator: "Commandant Pierre-Yves Leduc",
-    phone: "+33 3 20 49 55 11",
-    email: "antenne.lille@asf-fr.org",
-    address: "Aéroport de Lille-Lesquin, Zone Fret, 59810 Lesquin",
-    airport: "Lille-Lesquin (LFQQ)",
-    planes: ["Cessna 172 Skyhawk (F-LISF)"],
-    activeMissions: 2,
-  },
-  strasbourg: {
-    coordinator: "Capitaine Frédéric Schmitt",
-    phone: "+33 3 88 64 67 00",
-    email: "antenne.strasbourg@asf-fr.org",
-    address: "Aéroport de Strasbourg-Entzheim, RD 221, 67960 Entzheim",
-    airport: "Strasbourg-Entzheim (LFST)",
-    planes: ["Socata TB-10 Tobago (F-STSF)"],
-    activeMissions: 3,
-  }
-};
-
-const DEFAULTS_COORD = {
-  coordinator: "Coordinateur des vols",
-  phone: "+33 1 45 42 00 00",
-  email: "antenne.france@asf-fr.org",
-  address: "Aéroport local ASF",
-  airport: "Aérodrome de rattachement",
-  planes: ["Aéronef d'initiation (F-ASF)"],
-  activeMissions: 2
-};
 
 export default function AntenneDashboardModal({
   isOpen,
@@ -146,6 +54,13 @@ export default function AntenneDashboardModal({
   delegationFilterId,
 }: AntenneDashboardModalProps) {
   const [activeTab, setActiveTab] = useState<'stats' | 'orgs' | 'documents'>('stats');
+  // Profil réel de l'antenne (renseigné par le gestionnaire d'antenne). Aucune
+  // donnée inventée : champ vide → « Non renseigné ».
+  const [info, setInfo] = useState<AntenneSettings | null>(null);
+  useEffect(() => {
+    if (!isOpen || !antenneId) { setInfo(null); return; }
+    return subscribeAntenneSettings(antenneId, setInfo);
+  }, [isOpen, antenneId]);
 
   if (!isOpen || !antenneId) return null;
 
@@ -153,7 +68,8 @@ export default function AntenneDashboardModal({
   const group = antennes[delegationFilterId] || [];
   const antenne = group.find(a => a.id === antenneId) || { id: antenneId, name: antenneId.toUpperCase() };
 
-  const meta = ANTENNE_METADATA[antenneId] || DEFAULTS_COORD;
+  // Valeur affichée ou repli « Non renseigné » (jamais de fausse donnée).
+  const shown = (v?: string) => (v && v.trim() ? v : 'Non renseigné');
 
   // Query actual data for this antenne
   const localOrgs = orgProfiles.filter(org => org.antenne_id === antenneId);
@@ -218,7 +134,7 @@ export default function AntenneDashboardModal({
                   <span>Direction Locale : {antenne.name}</span>
                 </h2>
                 <p className="text-xs text-slate-100/90 font-medium tracking-tight">
-                  Aéroport de rattachement principal : <strong className="font-extrabold">{meta.airport}</strong>
+                  Aérodrome de rattachement : <strong className="font-extrabold">{shown(info?.airport)}</strong>
                 </p>
               </div>
 
@@ -258,10 +174,10 @@ export default function AntenneDashboardModal({
               </div>
 
               <div>
-                <span className="text-[10px] text-azur-pastel font-extrabold uppercase tracking-wide">Vols Planifiés</span>
+                <span className="text-[10px] text-azur-pastel font-extrabold uppercase tracking-wide">Documents validés</span>
                 <div className="text-lg font-black mt-0.5 flex items-center gap-1.5">
-                  <PlaneTakeoff className="w-4 h-4 text-azur-pastel" />
-                  <span>{meta.activeMissions} missions</span>
+                  <FileCheck2 className="w-4 h-4 text-emerald-400" />
+                  <span>{validatedFiles}</span>
                 </div>
               </div>
             </div>
@@ -348,58 +264,43 @@ export default function AntenneDashboardModal({
                       </div>
 
                       <div className="flex flex-col sm:flex-row gap-4 justify-between">
-                        <div>
-                          <p className="text-sm font-black text-slate-900 dark:text-slate-100">{meta.coordinator}</p>
-                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Coordonnées de l'antenne locale d'Aviation Sans Frontières.</p>
-                          
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-slate-900 dark:text-slate-100">{shown(info?.coordinatorName)}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Coordonnées renseignées par l'antenne.</p>
+
                           <div className="mt-3.5 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                             <span className="flex items-center gap-2">
-                              <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                              <span>{meta.phone}</span>
+                              <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                              <span>{shown(info?.phone)}</span>
                             </span>
-                            <span className="flex items-center gap-2">
-                              <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                              <span className="underline hover:text-azur">{meta.email}</span>
+                            <span className="flex items-center gap-2 min-w-0">
+                              <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                              {info?.publicEmail
+                                ? <a href={`mailto:${info.publicEmail}`} className="underline hover:text-azur truncate">{info.publicEmail}</a>
+                                : <span>Non renseigné</span>}
                             </span>
                           </div>
                         </div>
 
-                        {/* Map marker detail block */}
+                        {/* Aérodrome de rattachement */}
                         <div className="p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-100 dark:border-slate-800/80 font-mono text-[10.5px] space-y-2 sm:max-w-[210px] sm:self-center">
-                          <p className="text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">📍 Localisation</p>
-                          <p className="text-slate-700 dark:text-slate-300 font-sans font-bold leading-normal">{meta.address}</p>
+                          <p className="text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">📍 Aérodrome</p>
+                          <p className="text-slate-700 dark:text-slate-300 font-sans font-bold leading-normal">{shown(info?.airport)}</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Simulated Flight plans / Operations Card */}
+                    {/* Présentation de l'antenne (texte libre renseigné par l'antenne) */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-3xs text-left">
                       <div className="flex items-center gap-2 border-b border-slate-50 dark:border-slate-800/60 pb-3 mb-3">
-                        <PlaneTakeoff className="w-5 h-5 text-azur" />
-                        <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">Missions & Vols Actifs "Ailes du Sourire"</h4>
+                        <Info className="w-5 h-5 text-azur" />
+                        <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">Présentation de l'antenne</h4>
                       </div>
-
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
-                          <div className="space-y-1">
-                            <strong className="text-xs text-slate-800 dark:text-slate-200">Vol Découverte "Ailes 44"</strong>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500">Simulation d'intégration / Initiation de vol adaptée</p>
-                          </div>
-                          <span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-100 dark:border-emerald-500/30">
-                            PLANI : CE SAMEDI
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
-                          <div className="space-y-1">
-                            <strong className="text-xs text-slate-800 dark:text-slate-200">Visite d'aérodrome locale</strong>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500">Encadrement des enfants en situation de fragilité</p>
-                          </div>
-                          <span className="bg-azur-light text-azur text-[10px] font-bold px-2 py-1 rounded-md border border-azur/20">
-                            VALIDÉ PAR COMM.
-                          </span>
-                        </div>
-                      </div>
+                      {info?.description ? (
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{info.description}</p>
+                      ) : (
+                        <p className="text-xs text-slate-400 dark:text-slate-500 italic">Aucune présentation renseignée par l'antenne pour le moment.</p>
+                      )}
                     </div>
                   </div>
 
@@ -425,17 +326,17 @@ export default function AntenneDashboardModal({
                       </button>
                     </div>
 
-                    {/* Regional aircraft info */}
+                    {/* Flotte (texte libre renseigné par l'antenne) */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4.5 rounded-2xl text-left space-y-3 text-xs font-medium">
-                      <h4 className="font-extrabold text-slate-700 dark:text-slate-300">Flotte d'aéronefs d'initiation</h4>
-                      <div className="space-y-2">
-                        {meta.planes.map((p, i) => (
-                          <div key={i} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
-                            <span>✈️</span>
-                            <span>{p}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <h4 className="font-extrabold text-slate-700 dark:text-slate-300">Flotte d'aéronefs</h4>
+                      {info?.aircraft ? (
+                        <div className="flex gap-2 items-start bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[11px]">
+                          <span className="shrink-0">✈️</span>
+                          <span className="whitespace-pre-wrap">{info.aircraft}</span>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">Non renseigné par l'antenne.</p>
+                      )}
                     </div>
                   </div>
                 </motion.div>

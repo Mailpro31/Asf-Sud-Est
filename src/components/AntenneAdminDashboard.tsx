@@ -185,15 +185,58 @@ export default function AntenneAdminDashboard() {
   const [notifyEmail, setNotifyEmail] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
 
+  // Profil public de l'antenne (modifiable par le gestionnaire, visible par les
+  // membres). Stocké dans antenne_settings.
+  const [infoAirport, setInfoAirport] = useState('');
+  const [infoCoordinator, setInfoCoordinator] = useState('');
+  const [infoPhone, setInfoPhone] = useState('');
+  const [infoEmail, setInfoEmail] = useState('');
+  const [infoAircraft, setInfoAircraft] = useState('');
+  const [infoDescription, setInfoDescription] = useState('');
+  const [savingInfo, setSavingInfo] = useState(false);
+
   useEffect(() => {
     if (!antenneId) return;
     const unsub = subscribeAntenneSettings(antenneId, (s) => {
       setNotifyEnabled(s.notifyEnabled);
       setNotifyNewUserEnabled(s.notifyNewUserEnabled);
       setNotifyEmail(s.notifyEmail);
+      setInfoAirport(s.airport);
+      setInfoCoordinator(s.coordinatorName);
+      setInfoPhone(s.phone);
+      setInfoEmail(s.publicEmail);
+      setInfoAircraft(s.aircraft);
+      setInfoDescription(s.description);
     });
     return unsub;
   }, [antenneId]);
+
+  const handleSaveInfo = async () => {
+    setSavingInfo(true);
+    try {
+      await saveAntenneSettings(antenneId, {
+        airport: infoAirport,
+        coordinatorName: infoCoordinator,
+        phone: infoPhone,
+        publicEmail: infoEmail,
+        aircraft: infoAircraft,
+        description: infoDescription,
+      });
+      logAction('antenne_settings_change', {
+        targetType: 'antenne',
+        targetId: antenneId,
+        targetName: antenneName,
+        antenne_id: antenneId,
+        delegation_id: delegationId,
+        details: "Profil de l'antenne mis à jour",
+      });
+      toast("Infos de l'antenne enregistrées.", 'success');
+    } catch {
+      toast("Échec de l'enregistrement des infos.", 'error');
+    } finally {
+      setSavingInfo(false);
+    }
+  };
 
   const handleSaveSettings = async () => {
     const email = notifyEmail.trim();
@@ -1487,7 +1530,7 @@ export default function AntenneAdminDashboard() {
         </div>
 
         {/* Réglages : notification e-mail à chaque dépôt */}
-        {view === 'settings' && (
+        {view === 'settings' && (<>
         <section data-tour="settings-notify" className="card-asf p-5 space-y-4">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
@@ -1547,7 +1590,53 @@ export default function AntenneAdminDashboard() {
             </button>
           </div>
         </section>
-        )}
+
+        {/* Profil public de l'antenne (visible par les membres rattachés) */}
+        <section className="card-asf p-5 sm:p-6 space-y-4">
+          <div>
+            <h2 className="font-display text-deep dark:text-azur-pastel font-bold tracking-tight flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-azur" /> Infos de l'antenne
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Ces informations sont visibles par les organismes rattachés à votre antenne et par la coordination. Laissez vide ce que vous ne souhaitez pas afficher.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">Aérodrome de rattachement</label>
+              <input value={infoAirport} onChange={(e) => setInfoAirport(e.target.value)} placeholder="ex. Aix — Les Milles (LFMA)" className="input-asf text-sm w-full" />
+            </div>
+            <div>
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">Coordinateur référent</label>
+              <input value={infoCoordinator} onChange={(e) => setInfoCoordinator(e.target.value)} placeholder="Nom du coordinateur" className="input-asf text-sm w-full" />
+            </div>
+            <div>
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">Téléphone</label>
+              <input value={infoPhone} onChange={(e) => setInfoPhone(e.target.value)} placeholder="ex. 04 42 00 00 00" className="input-asf text-sm w-full" />
+            </div>
+            <div>
+              <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">E-mail public</label>
+              <input value={infoEmail} onChange={(e) => setInfoEmail(e.target.value)} placeholder="contact@exemple.org" className="input-asf text-sm w-full" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">Flotte d'aéronefs</label>
+            <textarea value={infoAircraft} onChange={(e) => setInfoAircraft(e.target.value)} rows={2} placeholder="ex. Cessna 172 (F-XXXX), Robin DR400…" className="input-asf text-sm w-full resize-y" />
+          </div>
+          <div>
+            <label className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-1">Présentation</label>
+            <textarea value={infoDescription} onChange={(e) => setInfoDescription(e.target.value)} rows={3} placeholder="Présentez votre antenne, ses missions, ses horaires…" className="input-asf text-sm w-full resize-y" />
+          </div>
+
+          <div className="flex justify-end">
+            <button onClick={handleSaveInfo} disabled={savingInfo} className="btn-asf text-sm disabled:opacity-60">
+              {savingInfo ? 'Enregistrement…' : "Enregistrer les infos"}
+            </button>
+          </div>
+        </section>
+        </>)}
 
         {view === 'workspace' && (<>
         {/* Organismes */}
