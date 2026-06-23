@@ -183,6 +183,33 @@ export default function AdminPanel() {
   // organismes ou documents en attente) pour ne pas noyer l'utilisateur.
   const [showAllAntennes, setShowAllAntennes] = useState(false);
 
+  // Notifications « nouveau membre » (par admin, localStorage — aucune écriture
+  // Firestore). Un compte récemment inscrit non encore consulté est entouré de
+  // rouge ; consulter/approuver/éditer/cliquer le badge l'efface.
+  const memberSeenKey = `asf_members_seen_${organization?.id || 'anon'}`;
+  const [memberSeen, setMemberSeen] = useState<{ baseline: number; items: Record<string, number> }>(() => {
+    try {
+      const raw = localStorage.getItem(memberSeenKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && typeof p.baseline === 'number' && p.items) return p;
+      }
+    } catch { /* ignore */ }
+    const init = { baseline: Date.now(), items: {} as Record<string, number> };
+    try { localStorage.setItem(memberSeenKey, JSON.stringify(init)); } catch { /* ignore */ }
+    return init;
+  });
+  const isMemberUnseen = (id: string, ts: number) =>
+    !!id && ts > 0 && ts > (memberSeen.items[id] ?? memberSeen.baseline);
+  const markMemberSeen = (id: string) => {
+    if (!id) return;
+    setMemberSeen((prev) => {
+      const next = { ...prev, items: { ...prev.items, [id]: Date.now() } };
+      try { localStorage.setItem(memberSeenKey, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   // Auto-select antenna for a national admin scoped to a single antenne.
   useEffect(() => {
     if (organization?.role === 'admin' && organization?.antenne_id) {
@@ -2557,80 +2584,64 @@ export default function AdminPanel() {
                         Aucun membre ne correspond à votre recherche.
                       </div>
                     ) : (
-                      <div data-tour="members-table" className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900">
-                        <p className="px-5 py-2 text-[11px] text-slate-400 dark:text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-800">{filteredMembers.length} membre{filteredMembers.length > 1 ? 's' : ''} affiché{filteredMembers.length > 1 ? 's' : ''}</p>
-                        <table className="w-full min-w-[900px] text-left border-collapse">
-                          <thead>
-                            <tr className="text-[11px] font-semibold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400">
-                              <th className="px-5 py-3">Raison sociale / Organisme</th>
-                              <th className="px-5 py-3">Point de contact</th>
-                              <th className="px-5 py-3 w-44">Rôle</th>
-                              <th className="px-5 py-3 w-64">Attribution régionale</th>
-                              <th className="px-5 py-3 w-40">Statut d'accès</th>
-                              <th className="px-5 py-3 text-right">Décision d'accréditation</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200 text-xs">
-                            {filteredMembers.map((org, _rowIdx) => {
-                              const st = org.submissionStatus || 'Pending';
-                              const isExample = _rowIdx === 0;
-                              // Le super admin gère tous les comptes. Un coordinateur de
-                              // délégation gère les comptes de sa délégation, mais PAS les
-                              // comptes du personnel (super admin / admin / autres coordinateurs).
-                              const manageable = isSuperAdminMode || org.role === 'organization' || org.role === 'admin_antenne';
-                              return (
-                                <tr key={org.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                      <div data-tour="members-table" className="space-y-3">
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">{filteredMembers.length} membre{filteredMembers.length > 1 ? 's' : ''} affiché{filteredMembers.length > 1 ? 's' : ''}</p>
+                        <div className="grid grid-cols-1 gap-3">
+                          {filteredMembers.map((org, _rowIdx) => {
+                            const st = org.submissionStatus || 'Pending';
+                            const isExample = _rowIdx === 0;
+                            const manageable = isSuperAdminMode || org.role === 'organization' || org.role === 'admin_antenne';
+                            const isNew = isMemberUnseen(org.id, (org as any).createdAt || 0);
+                            const rm = roleMeta(org.role);
+                            const memberFiles = org.role === 'organization' ? files.filter(f => f.orgId === org.id) : [];
+                            const memberValidated = memberFiles.filter(f => (f.submissionStatus || 'Pending') === 'Validated').length;
+                            const statusAccent = st === 'Validated' ? 'bg-emerald-400' : st === 'Incomplete' ? 'bg-rose-400' : 'bg-amber-400';
+                            return (
+                              <div
+                                key={org.id}
+                                className={`relative bg-white dark:bg-slate-900 border rounded-2xl p-4 pl-5 shadow-3xs overflow-hidden transition-all ${isNew ? 'border-rose-300 dark:border-rose-500/50 ring-2 ring-rose-200 dark:ring-rose-500/30' : 'border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}
+                              >
+                                <span className={`absolute left-0 top-0 bottom-0 w-1 ${isNew ? 'bg-rose-500' : statusAccent}`} />
+                                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
 
-                                  <td className="px-5 py-4 font-bold text-slate-900 dark:text-slate-100">
-                                    <p className="font-extrabold text-slate-900 dark:text-slate-100">{org.name || "Néant"}</p>
-                                    <p className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono">UID : {org.id.substring(0, 10)}</p>
-                                    {org.role === 'organization' && (() => {
-                                      const of = files.filter(f => f.orgId === org.id);
-                                      const val = of.filter(f => (f.submissionStatus || 'Pending') === 'Validated').length;
-                                      return <div className="mt-2.5 max-w-[200px]"><ComplianceBar validated={val} total={of.length} /></div>;
-                                    })()}
-                                    <button
-                                      onClick={() => {
-                                        setSelectedOrgForFiles(org);
-                                      }}
-                                      className="flex items-center gap-1.5 text-[11px] font-black bg-azur-light dark:bg-azur/20 text-azur dark:text-azur-pastel border border-azur/20 dark:border-azur/40 hover:bg-azur/10 dark:hover:bg-azur/30 hover:border-azur/40 px-3 py-1.5 rounded-xl mt-2.5 transition-all shadow-3xs cursor-pointer"
-                                    >
-                                      📂 Cabinet & justificatifs
-                                    </button>
-                                  </td>
+                                  {/* Identité + contact */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate">{org.name || "Néant"}</h4>
+                                      <span data-tour={isExample ? 'member-role' : undefined} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-bold leading-tight ${rm.className}`} title={`Rôle du compte : ${rm.label}`}>
+                                        <span>{rm.icon}</span><span>{rm.label}</span>
+                                      </span>
+                                      {isNew && (
+                                        <button onClick={() => markMemberSeen(org.id)} className="text-[9px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-rose-500 text-white hover:bg-rose-600 cursor-pointer" title="Marquer comme vu">Nouveau</button>
+                                      )}
+                                    </div>
+                                    <div data-tour={isExample ? 'member-contact' : undefined} className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400 min-w-0">
+                                      {org.contactName && <span className="font-bold text-slate-700 dark:text-slate-300 truncate">{org.contactName}</span>}
+                                      {org.email && <><span className="text-slate-300 dark:text-slate-600">·</span><a href={`mailto:${org.email}`} onClick={(e) => e.stopPropagation()} className="text-azur font-semibold truncate hover:underline">{org.email}</a></>}
+                                      {org.phone && <><span className="text-slate-300 dark:text-slate-600">·</span><span className="font-mono">{org.phone}</span></>}
+                                    </div>
+                                    <div className="mt-2.5 flex items-center gap-3 flex-wrap">
+                                      <button
+                                        onClick={() => { markMemberSeen(org.id); setSelectedOrgForFiles(org); }}
+                                        className="flex items-center gap-1.5 text-[11px] font-black bg-azur-light dark:bg-azur/20 text-azur dark:text-azur-pastel border border-azur/20 dark:border-azur/40 hover:bg-azur/10 dark:hover:bg-azur/30 hover:border-azur/40 px-3 py-1.5 rounded-xl transition-all shadow-3xs cursor-pointer"
+                                      >
+                                        📂 Cabinet & justificatifs
+                                      </button>
+                                      {org.role === 'organization' && memberFiles.length > 0 && (
+                                        <div className="w-32"><ComplianceBar validated={memberValidated} total={memberFiles.length} /></div>
+                                      )}
+                                    </div>
+                                  </div>
 
-                                  <td data-tour={isExample ? 'member-contact' : undefined} className="px-5 py-4">
-                                    <p className="font-bold text-slate-800 dark:text-slate-100">{org.contactName}</p>
-                                    <p className="text-[11px] text-azur font-semibold">{org.email}</p>
-                                    <p className="text-[11.5px] text-slate-500 dark:text-slate-400 font-mono">{org.phone}</p>
-                                  </td>
-
-                                  <td data-tour={isExample ? 'member-role' : undefined} className="px-5 py-4">
-                                    {(() => {
-                                      const rm = roleMeta(org.role);
-                                      return (
-                                        <span
-                                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10.5px] font-bold leading-tight ${rm.className}`}
-                                          title={`Rôle du compte : ${rm.label}`}
-                                        >
-                                          <span>{rm.icon}</span>
-                                          <span>{rm.label}</span>
-                                        </span>
-                                      );
-                                    })()}
-                                  </td>
-
-                                  <td data-tour={isExample ? 'member-manage' : undefined} className="px-5 py-4">
+                                  {/* Attribution régionale */}
+                                  <div data-tour={isExample ? 'member-manage' : undefined} className="lg:w-60 shrink-0">
                                     {editingOrgId === org.id ? (
-                                      <div className="space-y-2 p-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl max-w-xs">
+                                      <div className="space-y-2 p-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
                                         <div>
                                           <label className="text-[9.5px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black block">Bureau de rattachement</label>
                                           <select
                                             value={editDelegation}
-                                            onChange={(e) => {
-                                              setEditDelegation(e.target.value);
-                                              setEditAntenne('');
-                                            }}
+                                            onChange={(e) => { setEditDelegation(e.target.value); setEditAntenne(''); }}
                                             className="text-xs p-1.5 border rounded-lg w-full bg-white dark:bg-slate-900 font-bold text-slate-800 dark:text-slate-100"
                                           >
                                             <option value="">Sélectionner...</option>
@@ -2639,7 +2650,6 @@ export default function AdminPanel() {
                                             ))}
                                           </select>
                                         </div>
-
                                         <div>
                                           <label className="text-[9.5px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black block">Ville / Antenne</label>
                                           <select
@@ -2654,7 +2664,6 @@ export default function AdminPanel() {
                                             ))}
                                           </select>
                                         </div>
-
                                         {manageable && (
                                           <div>
                                             <label className="text-[9.5px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black block">Rôle du compte</label>
@@ -2666,13 +2675,9 @@ export default function AdminPanel() {
                                             >
                                               <option value="organization">Partenaire / Organisme</option>
                                               <option value="admin_antenne">Gestionnaire d'antenne</option>
-                                              {/* Seul le super admin peut désigner un autre super administrateur. */}
                                               {isSuperAdminMode && (
                                                 <option value="super_admin">Super administrateur</option>
                                               )}
-                                              {/* Rôle hérité (déprécié) : affiché uniquement s'il est encore
-                                                  attribué, afin que le <select> reflète la réalité et permette
-                                                  de réaffecter le compte. Jamais proposé pour un nouveau compte. */}
                                               {org.role === 'admin_delegation' && (
                                                 <option value="admin_delegation">Coordinateur de délégation (hérité)</option>
                                               )}
@@ -2682,7 +2687,6 @@ export default function AdminPanel() {
                                             </p>
                                           </div>
                                         )}
-
                                         <div className="flex gap-2 pt-1">
                                           <button
                                             onClick={() => handleSaveOrgDelegationAntenne(org.id)}
@@ -2700,70 +2704,37 @@ export default function AdminPanel() {
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="space-y-1">
-                                        <p className="font-bold text-slate-900 dark:text-slate-100 capitalize text-[13px] flex items-center gap-1">
-                                          <span>⛵ {DELEGATIONS.find(d => d.id === org.delegation_id)?.name || "Non défini"}</span>
-                                        </p>
-                                        <p className="text-[11.5px] text-slate-400 dark:text-slate-500 font-semibold font-mono">
-                                          📍 {org.antenne_id ? (ANTENNES_BY_DELEGATION[org.delegation_id || '']?.find(a => a.id === org.antenne_id)?.name || org.antenne_id) : "Non affecté"}
-                                        </p>
+                                      <div className="space-y-0.5">
+                                        <p className="font-bold text-slate-800 dark:text-slate-100 text-[12px] flex items-center gap-1 capitalize truncate"><span>⛵ {DELEGATIONS.find(d => d.id === org.delegation_id)?.name || "Non défini"}</span></p>
+                                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono truncate">📍 {org.antenne_id ? (ANTENNES_BY_DELEGATION[org.delegation_id || '']?.find(a => a.id === org.antenne_id)?.name || org.antenne_id) : "Non affecté"}</p>
                                         {manageable && (
-                                          <button
-                                            onClick={() => {
-                                              setEditingOrgId(org.id);
-                                              setEditDelegation(org.delegation_id || '');
-                                              setEditAntenne(org.antenne_id || '');
-                                            }}
-                                            className="text-[11px] text-azur hover:underline font-black mt-2 block cursor-pointer"
-                                          >
-                                            ✏️ Modifier la ville
-                                          </button>
+                                          <button onClick={() => { markMemberSeen(org.id); setEditingOrgId(org.id); setEditDelegation(org.delegation_id || ''); setEditAntenne(org.antenne_id || ''); }} className="text-[11px] text-azur hover:underline font-black mt-1 block cursor-pointer">✏️ Modifier la ville</button>
                                         )}
                                       </div>
                                     )}
-                                  </td>
+                                  </div>
 
-                                  <td className="px-5 py-4">
+                                  {/* Statut + décision */}
+                                  <div data-tour={isExample ? 'member-decision' : undefined} className="shrink-0 flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-end gap-2">
                                     <StatusBadge status={st} />
-                                  </td>
-
-                                  <td data-tour={isExample ? 'member-decision' : undefined} className="px-5 py-4 text-right">
-                                    <div className="flex justify-end gap-1.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                       {manageable && org.submissionStatus !== 'Validated' && (
-                                        <button
-                                          onClick={() => handleUpdateOrgStatus(org.id, 'Validated')}
-                                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11.5px] px-3.5 py-1.5 rounded-xl cursor-pointer transition-all shadow-xs"
-                                        >
-                                          ✓ Approuver
-                                        </button>
+                                        <button onClick={() => { markMemberSeen(org.id); handleUpdateOrgStatus(org.id, 'Validated'); }} className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] px-3 py-1.5 rounded-xl cursor-pointer transition-all shadow-xs">✓ Approuver</button>
                                       )}
-
                                       {manageable && org.submissionStatus === 'Validated' && (
-                                        <button
-                                          onClick={() => handleUpdateOrgStatus(org.id, 'Incomplete')}
-                                          className="bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 font-extrabold border border-rose-200 dark:border-rose-500/30 text-[11.5px] px-3.5 py-1.5 rounded-xl cursor-pointer transition-all"
-                                        >
-                                          ✗ Suspendre
-                                        </button>
+                                        <button onClick={() => { markMemberSeen(org.id); handleUpdateOrgStatus(org.id, 'Incomplete'); }} className="bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 font-extrabold border border-rose-200 dark:border-rose-500/30 text-[11px] px-3 py-1.5 rounded-xl cursor-pointer transition-all">✗ Suspendre</button>
                                       )}
-
                                       {manageable && (
-                                        <button
-                                          onClick={() => handleDeleteOrg(org)}
-                                          className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[11.5px] px-3 py-1.5 rounded-xl cursor-pointer transition-all shadow-xs inline-flex items-center gap-1"
-                                          title="Supprimer définitivement ce compte"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" /> Supprimer
-                                        </button>
+                                        <button onClick={() => handleDeleteOrg(org)} className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl cursor-pointer transition-all shadow-xs inline-flex items-center gap-1" title="Supprimer définitivement ce compte"><Trash2 className="w-3.5 h-3.5" /> Supprimer</button>
                                       )}
                                     </div>
-                                  </td>
+                                  </div>
 
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
