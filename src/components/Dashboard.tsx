@@ -29,7 +29,14 @@ import {
   ArrowRight,
   Upload,
   X,
-  Menu
+  Menu,
+  Plane,
+  Phone,
+  Mail,
+  MapPin,
+  Building2,
+  Info,
+  ChevronDown
 } from 'lucide-react';
 import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable } from 'firebase/storage';
@@ -44,7 +51,7 @@ import CreateFolderModal from './CreateFolderModal';
 import UserProfileModal from './UserProfileModal';
 import { LogoASF } from './LandingPage';
 import { localDb } from '../lib/localDb';
-import { notifyAntenneOnUpload } from '../lib/antenneSettings';
+import { notifyAntenneOnUpload, subscribeAntenneSettings, type AntenneSettings } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { firebaseConfig } from '../lib/firebaseConfig';
@@ -78,6 +85,10 @@ export default function Dashboard() {
   const [showWarningDetails, setShowWarningDetails] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  // Profil (lecture seule) de l'antenne de rattachement, renseigné par le
+  // gestionnaire d'antenne. Visible par tous ses membres.
+  const [antenneInfo, setAntenneInfo] = useState<AntenneSettings | null>(null);
+  const [showAntenneInfo, setShowAntenneInfo] = useState(true);
 
   const refreshLocalState = useCallback(() => {
     if (!user || !organization) return;
@@ -336,6 +347,18 @@ export default function Dashboard() {
       unsubAdminFoldersPublic();
     };
   }, [user, organization, refreshLocalState]);
+
+  // Abonnement au profil de l'antenne de rattachement (lecture seule pour le
+  // membre). Les valeurs sont renseignées par le gestionnaire de l'antenne.
+  useEffect(() => {
+    const antId = organization?.antenne_id;
+    if (!antId) {
+      setAntenneInfo(null);
+      return;
+    }
+    const unsub = subscribeAntenneSettings(antId, setAntenneInfo);
+    return () => unsub();
+  }, [organization?.antenne_id]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!user) return;
@@ -1469,6 +1492,83 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Votre antenne — profil renseigné par le gestionnaire, lecture seule */}
+        {organization.antenne_id && (() => {
+          const info = antenneInfo;
+          const antName = getAntenneName(organization.delegation_id, organization.antenne_id);
+          const rows = [
+            { icon: MapPin, label: 'Aérodrome de rattachement', value: info?.airport },
+            { icon: User, label: 'Coordinateur référent', value: info?.coordinatorName },
+            { icon: Phone, label: 'Téléphone', value: info?.phone, href: info?.phone ? `tel:${info.phone.replace(/\s+/g, '')}` : undefined },
+            { icon: Mail, label: 'E-mail de contact', value: info?.publicEmail, href: info?.publicEmail ? `mailto:${info.publicEmail}` : undefined },
+            { icon: Plane, label: 'Flotte / aéronefs', value: info?.aircraft },
+          ].filter((r) => r.value && r.value.trim());
+          const hasContent = rows.length > 0 || (info?.description && info.description.trim());
+          return (
+            <div className={`mb-6 shrink-0 ${themeConfig.cardBg} ${borderStyle} ${containerRounded} overflow-hidden shadow-xs`}>
+              <button
+                type="button"
+                onClick={() => setShowAntenneInfo((v) => !v)}
+                className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                aria-expanded={showAntenneInfo}
+              >
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-azur to-deep text-white flex items-center justify-center shrink-0 shadow-asf-md">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500">Votre antenne</p>
+                  <h3 className="font-display text-deep dark:text-white font-bold tracking-tight text-sm truncate">{antName}</h3>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${showAntenneInfo ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showAntenneInfo && (
+                <div className="px-5 pb-5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                  {hasContent ? (
+                    <>
+                      {rows.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                          {rows.map((r) => {
+                            const Icon = r.icon;
+                            return (
+                              <div key={r.label} className="flex items-start gap-2.5 min-w-0">
+                                <span className="w-8 h-8 rounded-lg bg-azur/10 text-azur dark:text-azur-pastel flex items-center justify-center shrink-0">
+                                  <Icon className="w-4 h-4" />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">{r.label}</span>
+                                  {r.href ? (
+                                    <a href={r.href} className="block text-sm font-semibold text-deep dark:text-azur-pastel hover:underline break-words">{r.value}</a>
+                                  ) : (
+                                    <span className="block text-sm font-semibold text-slate-700 dark:text-slate-200 break-words">{r.value}</span>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {info?.description && info.description.trim() && (
+                        <div className="mt-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 p-3.5">
+                          <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 mb-1 flex items-center gap-1.5">
+                            <Info className="w-3.5 h-3.5" /> À propos
+                          </p>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">{info.description}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 leading-relaxed flex items-start gap-2">
+                      <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
+                      Votre antenne n'a pas encore renseigné ses informations de contact. Elles apparaîtront ici dès qu'elle les aura complétées.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Progression de transmission des fichiers */}
         {uploading && (
