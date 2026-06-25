@@ -14,6 +14,8 @@ import AdminPanel from './components/AdminPanel';
 import AntenneAdminDashboard from './components/AntenneAdminDashboard';
 import ChooseAntenne from './components/ChooseAntenne';
 import LandingPage from './components/LandingPage';
+import LegalModal from './components/LegalModal';
+import ConsentBanner from './components/ui/ConsentBanner';
 
 function MainApp() {
   const { user, organization, loading, error, signOut } = useAuth();
@@ -135,6 +137,9 @@ export default function App() {
       <AuthProvider>
         <FeedbackProvider>
           <MainApp />
+          {/* Conformité RGPD : disponibles sur toutes les vues (overlays) */}
+          <LegalModal />
+          <ConsentBanner />
         </FeedbackProvider>
       </AuthProvider>
     </ThemeProvider>
