@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { StatusBadge, ThemeToggle } from './ui';
+import { openLegal } from './LegalModal';
 import type { SubmissionStatus } from '../types';
 
 interface LandingPageProps {
@@ -547,18 +548,34 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
             <div key={c.h}>
               <h4 className="mb-3.5 text-[11px] uppercase tracking-widest font-bold text-white font-mono">{c.h}</h4>
               <ul className="space-y-2.5">
-                {c.links.map((l) => (
-                  <li key={l}>
-                    <a href="#top" className="text-[13px] text-slate-400 hover:text-azur-pastel transition-colors">{l}</a>
-                  </li>
-                ))}
+                {c.links.map((l) => {
+                  const cls = 'text-[13px] text-slate-400 hover:text-azur-pastel transition-colors cursor-pointer text-left';
+                  let node: React.ReactNode;
+                  if (l === 'Mentions légales') node = <button type="button" onClick={() => openLegal('legal')} className={cls}>{l}</button>;
+                  else if (l === 'Protection des données' || l === 'Sécurité & conformité' || l === 'Charte de sécurité') node = <button type="button" onClick={() => openLegal('privacy')} className={cls}>{l}</button>;
+                  else if (l === 'Se connecter') node = <button type="button" onClick={onNavigateLogin} className={cls}>{l}</button>;
+                  else if (l === 'Nous contacter') node = <a href="mailto:communication@aviation-sans-frontieres-fr.org" className={cls}>{l}</a>;
+                  else node = <a href="#top" className={cls}>{l}</a>;
+                  return <li key={l}>{node}</li>;
+                })}
               </ul>
             </div>
           ))}
         </div>
         <div className="border-t border-slate-800">
           <div className="max-w-7xl mx-auto px-6 py-4.5 flex flex-wrap justify-between items-center gap-4">
-            <span className="text-[11px] text-slate-500">© Aviation Sans Frontières · Tous droits réservés.</span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="text-[11px] text-slate-500">© Aviation Sans Frontières · Tous droits réservés.</span>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400/90">
+                <ShieldCheck className="w-3.5 h-3.5" /> Conforme RGPD · données hébergées dans l'UE
+              </span>
+              <button type="button" onClick={() => openLegal('privacy')} className="text-[11px] text-slate-400 hover:text-azur-pastel transition-colors cursor-pointer">
+                Politique de confidentialité
+              </button>
+              <button type="button" onClick={() => openLegal('legal')} className="text-[11px] text-slate-400 hover:text-azur-pastel transition-colors cursor-pointer">
+                Mentions légales
+              </button>
+            </div>
             <a href="mailto:communication@aviation-sans-frontieres-fr.org" id="footer-email-link" className="text-azur-pastel hover:underline inline-flex items-center gap-1.5 font-mono text-xs">
               <Mail className="w-3.5 h-3.5" /> communication@aviation-sans-frontieres-fr.org
             </a>

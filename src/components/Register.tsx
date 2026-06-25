@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { authErrorMessage } from '../lib/authErrors';
 import { LogoASF } from './LandingPage';
+import { openLegal } from './LegalModal';
 import { ThemeToggle } from './ui';
 import { localDb } from '../lib/localDb';
 
@@ -64,6 +65,8 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
   });
   const [selectedDelegation] = useState('france');
   const [selectedAntenne, setSelectedAntenne] = useState('');
+  // Consentement RGPD requis pour créer le compte.
+  const [consent, setConsent] = useState(false);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -120,6 +123,11 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
     const passwordError = validatePasswordStrength(formData.password);
     if (passwordError) {
       setError(passwordError);
+      return;
+    }
+
+    if (!consent) {
+      setError('Veuillez accepter la politique de confidentialité pour créer votre compte.');
       return;
     }
 
@@ -465,6 +473,24 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                     Au moins 12 caractères, avec majuscule, minuscule, chiffre et caractère spécial.
                   </p>
                 </div>
+
+                {/* Consentement RGPD */}
+                <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200/70 dark:border-slate-800 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-azur shrink-0 cursor-pointer"
+                  />
+                  <span className="text-[11.5px] leading-relaxed text-slate-600 dark:text-slate-300">
+                    J'accepte que mes données soient traitées par Aviation Sans Frontières pour la gestion de mon dossier,
+                    conformément à la{' '}
+                    <button type="button" onClick={() => openLegal('privacy')} className="font-bold text-azur dark:text-azur-pastel hover:underline cursor-pointer">
+                      politique de confidentialité
+                    </button>
+                    .
+                  </span>
+                </label>
               </div>
             )}
 
