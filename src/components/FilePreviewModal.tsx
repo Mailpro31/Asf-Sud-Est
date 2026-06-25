@@ -17,10 +17,10 @@ import {
   Edit,
   Save
 } from 'lucide-react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../lib/firebase';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { DossierFile } from '../types';
+import { resolveFileUrl } from '../lib/fileTransfer';
 import { StatusBadge, StatusActions } from './ui';
 
 interface FilePreviewModalProps {
@@ -143,62 +143,49 @@ export default function FilePreviewModal({
     const loadFileData = async () => {
       setLoading(true);
       try {
-        let rawDataUrl: string | null = null;
-        if (file.storagePath === 'firestore_fallback' && file.fallbackDataUrl) {
-          rawDataUrl = file.fallbackDataUrl;
-          if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.json') || file.name.endsWith('.csv') || file.name.endsWith('.md')) {
-            const text = decodeBase64Text(file.fallbackDataUrl);
-            setTextContent(text);
-          }
-        } else if (file.storagePath === 'firestore_fallback_chunked') {
-          // Stitch from chunks
-          const chunksRef = collection(db, 'files', file.id, 'chunks');
-          const q = query(chunksRef, orderBy('index', 'asc'));
-          const querySnapshot = await getDocs(q);
-          const chunksData: string[] = [];
-          querySnapshot.forEach((docSnap) => {
-            chunksData.push(docSnap.data().data);
-          });
-          const fullBase64 = chunksData.join('');
-          rawDataUrl = fullBase64;
-          if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.json') || file.name.endsWith('.csv') || file.name.endsWith('.md')) {
-            const text = decodeBase64Text(fullBase64);
-            setTextContent(text);
-          }
-        } else if (file.storagePath && file.storagePath !== 'firestore_fallback') {
-          // Fichier stocké nativement dans Firebase Storage : on récupère une URL
-          // de téléchargement consultable (image/PDF/vidéo/audio en aperçu direct).
-          try {
-            rawDataUrl = await getDownloadURL(ref(storage, file.storagePath));
-            if (file.type.startsWith('text/') || /\.(txt|json|csv|md)$/i.test(file.name)) {
-              try {
-                const resp = await fetch(rawDataUrl);
-                setTextContent(await resp.text());
-              } catch { /* aperçu texte indisponible */ }
-            }
-          } catch (e) {
-            console.warn('getDownloadURL a échoué, repli sur la donnée locale :', e);
-            rawDataUrl = file.fallbackDataUrl || null;
-          }
-        } else {
-          rawDataUrl = file.fallbackDataUrl || null;
+        // On utilise EXACTEMENT le même résolveur que le téléchargement
+        // (resolveFileUrl) : tout mode de stockage qui se télécharge se
+        // prévisualise donc aussi — fini les divergences « Aucun aperçu ».
+        const rawDataUrl = await resolveFileUrl(file);
+
+        if (!rawDataUrl) {
+          setDataUrl(null);
+          return;
         }
 
-        if (rawDataUrl) {
+        // Aperçu texte : décodage base64 si data:, sinon lecture via l'URL.
+        const isTextFile = file.type.startsWith('text/') || /\.(txt|json|csv|md)$/i.test(file.name);
+        if (isTextFile) {
           if (rawDataUrl.startsWith('data:')) {
-            const blob = dataURLtoBlob(rawDataUrl);
-            if (blob) {
-              currentObjectUrl = URL.createObjectURL(blob);
-              setDataUrl(currentObjectUrl);
-            } else {
-              setDataUrl(rawDataUrl);
-            }
+            setTextContent(decodeBase64Text(rawDataUrl));
+          } else {
+            try {
+              const resp = await fetch(rawDataUrl);
+              setTextContent(await resp.text());
+            } catch { /* aperçu texte indisponible */ }
+          }
+        }
+
+        if (rawDataUrl.startsWith('data:')) {
+          // Un Blob URL est plus robuste qu'un long data: dans <iframe>/<img>.
+          const blob = dataURLtoBlob(rawDataUrl);
+          if (blob) {
+            currentObjectUrl = URL.createObjectURL(blob);
+            setDataUrl(currentObjectUrl);
           } else {
             setDataUrl(rawDataUrl);
           }
+        } else {
+          setDataUrl(rawDataUrl);
         }
       } catch (err) {
         console.error('Error compiling file preview:', err);
+        // Dernier repli : la donnée locale éventuellement embarquée sur le doc.
+        if (file.fallbackDataUrl && file.fallbackDataUrl !== '#') {
+          setDataUrl(file.fallbackDataUrl);
+        } else {
+          setDataUrl(null);
+        }
       } finally {
         setLoading(false);
       }
