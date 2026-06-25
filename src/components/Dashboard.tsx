@@ -643,7 +643,7 @@ export default function Dashboard() {
   const notifItems = useMemo<NotificationItem[]>(() => {
     const out: NotificationItem[] = [];
     files.forEach((f) => {
-      if (f.submissionStatus === 'Incomplete' || (f.reviewNote && f.reviewNote.trim())) {
+      if (f.submissionStatus === 'Incomplete') {
         out.push({
           id: `corr_${f.id}`,
           title: 'Document à corriger',
@@ -1662,9 +1662,10 @@ export default function Dashboard() {
 
         {/* Verdict de revue (dérivé des statuts/notes des fichiers) */}
         {(() => {
-          const corrections = files.filter(
-            (f) => (f.submissionStatus === 'Incomplete') || (f.reviewNote && f.reviewNote.trim()),
-          );
+          // Une correction n'est « en cours » que si la pièce est actuellement
+          // marquée « À corriger ». La note de revue (`reviewNote`) peut subsister
+          // après re-validation : on ne s'y fie donc pas pour le décompte.
+          const corrections = files.filter((f) => f.submissionStatus === 'Incomplete');
           const hasFiles = files.length > 0;
           const allValidated = hasFiles && files.every((f) => (f.submissionStatus || 'Pending') === 'Validated');
           if (corrections.length > 0) {
@@ -1888,7 +1889,7 @@ export default function Dashboard() {
                             Déposé par l'administrateur
                           </span>
                         )}
-                        {file.reviewNote && (
+                        {file.submissionStatus === 'Incomplete' && file.reviewNote && (
                           <p className="mt-2 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5" title="Correction demandée par votre antenne">
                             <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
                             <span className="min-w-0">À corriger : {file.reviewNote}</span>
