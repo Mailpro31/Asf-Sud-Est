@@ -27,16 +27,25 @@ export function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+/** N'autorise que des schémas d'URL sûrs à être affichés/ouverts. Empêche qu'un
+ *  document falsifié (champ `fallbackDataUrl` écrit directement en base avec
+ *  `javascript:` / `vbscript:` …) ne devienne un vecteur XSS lors de l'aperçu
+ *  (`<iframe src>`, `window.open`) ou du téléchargement. */
+export function isSafeFileUrl(u: string | null | undefined): u is string {
+  return !!u && /^(https?:|data:|blob:)/i.test(u.trim());
+}
+
 /** Résout une URL exploitable (https ou data:) pour un fichier, quel que soit
- *  son mode de stockage. Renvoie `null` si rien n'est disponible. */
+ *  son mode de stockage. Renvoie `null` si rien d'exploitable et sûr n'est
+ *  disponible. */
 export async function resolveFileUrl(file: DossierFile): Promise<string | null> {
   if (file.storagePath === 'firestore_fallback_chunked') {
     const snap = await getDocs(query(collection(db, 'files', file.id, 'chunks'), orderBy('index', 'asc')));
     const full = snap.docs.map((d) => (d.data() as any).data).join('');
-    return full || null;
+    return isSafeFileUrl(full) ? full : null;
   }
   if (file.storagePath === 'firestore_fallback' || file.storagePath === 'sandbox') {
-    return file.fallbackDataUrl && file.fallbackDataUrl !== '#' ? file.fallbackDataUrl : null;
+    return isSafeFileUrl(file.fallbackDataUrl) ? file.fallbackDataUrl : null;
   }
   // Stockage natif : URL déjà connue, sinon on la récupère depuis Storage.
   if (file.fallbackDataUrl && file.fallbackDataUrl.startsWith('http')) {
@@ -45,7 +54,7 @@ export async function resolveFileUrl(file: DossierFile): Promise<string | null> 
   if (file.storagePath) {
     return await getDownloadURL(ref(storage, file.storagePath));
   }
-  return file.fallbackDataUrl && file.fallbackDataUrl !== '#' ? file.fallbackDataUrl : null;
+  return isSafeFileUrl(file.fallbackDataUrl) ? file.fallbackDataUrl : null;
 }
 
 /** Déclenche le téléchargement d'un fichier dans le navigateur.

@@ -187,6 +187,10 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
 
   const handleGoogleSignIn = async () => {
     setError('');
+    if (!consent) {
+      setError('Veuillez accepter la politique de confidentialité pour continuer.');
+      return;
+    }
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       prompt: 'select_account'
@@ -248,6 +252,27 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
     const found = activeAntennesList.find(a => a.id === id);
     return found ? found.name : '';
   };
+
+  // Case de consentement RGPD — partagée par la création e-mail (étape 3) et la
+  // connexion Google (étape 1), pour que les deux parcours recueillent l'accord.
+  const consentCheckbox = (
+    <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200/70 dark:border-slate-800 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={consent}
+        onChange={(e) => setConsent(e.target.checked)}
+        className="mt-0.5 w-4 h-4 accent-azur shrink-0 cursor-pointer"
+      />
+      <span className="text-[11.5px] leading-relaxed text-slate-600 dark:text-slate-300">
+        J'accepte que mes données soient traitées par Aviation Sans Frontières pour la gestion de mon dossier,
+        conformément à la{' '}
+        <button type="button" onClick={() => openLegal('privacy')} className="font-bold text-azur dark:text-azur-pastel hover:underline cursor-pointer">
+          politique de confidentialité
+        </button>
+        .
+      </span>
+    </label>
+  );
 
   return (
     <div className={`min-h-screen flex flex-col justify-center items-center ${themeConfig.bg} ${themeConfig.fontFamily} px-4 py-20 sm:py-16 md:p-8 transition-all duration-300 relative`}>
@@ -474,23 +499,8 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                   </p>
                 </div>
 
-                {/* Consentement RGPD */}
-                <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200/70 dark:border-slate-800 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={consent}
-                    onChange={(e) => setConsent(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 accent-azur shrink-0 cursor-pointer"
-                  />
-                  <span className="text-[11.5px] leading-relaxed text-slate-600 dark:text-slate-300">
-                    J'accepte que mes données soient traitées par Aviation Sans Frontières pour la gestion de mon dossier,
-                    conformément à la{' '}
-                    <button type="button" onClick={() => openLegal('privacy')} className="font-bold text-azur dark:text-azur-pastel hover:underline cursor-pointer">
-                      politique de confidentialité
-                    </button>
-                    .
-                  </span>
-                </label>
+                {/* Consentement RGPD (parcours e-mail) */}
+                {consentCheckbox}
               </div>
             )}
 
@@ -542,7 +552,10 @@ export default function Register({ onNavigateLogin, onNavigateHome }: RegisterPr
                 <span className="px-3 text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-black">ou s'enregistrer avec</span>
                 <div className="flex-1 border-t border-slate-200/60 dark:border-slate-800"></div>
               </div>
-              
+
+              {/* Consentement RGPD (parcours Google) */}
+              <div className="w-full mb-4">{consentCheckbox}</div>
+
               <button
                 type="button"
                 onClick={handleGoogleSignIn}

@@ -20,7 +20,7 @@ import {
 import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DossierFile } from '../types';
-import { resolveFileUrl } from '../lib/fileTransfer';
+import { resolveFileUrl, isSafeFileUrl } from '../lib/fileTransfer';
 import { StatusBadge, StatusActions } from './ui';
 
 interface FilePreviewModalProps {
@@ -180,12 +180,8 @@ export default function FilePreviewModal({
         }
       } catch (err) {
         console.error('Error compiling file preview:', err);
-        // Dernier repli : la donnée locale éventuellement embarquée sur le doc.
-        if (file.fallbackDataUrl && file.fallbackDataUrl !== '#') {
-          setDataUrl(file.fallbackDataUrl);
-        } else {
-          setDataUrl(null);
-        }
+        // Dernier repli : la donnée locale embarquée, si son schéma est sûr.
+        setDataUrl(isSafeFileUrl(file.fallbackDataUrl) ? file.fallbackDataUrl : null);
       } finally {
         setLoading(false);
       }
