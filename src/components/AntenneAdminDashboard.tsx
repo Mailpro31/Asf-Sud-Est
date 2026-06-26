@@ -54,14 +54,14 @@ import { logAction, subscribeAuditLogs } from '../lib/auditLog';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
-import { sweepExpired, expiryInfo, tsToExpiryInput, expiryInputToTs, minExpiryDateInput, formatExpiryDate } from '../lib/expiry';
+import { sweepExpired, tsToExpiryInput, expiryInputToTs, minExpiryDateInput, formatExpiryDate } from '../lib/expiry';
 import { downloadFilesAsZip } from '../lib/zip';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, StatusActions, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, type NotificationItem, type TourStep } from './ui';
+import { StatusBadge, StatusActions, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -1405,25 +1405,9 @@ export default function AntenneAdminDashboard() {
   };
 
   // Ligne de document réutilisable (liste principale + fiche organisme).
-  // Pastille « suppression automatique programmée » (rouge si imminente, ambre si proche).
-  const renderExpiryBadge = (ts?: number | null) => {
-    const info = expiryInfo(ts);
-    if (!info) return null;
-    const cls =
-      info.tone === 'expired'
-        ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30'
-        : info.tone === 'soon'
-          ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700';
-    return (
-      <span
-        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${cls}`}
-        title={`Suppression automatique le ${info.date}`}
-      >
-        <CalendarClock className="w-3 h-3" /> {info.tone === 'scheduled' ? `Suppr. le ${info.date}` : info.label}
-      </span>
-    );
-  };
+  // Pastille « suppression automatique programmée » — rendu partagé (couleur
+  // graduée selon l'urgence). Voir ui/ExpiryBadge.
+  const renderExpiryBadge = (ts?: number | null) => <ExpiryBadge ts={ts} />;
 
   // Bouton « programmer / modifier la suppression automatique ».
   const expiryButton = (kind: 'file' | 'folder', item: { id: string; name: string; expiresAt?: number | null }, extra = '') => (
