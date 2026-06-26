@@ -19,7 +19,7 @@ export type LegalSection = 'privacy' | 'legal';
 export const LEGAL_CONTACT = {
   org: 'Aviation Sans Frontières',
   /** Contact pour l'exercice des droits RGPD. À remplacer par une adresse dédiée si disponible. */
-  email: 'communication@aviation-sans-frontieres-fr.org',
+  email: 'asf.aix@aviation-sans-frontieres-fr.org',
   /** Adresse postale du responsable de traitement. */
   address: '[Adresse du siège à compléter]',
   /** Date de dernière mise à jour de la politique. */

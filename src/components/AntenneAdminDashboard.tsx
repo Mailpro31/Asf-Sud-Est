@@ -1533,6 +1533,122 @@ export default function AntenneAdminDashboard() {
    );
   };
 
+  // Zone « dossiers » partagée entre la vue organisme et la vue documents
+  // internes : même présentation (fil d'Ariane quand on est dans un dossier,
+  // sinon grille de cartes) et mêmes actions (ouvrir, programmer la suppression
+  // automatique, supprimer).
+  const renderFolderArea = (cfg: {
+    folderList: Folder[];
+    currentId: string | null;
+    setCurrentId: (id: string | null) => void;
+    newFolderOrgId: string | null;
+    title: string;
+    subtitle: string;
+    emptyLabel: string;
+    countLabel: string;
+  }) => {
+    const { folderList, currentId, setCurrentId, newFolderOrgId, title, subtitle, emptyLabel, countLabel } = cfg;
+    if (currentId) {
+      const fol = folderList.find((f) => f.id === currentId);
+      return (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <button onClick={() => setCurrentId(null)} className="btn-ghost text-xs !py-1.5 !px-3 inline-flex items-center gap-1.5">
+              <ChevronLeft className="w-3.5 h-3.5" /> Tous
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+            <span className="text-sm font-bold text-deep dark:text-azur-pastel inline-flex items-center gap-1.5 min-w-0">
+              <FolderOpen className="w-4 h-4 shrink-0" />
+              <span className="truncate">{fol?.name}</span>
+            </span>
+            {fol?.expiresAt ? renderExpiryBadge(fol.expiresAt) : null}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => { if (fol) openExpiry('folder', fol); }} className="btn-ghost text-xs !py-1.5 !px-3 inline-flex items-center gap-1.5">
+              <CalendarClock className="w-3.5 h-3.5" /> Suppression auto
+            </button>
+            <button onClick={() => { if (fol) handleDeleteFolder(fol); }} className="btn-ghost text-xs !py-1.5 !px-3 text-rose-500 dark:text-rose-300 inline-flex items-center gap-1.5">
+              <Trash2 className="w-3.5 h-3.5" /> Supprimer le dossier
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <h4 className="text-xs font-display font-black uppercase tracking-wider text-deep dark:text-slate-300 flex items-center gap-1.5">
+              <FolderIcon className="w-3.5 h-3.5 text-azur" /> {title}
+            </h4>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{subtitle}</p>
+          </div>
+          <button
+            onClick={() => { setFolderName(''); setFolderTargetOrgId(newFolderOrgId); setCreatingFolder(true); }}
+            className="btn-asf text-xs shrink-0"
+          >
+            <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
+          </button>
+        </div>
+        {folderList.length === 0 ? (
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">{emptyLabel}</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {folderList.map((fol) => {
+              const folderSelfNew = fol.createdBy !== 'admin' && isUnseen(fol.id, fol.createdAt || 0);
+              const folderHasNew = files.some((f) => (f.folderId || null) === fol.id && f.uploadedBy !== 'admin' && isUnseen(f.id, fileStamp(f)));
+              const folNew = folderSelfNew || folderHasNew;
+              return (
+                <div
+                  key={fol.id}
+                  onClick={() => { if (folderSelfNew) markSeen(fol.id); setCurrentId(fol.id); }}
+                  className={`card-asf p-3.5 flex flex-col gap-2.5 group relative cursor-pointer ${folNew ? 'ring-2 ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
+                  title={folNew ? 'Nouveau dossier — cliquez pour le marquer comme vu' : undefined}
+                >
+                  {folNew && <span className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="w-9 h-9 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
+                      <FolderIcon className="w-4 h-4 fill-current" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {folNew && (
+                        <span className="text-[8px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-rose-500 text-white">Nouveau</span>
+                      )}
+                      <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
+                        {fol.createdBy === 'admin' ? 'Admin' : 'Org'}
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openExpiry('folder', fol); }}
+                        className={`opacity-0 group-hover:opacity-100 transition-all p-1 cursor-pointer ${fol.expiresAt ? 'text-azur dark:text-azur-pastel opacity-100' : 'text-slate-400 dark:text-slate-500 hover:text-azur'}`}
+                        title={fol.expiresAt ? `Suppression auto le ${formatExpiryDate(fol.expiresAt)} — modifier` : 'Programmer la suppression automatique'}
+                      >
+                        <CalendarClock className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(fol); }}
+                        className="opacity-0 group-hover:opacity-100 text-slate-400 dark:text-slate-500 hover:text-rose-500 transition-all p-1 cursor-pointer"
+                        title="Supprimer le dossier"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate text-slate-800 dark:text-slate-100">{fol.name}</p>
+                    <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
+                      {folderFileCount(fol.id)} {countLabel}
+                    </p>
+                    {fol.expiresAt ? <div className="mt-1.5">{renderExpiryBadge(fol.expiresAt)}</div> : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </>
+    );
+  };
+
   if (!organization) return null;
 
   const selectedOrg = selectedOrgId ? partnerOrgs.find((o) => o.id === selectedOrgId) || null : null;
@@ -2249,116 +2365,16 @@ export default function AntenneAdminDashboard() {
 
             {/* Répertoires associés (cartes) + navigation, façon Cabinet Documentaire */}
             <div data-tour="org-folders" className="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-              {orgFolderId ? (
-                /* Vue d'un dossier : fil d'Ariane + actions du dossier */
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <button
-                      onClick={() => setOrgFolderId(null)}
-                      className="btn-ghost text-xs !py-1.5 !px-3 inline-flex items-center gap-1.5"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" /> Tous
-                    </button>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
-                    <span className="text-sm font-bold text-deep dark:text-azur-pastel inline-flex items-center gap-1.5 min-w-0">
-                      <FolderOpen className="w-4 h-4 shrink-0" />
-                      <span className="truncate">{orgFolders.find((f) => f.id === orgFolderId)?.name}</span>
-                    </span>
-                    {(() => { const fol = orgFolders.find((f) => f.id === orgFolderId); return fol?.expiresAt ? renderExpiryBadge(fol.expiresAt) : null; })()}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => { const fol = orgFolders.find((f) => f.id === orgFolderId); if (fol) openExpiry('folder', fol); }}
-                      className="btn-ghost text-xs !py-1.5 !px-3 inline-flex items-center gap-1.5"
-                    >
-                      <CalendarClock className="w-3.5 h-3.5" /> Suppression auto
-                    </button>
-                    <button
-                      onClick={() => { const fol = orgFolders.find((f) => f.id === orgFolderId); if (fol) handleDeleteFolder(fol); }}
-                      className="btn-ghost text-xs !py-1.5 !px-3 text-rose-500 dark:text-rose-300 inline-flex items-center gap-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Supprimer le dossier
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Racine : section « Répertoires associés » en cartes */
-                <>
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0">
-                      <h4 className="text-xs font-display font-black uppercase tracking-wider text-deep dark:text-slate-300 flex items-center gap-1.5">
-                        <FolderIcon className="w-3.5 h-3.5 text-azur" /> Répertoires associés et justificatifs réglementaires
-                      </h4>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                        Dossiers de rangement privés à cet organisme (récépissés, assurances, brevets…).
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => { setFolderName(''); setFolderTargetOrgId(selectedOrg.id); setCreatingFolder(true); }}
-                      className="btn-asf text-xs shrink-0"
-                    >
-                      <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
-                    </button>
-                  </div>
-                  {orgFolders.length === 0 ? (
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">
-                      Aucun dossier — les pièces ci-dessous sont versées à la racine.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {orgFolders.map((fol) => {
-                        const folderSelfNew = fol.createdBy !== 'admin' && isUnseen(fol.id, fol.createdAt || 0);
-                        const folderHasNew = files.some((f) => (f.folderId || null) === fol.id && f.uploadedBy !== 'admin' && isUnseen(f.id, fileStamp(f)));
-                        const folNew = folderSelfNew || folderHasNew;
-                        return (
-                        <div
-                          key={fol.id}
-                          onClick={() => { if (folderSelfNew) markSeen(fol.id); setOrgFolderId(fol.id); }}
-                          className={`card-asf p-3.5 flex flex-col gap-2.5 group relative cursor-pointer ${folNew ? 'ring-2 ring-rose-400 dark:ring-rose-500/70 bg-rose-50/40 dark:bg-rose-500/5' : ''}`}
-                          title={folNew ? 'Nouveau dossier — cliquez pour le marquer comme vu' : undefined}
-                        >
-                          {folNew && <span className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="w-9 h-9 rounded-xl bg-azur/10 text-azur flex items-center justify-center shrink-0">
-                              <FolderIcon className="w-4 h-4 fill-current" />
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              {folNew && (
-                                <span className="text-[8px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-rose-500 text-white">Nouveau</span>
-                              )}
-                              <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
-                                {fol.createdBy === 'admin' ? 'Admin' : 'Org'}
-                              </span>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); openExpiry('folder', fol); }}
-                                className={`opacity-0 group-hover:opacity-100 transition-all p-1 cursor-pointer ${fol.expiresAt ? 'text-azur dark:text-azur-pastel opacity-100' : 'text-slate-400 dark:text-slate-500 hover:text-azur'}`}
-                                title={fol.expiresAt ? `Suppression auto le ${formatExpiryDate(fol.expiresAt)} — modifier` : 'Programmer la suppression automatique'}
-                              >
-                                <CalendarClock className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleDeleteFolder(fol); }}
-                                className="opacity-0 group-hover:opacity-100 text-slate-400 dark:text-slate-500 hover:text-rose-500 transition-all p-1 cursor-pointer"
-                                title="Supprimer le dossier"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold truncate text-slate-800 dark:text-slate-100">{fol.name}</p>
-                            <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
-                              {folderFileCount(fol.id)} fichier(s) justificatifs
-                            </p>
-                            {fol.expiresAt ? <div className="mt-1.5">{renderExpiryBadge(fol.expiresAt)}</div> : null}
-                          </div>
-                        </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              )}
+              {renderFolderArea({
+                folderList: orgFolders,
+                currentId: orgFolderId,
+                setCurrentId: setOrgFolderId,
+                newFolderOrgId: selectedOrg.id,
+                title: 'Répertoires associés et justificatifs réglementaires',
+                subtitle: 'Dossiers de rangement privés à cet organisme (récépissés, assurances, brevets…).',
+                emptyLabel: 'Aucun dossier — les pièces ci-dessous sont versées à la racine.',
+                countLabel: 'fichier(s) justificatifs',
+              })}
             </div>
 
             {/* Recherche, filtres et actions sur les documents de l'organisme */}
@@ -2545,8 +2561,13 @@ export default function AntenneAdminDashboard() {
                   <FolderOpen className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Documents internes</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Documents de l'antenne non rattachés à un organisme.</p>
+                  <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Documents internes de l'antenne</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Espace de classement <strong>propre à votre antenne</strong>, indépendant des organismes : conventions,
+                    notes internes, modèles de documents, comptes rendus… Ces pièces ne sont <strong>pas</strong> rattachées à
+                    un partenaire et ne sont visibles que par les coordinateurs de l'antenne. Rangez-les dans des dossiers et,
+                    si besoin, programmez leur suppression automatique — exactement comme pour un organisme.
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -2559,59 +2580,18 @@ export default function AntenneAdminDashboard() {
               </div>
             </div>
 
-            {/* Dossiers internes */}
-            <div data-tour="int-folders" className="px-5 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5 mb-2">
-                <FolderIcon className="w-3.5 h-3.5" /> Dossiers internes
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => setActiveFolderId(null)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                    activeFolderId === null ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5" /> Tous ({internalAll.length})
-                </button>
-                {internalFolders.map((fol) => (
-                  <span
-                    key={fol.id}
-                    className={`text-xs font-bold pl-3 pr-1.5 py-1.5 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-                      activeFolderId === fol.id ? 'bg-azur text-white border-azur' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-azur/40'
-                    }`}
-                  >
-                    <button onClick={() => setActiveFolderId(fol.id)} className="inline-flex items-center gap-1.5 cursor-pointer">
-                      {activeFolderId === fol.id ? <FolderOpen className="w-3.5 h-3.5" /> : <FolderIcon className="w-3.5 h-3.5" />}
-                      {fol.name} ({folderFileCount(fol.id)})
-                      {fol.expiresAt ? <CalendarClock className="w-3 h-3 opacity-80" /> : null}
-                    </button>
-                    <button
-                      onClick={() => openExpiry('folder', fol)}
-                      title={fol.expiresAt ? `Suppression auto le ${formatExpiryDate(fol.expiresAt)} — modifier` : 'Programmer la suppression automatique'}
-                      className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
-                        activeFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-azur/10 text-slate-400 dark:text-slate-500 hover:text-azur'
-                      }`}
-                    >
-                      <CalendarClock className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteFolder(fol)}
-                      title="Supprimer le dossier"
-                      className={`w-5 h-5 rounded-full inline-flex items-center justify-center transition-colors ${
-                        activeFolderId === fol.id ? 'hover:bg-white/20' : 'hover:bg-rose-50 dark:hover:bg-rose-500/10 text-slate-400 dark:text-slate-500 hover:text-rose-500'
-                      }`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-                <button
-                  onClick={() => { setFolderName(''); setFolderTargetOrgId(null); setCreatingFolder(true); }}
-                  className="text-xs font-bold px-3 py-1.5 rounded-full border border-dashed border-azur/40 text-azur hover:bg-azur/5 inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <FolderPlus className="w-3.5 h-3.5" /> Nouveau dossier
-                </button>
-              </div>
+            {/* Dossiers internes — même présentation que la vue organisme */}
+            <div data-tour="int-folders" className="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              {renderFolderArea({
+                folderList: internalFolders,
+                currentId: activeFolderId,
+                setCurrentId: setActiveFolderId,
+                newFolderOrgId: null,
+                title: "Dossiers internes de l'antenne",
+                subtitle: "Pour organiser les documents propres à l'antenne (conventions, notes, modèles…).",
+                emptyLabel: 'Aucun dossier interne — les documents ci-dessous sont à la racine.',
+                countLabel: 'document(s)',
+              })}
             </div>
 
             {/* Barre d'actions */}
@@ -2723,7 +2703,12 @@ export default function AntenneAdminDashboard() {
                     title="Tout sélectionner"
                   />
                 )}
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 inline-flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" />
+                  {activeFolderId
+                    ? `Dossier · ${internalFolders.find((f) => f.id === activeFolderId)?.name || ''}`
+                    : 'Pièces à la racine (hors dossiers)'}
+                  <span className="text-slate-300 dark:text-slate-600">·</span>
                   {internalFiles.length} document{internalFiles.length > 1 ? 's' : ''}
                 </span>
                 {dragOver && <span className="text-[11px] font-bold text-azur ml-auto">Déposez pour téléverser…</span>}
@@ -2731,7 +2716,13 @@ export default function AntenneAdminDashboard() {
               {internalFiles.length === 0 ? (
                 <div className="px-5 pb-8 pt-4 text-center text-sm text-slate-400 dark:text-slate-500 flex flex-col items-center gap-2">
                   <CloudUpload className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-                  Aucun document interne.
+                  {searchQuery || statusFilter !== 'all'
+                    ? 'Aucun document ne correspond à votre recherche.'
+                    : activeFolderId
+                      ? 'Ce dossier est vide.'
+                      : internalFolders.length > 0
+                        ? 'Aucune pièce à la racine — les documents sont rangés dans les dossiers ci-dessus.'
+                        : 'Aucun document interne.'}
                   <span className="text-xs">Glissez-déposez des fichiers ici ou utilisez « Déposer ».</span>
                 </div>
               ) : (

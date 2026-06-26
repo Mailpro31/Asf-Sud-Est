@@ -554,7 +554,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                   if (l === 'Mentions légales') node = <button type="button" onClick={() => openLegal('legal')} className={cls}>{l}</button>;
                   else if (l === 'Protection des données' || l === 'Sécurité & conformité' || l === 'Charte de sécurité') node = <button type="button" onClick={() => openLegal('privacy')} className={cls}>{l}</button>;
                   else if (l === 'Se connecter') node = <button type="button" onClick={onNavigateLogin} className={cls}>{l}</button>;
-                  else if (l === 'Nous contacter') node = <a href="mailto:communication@aviation-sans-frontieres-fr.org" className={cls}>{l}</a>;
+                  else if (l === 'Nous contacter') node = <a href="mailto:asf.aix@aviation-sans-frontieres-fr.org" className={cls}>{l}</a>;
                   else node = <a href="#top" className={cls}>{l}</a>;
                   return <li key={l}>{node}</li>;
                 })}
@@ -576,8 +576,8 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister }: Lan
                 Mentions légales
               </button>
             </div>
-            <a href="mailto:communication@aviation-sans-frontieres-fr.org" id="footer-email-link" className="text-azur-pastel hover:underline inline-flex items-center gap-1.5 font-mono text-xs">
-              <Mail className="w-3.5 h-3.5" /> communication@aviation-sans-frontieres-fr.org
+            <a href="mailto:asf.aix@aviation-sans-frontieres-fr.org" id="footer-email-link" className="text-azur-pastel hover:underline inline-flex items-center gap-1.5 font-mono text-xs">
+              <Mail className="w-3.5 h-3.5" /> asf.aix@aviation-sans-frontieres-fr.org
             </a>
           </div>
         </div>

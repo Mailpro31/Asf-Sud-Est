@@ -1131,7 +1131,16 @@ export default function Dashboard() {
                           <FolderIcon className="w-4 h-4 text-azur-pastel shrink-0" />
                           <span className="flex-1 truncate font-medium">{folder.name}</span>
                           {folder.expiresAt ? (
-                            <CalendarClock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => { e.stopPropagation(); toast(`Le dossier « ${folder.name} » et son contenu seront supprimés automatiquement le ${formatExpiryDate(folder.expiresAt!)}.`, 'warning'); }}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toast(`Le dossier « ${folder.name} » et son contenu seront supprimés automatiquement le ${formatExpiryDate(folder.expiresAt!)}.`, 'warning'); } }}
+                              title={`Suppression automatique le ${formatExpiryDate(folder.expiresAt)} — cliquez pour le détail`}
+                              className="shrink-0 text-amber-400 hover:text-amber-300 cursor-pointer"
+                            >
+                              <CalendarClock className="w-3.5 h-3.5" />
+                            </span>
                           ) : null}
                           <span className="text-[11px] font-mono text-slate-400 shrink-0">{count}</span>
                           {folder.createdBy === 'admin' && (
@@ -1296,7 +1305,16 @@ export default function Dashboard() {
                             <FolderIcon className="w-4 h-4 text-azur-pastel shrink-0" />
                             <span className="flex-1 truncate font-medium">{folder.name}</span>
                             {folder.expiresAt ? (
-                              <CalendarClock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => { e.stopPropagation(); toast(`Le dossier « ${folder.name} » et son contenu seront supprimés automatiquement le ${formatExpiryDate(folder.expiresAt!)}.`, 'warning'); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toast(`Le dossier « ${folder.name} » et son contenu seront supprimés automatiquement le ${formatExpiryDate(folder.expiresAt!)}.`, 'warning'); } }}
+                                title={`Suppression automatique le ${formatExpiryDate(folder.expiresAt)} — cliquez pour le détail`}
+                                className="shrink-0 text-amber-400 hover:text-amber-300 cursor-pointer"
+                              >
+                                <CalendarClock className="w-3.5 h-3.5" />
+                              </span>
                             ) : null}
                             <span className="text-[11px] font-mono text-slate-400 shrink-0">{count}</span>
                             {folder.createdBy === 'admin' && (
@@ -1883,6 +1901,14 @@ export default function Dashboard() {
                   <span className={`text-xs font-black uppercase ${themeConfig.textColor}`}>
                     📂 {currentFolder.name}
                   </span>
+                  {currentFolder.expiresAt ? (
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30"
+                      title={`Ce dossier et son contenu seront supprimés le ${formatExpiryDate(currentFolder.expiresAt)}`}
+                    >
+                      <CalendarClock className="w-3 h-3" /> Suppression auto le {formatExpiryDate(currentFolder.expiresAt)}
+                    </span>
+                  ) : null}
                 </>
               )}
             </div>
