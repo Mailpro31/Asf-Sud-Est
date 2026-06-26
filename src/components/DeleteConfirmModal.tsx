@@ -9,6 +9,8 @@ interface DeleteConfirmModalProps {
   itemName: string;
   itemType: 'file' | 'folder';
   itemSize?: string | null;
+  /** Avertissement supplémentaire (ex. nombre de documents emportés). */
+  warning?: string | null;
 }
 
 export default function DeleteConfirmModal({
@@ -17,7 +19,8 @@ export default function DeleteConfirmModal({
   onConfirm,
   itemName,
   itemType,
-  itemSize
+  itemSize,
+  warning
 }: DeleteConfirmModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -113,6 +116,13 @@ export default function DeleteConfirmModal({
                   )}
                 </div>
               </div>
+
+              {warning && (
+                <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-3 text-[13px] text-amber-800 dark:text-amber-300">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>{warning}</span>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="mt-6 flex flex-wrap items-center justify-end gap-2 sm:gap-3">

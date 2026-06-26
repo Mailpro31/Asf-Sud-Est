@@ -3620,6 +3620,10 @@ export default function AdminPanel() {
         onConfirm={confirmDeleteFolder}
         itemName={folderToDelete?.name || ''}
         itemType="folder"
+        warning={(() => {
+          const n = folderToDelete ? files.filter((f) => f.folderId === folderToDelete.id).length : 0;
+          return n > 0 ? `Ce dossier contient ${n} document(s) : ils seront également supprimés.` : null;
+        })()}
       />
 
       <CreateFolderModal
