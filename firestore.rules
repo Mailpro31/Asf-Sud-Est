@@ -12,7 +12,16 @@ service cloud.firestore {
     
     function existing() { return resource.data; }
     function incoming() { return request.resource.data; }
-    
+
+    // Le champ de suppression automatique (expiresAt) ne peut être posé/retiré
+    // que par un gestionnaire d'antenne ou le super admin. Cette fonction sert à
+    // interdire à un compte partenaire (propriétaire d'un fichier/dossier) de le
+    // modifier — sinon il pourrait programmer la destruction de pièces déposées
+    // par l'antenne (qu'il n'a pas le droit de supprimer) via le balayage admin.
+    function expiresAtUnchanged() {
+      return !incoming().diff(existing()).affectedKeys().hasAny(['expiresAt']);
+    }
+
     function isValidId(id) { 
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
     }
@@ -116,6 +125,7 @@ service cloud.firestore {
              data.get('submissionStatus', '') in ['Pending', 'Under review', 'Validated', 'Incomplete'] &&
              (!('folderId' in data) || data.folderId == null || (data.folderId is string && data.folderId.size() <= 128)) &&
              (!('uploadedBy' in data) || data.uploadedBy in ['admin', 'user', 'public']) &&
+             (!('expiresAt' in data) || data.expiresAt == null || data.expiresAt is number) &&
              (!('fallbackDataUrl' in data) || data.fallbackDataUrl == null || data.fallbackDataUrl is string);
     }
 
@@ -191,6 +201,7 @@ service cloud.firestore {
              data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() <= 200 &&
              data.get('createdAt', 0) is number &&
              data.get('createdBy', '') in ['user', 'admin'] &&
+             (!('expiresAt' in data) || data.expiresAt == null || data.expiresAt is number) &&
              (!('delegation_id' in data) || data.delegation_id == null || data.delegation_id is string) &&
              (!('antenne_id' in data) || data.antenne_id == null || data.antenne_id is string);
     }
@@ -344,7 +355,9 @@ service cloud.firestore {
 
       allow update: if isSignedIn() && isValidFolder(incoming()) && (
                       isSuperAdmin() ||
-                      existing().get('orgId', '') == request.auth.uid ||
+                      // Propriétaire (partenaire) : peut modifier son dossier MAIS pas
+                      // programmer/retirer la suppression automatique (réservée à l'antenne).
+                      (existing().get('orgId', '') == request.auth.uid && expiresAtUnchanged()) ||
                       isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                       (hasUserDoc() && (
                         (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
@@ -396,7 +409,10 @@ service cloud.firestore {
 
       allow update: if isValidFile(incoming()) && (
                     isSuperAdmin() ||
-                    (isSignedIn() && existing().get('orgId', '') == request.auth.uid) ||
+                    // Propriétaire (partenaire) : peut modifier son fichier MAIS pas
+                    // programmer/retirer la suppression automatique (réservée à l'antenne) —
+                    // sinon il pourrait faire détruire une pièce déposée par l'antenne.
+                    (isSignedIn() && existing().get('orgId', '') == request.auth.uid && expiresAtUnchanged()) ||
                     isAdminAntenneOf(existing().get('delegation_id', ''), existing().get('antenne_id', '')) ||
                     (isSignedIn() && hasUserDoc() && (
                       (getUser().get('role', '') == 'admin' || getUser().get('role', '') == 'super_admin')
