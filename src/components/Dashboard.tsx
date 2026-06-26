@@ -36,7 +36,8 @@ import {
   MapPin,
   Building2,
   Info,
-  ChevronDown
+  ChevronDown,
+  CalendarClock
 } from 'lucide-react';
 import { collection, query, where, onSnapshot, deleteDoc, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable } from 'firebase/storage';
@@ -54,6 +55,7 @@ import { localDb } from '../lib/localDb';
 import { notifyAntenneOnUpload, notifyAntenneOnSubmission, subscribeAntenneSettings, type AntenneSettings } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
+import { sweepExpired, expiryInfo, formatExpiryDate, isExpired } from '../lib/expiry';
 import { firebaseConfig } from '../lib/firebaseConfig';
 import { StatusBadge, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, type NotificationItem, type TourStep } from './ui';
 import { useCmdK } from '../hooks/useCmdK';
@@ -655,9 +657,62 @@ export default function Dashboard() {
           onClick: () => setPreviewingFile(f),
         });
       }
+      // Information « suppression automatique programmée » par l'antenne.
+      const fi = expiryInfo(f.expiresAt);
+      if (fi) {
+        out.push({
+          id: `exp_${f.id}`,
+          title: 'Suppression automatique programmée',
+          description: `${f.name} — sera supprimé le ${fi.date}.`,
+          ts: f.expiresAt || 0,
+          tone: fi.tone === 'scheduled' ? 'info' : 'warning',
+          onClick: () => setPreviewingFile(f),
+        });
+      }
+    });
+    folders.forEach((fol) => {
+      const di = expiryInfo(fol.expiresAt);
+      if (di) {
+        out.push({
+          id: `expfol_${fol.id}`,
+          title: 'Dossier à suppression automatique',
+          description: `Dossier « ${fol.name} » et son contenu seront supprimés le ${di.date}.`,
+          ts: fol.expiresAt || 0,
+          tone: di.tone === 'scheduled' ? 'info' : 'warning',
+          onClick: () => setCurrentFolderId(fol.id),
+        });
+      }
     });
     return out;
-  }, [files]);
+  }, [files, folders]);
+
+  // Balayage des éléments arrivés à échéance que le partenaire peut lui-même
+  // supprimer (ses propres pièces et dossiers ; pas ceux déposés par l'antenne).
+  // En complément, l'UI bloque déjà l'accès aux fichiers expirés (cf. preview /
+  // téléchargement) le temps qu'un poste autorisé les efface physiquement.
+  const partnerSweepRunning = useRef(false);
+  useEffect(() => {
+    if (!user || partnerSweepRunning.current) return;
+    const due =
+      files.some((f) => isExpired(f.expiresAt)) || folders.some((f) => isExpired(f.expiresAt));
+    if (!due) return;
+    partnerSweepRunning.current = true;
+    sweepExpired({
+      files,
+      folders,
+      sandbox: localDb.isSandboxActive(),
+      canDeleteFile: (f) => f.orgId === user.uid && f.uploadedBy !== 'admin',
+      canDeleteFolder: (f) => f.orgId === user.uid && f.createdBy !== 'admin',
+      onDeleted: (k, item) =>
+        logAction(k === 'file' ? 'file_delete' : 'folder_delete', {
+          targetType: k,
+          targetId: item.id,
+          targetName: (item as any).name,
+          details: 'Suppression automatique à échéance',
+        }),
+    }).finally(() => { partnerSweepRunning.current = false; });
+  }, [files, folders, user]);
+
   const [renamingFolder, setRenamingFolder] = useState<Folder | null>(null);
   const [renameFolderInput, setRenameFolderInput] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -967,7 +1022,11 @@ export default function Dashboard() {
       
       const matchesStatus = fileStatusFilter === 'all' || (f.submissionStatus || 'Pending') === fileStatusFilter;
 
-      return matchesFolder && matchesSearch && matchesType && matchesStatus;
+      // Un document arrivé à échéance est masqué immédiatement (le balayage le
+      // supprimera physiquement) : il ne doit plus être consultable.
+      const notExpired = !isExpired(f.expiresAt) && !(f.folderId && isExpired(folders.find((d) => d.id === f.folderId)?.expiresAt));
+
+      return matchesFolder && matchesSearch && matchesType && matchesStatus && notExpired;
     })
     .sort((a, b) => {
       if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
@@ -1061,6 +1120,9 @@ export default function Dashboard() {
                         >
                           <FolderIcon className="w-4 h-4 text-azur-pastel shrink-0" />
                           <span className="flex-1 truncate font-medium">{folder.name}</span>
+                          {folder.expiresAt ? (
+                            <CalendarClock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          ) : null}
                           <span className="text-[11px] font-mono text-slate-400 shrink-0">{count}</span>
                           {folder.createdBy === 'admin' && (
                             <span className="px-1 py-0.5 rounded text-[7px] font-extrabold uppercase tracking-widest bg-amber-500/20 text-amber-300 shrink-0">Adm</span>
@@ -1223,6 +1285,9 @@ export default function Dashboard() {
                           >
                             <FolderIcon className="w-4 h-4 text-azur-pastel shrink-0" />
                             <span className="flex-1 truncate font-medium">{folder.name}</span>
+                            {folder.expiresAt ? (
+                              <CalendarClock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            ) : null}
                             <span className="text-[11px] font-mono text-slate-400 shrink-0">{count}</span>
                             {folder.createdBy === 'admin' && (
                               <span className="px-1 py-0.5 rounded text-[7px] font-extrabold uppercase tracking-widest bg-amber-500/20 text-amber-300 shrink-0">Adm</span>
@@ -1889,6 +1954,23 @@ export default function Dashboard() {
                             Déposé par l'administrateur
                           </span>
                         )}
+                        {(() => {
+                          const info = expiryInfo(file.expiresAt);
+                          if (!info) return null;
+                          const cls = info.tone === 'expired'
+                            ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30'
+                            : info.tone === 'soon'
+                              ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+                          return (
+                            <span
+                              className={`mt-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${cls}`}
+                              title={`Ce document sera automatiquement supprimé le ${info.date}`}
+                            >
+                              <CalendarClock className="w-3 h-3" /> Suppression auto le {info.date}
+                            </span>
+                          );
+                        })()}
                         {file.submissionStatus === 'Incomplete' && file.reviewNote && (
                           <p className="mt-2 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5" title="Correction demandée par votre antenne">
                             <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />

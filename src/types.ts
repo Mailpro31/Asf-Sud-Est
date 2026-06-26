@@ -38,6 +38,9 @@ export interface DossierFile {
   /** Dernière modification par l'organisme (renommage…). Sert au repérage
    *  « Nouveau » côté antenne. */
   updatedAt?: number;
+  /** Date (timestamp ms) de suppression automatique programmée par le
+   *  gestionnaire d'antenne. `null`/absent = pas de suppression programmée. */
+  expiresAt?: number | null;
 }
 
 export interface Folder {
@@ -48,6 +51,10 @@ export interface Folder {
   createdBy?: 'admin' | 'user';
   delegation_id?: string;
   antenne_id?: string;
+  /** Date (timestamp ms) de suppression automatique programmée par le
+   *  gestionnaire d'antenne : à échéance, le dossier ET les fichiers qu'il
+   *  contient sont supprimés. `null`/absent = pas de suppression programmée. */
+  expiresAt?: number | null;
 }
 
 // Invitation/attribution d'un gestionnaire d'antenne par e-mail. Créée par le

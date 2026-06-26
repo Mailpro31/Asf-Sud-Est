@@ -61,6 +61,7 @@ import AuditLogPanel from './AuditLogPanel';
 import { localDb } from '../lib/localDb';
 import { logAction, subscribeAuditLogs, type AuditLog } from '../lib/auditLog';
 import { readFileAsDataUrl, deleteFileArtifacts, downloadFile } from '../lib/fileTransfer';
+import { sweepExpired, isExpired } from '../lib/expiry';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
@@ -235,6 +236,31 @@ export default function AdminPanel() {
   const [files, setFiles] = useState<DossierFile[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [orgProfiles, setOrgProfiles] = useState<Organization[]>([]);
+
+  // Balayage des suppressions automatiques arrivées à échéance. Le super admin
+  // peut tout supprimer : sa session sert de filet de sécurité si aucun
+  // gestionnaire d'antenne ne s'est connecté depuis l'échéance.
+  const sweepRunning = useRef(false);
+  useEffect(() => {
+    if (sweepRunning.current) return;
+    const due = files.some((f) => isExpired(f.expiresAt)) || folders.some((f) => isExpired(f.expiresAt));
+    if (!due) return;
+    sweepRunning.current = true;
+    sweepExpired({
+      files,
+      folders,
+      sandbox: localDb.isSandboxActive(),
+      onDeleted: (k, item) =>
+        logAction(k === 'file' ? 'file_delete' : 'folder_delete', {
+          targetType: k,
+          targetId: item.id,
+          targetName: (item as any).name,
+          antenne_id: (item as any).antenne_id,
+          delegation_id: (item as any).delegation_id,
+          details: 'Suppression automatique à échéance',
+        }),
+    }).finally(() => { sweepRunning.current = false; });
+  }, [files, folders]);
 
   // Search, sorting, filters states
   const [searchQuery, setSearchQuery] = useState('');
