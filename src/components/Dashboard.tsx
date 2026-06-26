@@ -640,6 +640,25 @@ export default function Dashboard() {
   const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
   const [deletingFolder, setDeletingFolder] = useState<Folder | null>(null);
 
+  // Un fichier est « expiré » s'il a dépassé sa propre échéance OU celle de son
+  // dossier parent. Un document expiré n'est plus consultable (il va être
+  // supprimé) : on bloque aperçu et téléchargement à la source.
+  const isFileExpired = useCallback(
+    (f: DossierFile) => isExpired(f.expiresAt) || (!!f.folderId && isExpired(folders.find((d) => d.id === f.folderId)?.expiresAt)),
+    [folders],
+  );
+  // Ouvre l'aperçu d'un fichier, sauf s'il a expiré (il va être supprimé).
+  const openFilePreview = useCallback(
+    (f: DossierFile) => {
+      if (isFileExpired(f)) {
+        toast("Ce document a expiré : il n'est plus consultable et va être supprimé.", 'warning');
+        return;
+      }
+      setPreviewingFile(f);
+    },
+    [isFileExpired, toast],
+  );
+
   // Notifications du partenaire (cloche d'en-tête) : pièces à corriger
   // signalées par l'antenne, avec le motif en explication.
   const notifItems = useMemo<NotificationItem[]>(() => {
@@ -666,7 +685,7 @@ export default function Dashboard() {
           description: `${f.name} — sera supprimé le ${fi.date}.`,
           ts: f.expiresAt || 0,
           tone: (fi.tone === 'expired' || fi.tone === 'critical') ? 'danger' : fi.tone === 'soon' ? 'warning' : 'info',
-          onClick: () => setPreviewingFile(f),
+          onClick: () => openFilePreview(f),
         });
       }
     });
@@ -679,12 +698,15 @@ export default function Dashboard() {
           description: `Dossier « ${fol.name} » et son contenu seront supprimés le ${di.date}.`,
           ts: fol.expiresAt || 0,
           tone: (di.tone === 'expired' || di.tone === 'critical') ? 'danger' : di.tone === 'soon' ? 'warning' : 'info',
-          onClick: () => setCurrentFolderId(fol.id),
+          onClick: () => {
+            if (isExpired(fol.expiresAt)) { toast('Ce dossier a expiré : il va être supprimé.', 'warning'); return; }
+            setCurrentFolderId(fol.id);
+          },
         });
       }
     });
     return out;
-  }, [files, folders]);
+  }, [files, folders, openFilePreview, toast]);
 
   // Balayage des éléments arrivés à échéance que le partenaire peut lui-même
   // supprimer (ses propres pièces et dossiers ; pas ceux déposés par l'antenne).
@@ -867,6 +889,10 @@ export default function Dashboard() {
   };
 
   const handleDownloadFile = async (file: DossierFile) => {
+    if (isFileExpired(file)) {
+      toast("Ce document a expiré : il n'est plus disponible et va être supprimé.", 'warning');
+      return;
+    }
     try {
       const ok = await downloadFile(file);
       if (ok) {
@@ -917,23 +943,36 @@ export default function Dashboard() {
 
   const confirmDeleteFolder = async () => {
     if (!deletingFolder) return;
-    // Supprimer un dossier supprime aussi tout ce qu'il contient.
-    const folderFiles = files.filter(f => f.folderId === deletingFolder.id);
+    const folderId = deletingFolder.id;
+    // Supprimer un dossier supprime aussi tout ce qu'il contient ; les pièces
+    // déposées par l'antenne (non supprimables par l'organisme) reviennent à la
+    // racine pour ne pas devenir orphelines.
+    const folderFiles = files.filter(f => f.folderId === folderId);
+    const ownDeletable = (f: DossierFile) => f.orgId === user?.uid && f.uploadedBy !== 'admin';
+    const closeIfOpen = () => { if (currentFolderId === folderId) setCurrentFolderId(null); };
     const logIt = () => logAction('folder_delete', {
       targetType: 'folder',
-      targetId: deletingFolder.id,
+      targetId: folderId,
       targetName: deletingFolder.name,
     });
     if (localDb.isSandboxActive()) {
-      localDb.deleteFolder(deletingFolder.id); // supprime aussi les fichiers rattachés
+      // Conserver les pièces de l'antenne (les détacher avant la cascade locale).
+      for (const f of folderFiles) {
+        if (!ownDeletable(f)) {
+          const t = localDb.getFiles().find((x) => x.id === f.id);
+          if (t) { t.folderId = null; localDb.saveFile(t); }
+        }
+      }
+      localDb.deleteFolder(folderId); // supprime le dossier + les pièces restantes (celles de l'organisme)
       logIt();
       refreshLocalState();
+      closeIfOpen();
       setDeletingFolder(null);
       return;
     }
     try {
       for (const f of folderFiles) {
-        if (f.orgId === user?.uid && f.uploadedBy !== 'admin') {
+        if (ownDeletable(f)) {
           // Pièce de l'organisme : suppression complète (artefacts + document).
           try {
             await deleteFileArtifacts(f);
@@ -946,11 +985,12 @@ export default function Dashboard() {
           await updateDoc(doc(db, 'files', f.id), { folderId: null }).catch(() => {});
         }
       }
-      await deleteDoc(doc(db, 'folders', deletingFolder.id));
+      await deleteDoc(doc(db, 'folders', folderId));
       logIt();
     } catch (error) {
       console.error('Error deleting folder:', error);
     } finally {
+      closeIfOpen();
       setDeletingFolder(null);
     }
   };
@@ -2058,7 +2098,10 @@ export default function Dashboard() {
         itemName={deletingFolder?.name || ''}
         itemType="folder"
         warning={(() => {
-          const n = deletingFolder ? files.filter((f) => f.folderId === deletingFolder.id).length : 0;
+          if (!deletingFolder) return null;
+          // Ne compter que les pièces réellement supprimées (celles de
+          // l'organisme) : les pièces de l'antenne reviennent à la racine.
+          const n = files.filter((f) => f.folderId === deletingFolder.id && f.orgId === user?.uid && f.uploadedBy !== 'admin').length;
           return n > 0 ? `Ce dossier contient ${n} document(s) : ils seront également supprimés.` : null;
         })()}
       />

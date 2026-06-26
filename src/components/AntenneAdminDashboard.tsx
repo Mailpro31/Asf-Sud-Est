@@ -54,7 +54,7 @@ import { logAction, subscribeAuditLogs } from '../lib/auditLog';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
-import { sweepExpired, tsToExpiryInput, expiryInputToTs, minExpiryDateInput, formatExpiryDate } from '../lib/expiry';
+import { sweepExpired, isExpired, tsToExpiryInput, expiryInputToTs, minExpiryDateInput, formatExpiryDate } from '../lib/expiry';
 import { downloadFilesAsZip } from '../lib/zip';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../hooks/useFeedback';
@@ -1151,9 +1151,7 @@ export default function AntenneAdminDashboard() {
   const sweepRunning = useRef(false);
   useEffect(() => {
     if (sweepRunning.current) return;
-    const due =
-      files.some((f) => typeof f.expiresAt === 'number' && f.expiresAt > 0 && f.expiresAt <= Date.now()) ||
-      folders.some((f) => typeof f.expiresAt === 'number' && f.expiresAt > 0 && f.expiresAt <= Date.now());
+    const due = files.some((f) => isExpired(f.expiresAt)) || folders.some((f) => isExpired(f.expiresAt));
     if (!due) return;
     sweepRunning.current = true;
     sweepExpired({
@@ -1178,6 +1176,13 @@ export default function AntenneAdminDashboard() {
       })
       .finally(() => { sweepRunning.current = false; });
   }, [files, folders, antenneId, delegationId]);
+
+  // Si le dossier ouvert disparaît (suppression manuelle ou automatique), on
+  // revient à la racine pour ne pas rester sur un fil d'Ariane fantôme.
+  useEffect(() => {
+    if (orgFolderId && !folders.some((f) => f.id === orgFolderId)) setOrgFolderId(null);
+    if (activeFolderId && !folders.some((f) => f.id === activeFolderId)) setActiveFolderId(null);
+  }, [folders, orgFolderId, activeFolderId]);
 
   // --- Sélection multiple ---
   const toggleSelect = (id: string) => {
@@ -1410,10 +1415,10 @@ export default function AntenneAdminDashboard() {
   const renderExpiryBadge = (ts?: number | null) => <ExpiryBadge ts={ts} />;
 
   // Bouton « programmer / modifier la suppression automatique ».
-  const expiryButton = (kind: 'file' | 'folder', item: { id: string; name: string; expiresAt?: number | null }, extra = '') => (
+  const expiryButton = (kind: 'file' | 'folder', item: { id: string; name: string; expiresAt?: number | null }) => (
     <button
       onClick={(e) => { e.stopPropagation(); openExpiry(kind, item); }}
-      className={`btn-ghost p-2 shrink-0 ${item.expiresAt ? 'text-azur dark:text-azur-pastel' : ''} ${extra}`}
+      className={`btn-ghost p-2 shrink-0 ${item.expiresAt ? 'text-azur dark:text-azur-pastel' : ''}`}
       title={item.expiresAt ? `Suppression auto le ${formatExpiryDate(item.expiresAt)} — modifier` : 'Programmer la suppression automatique'}
     >
       <CalendarClock className="w-4 h-4" />

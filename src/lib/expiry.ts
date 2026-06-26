@@ -96,9 +96,21 @@ export function expiryIconClass(ts: number | null | undefined, now: number = Dat
   return info ? EXPIRY_STYLES[info.tone].icon : '';
 }
 
+/** Formate une date en `YYYY-MM-DD` dans le fuseau LOCAL (et non UTC), pour
+ *  rester cohérent avec `<input type="date">` qui raisonne en date locale et
+ *  avec `expiryInputToTs` qui interprète la valeur en heure locale. Utiliser
+ *  `toISOString()` (UTC) ici décalerait la date d'un jour dans les fuseaux à
+ *  décalage négatif (ex. Antilles, Guyane). */
+function toLocalDateInput(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 /** Date minimale sélectionnable (demain) pour un sélecteur `<input type="date">`. */
 export function minExpiryDateInput(now: number = Date.now()): string {
-  return new Date(now + DAY_MS).toISOString().slice(0, 10);
+  return toLocalDateInput(new Date(now + DAY_MS));
 }
 
 /** Convertit une valeur `<input type="date">` (YYYY-MM-DD) en timestamp à
@@ -110,10 +122,11 @@ export function expiryInputToTs(value: string): number | null {
   return Number.isFinite(t) ? t : null;
 }
 
-/** Valeur `<input type="date">` (YYYY-MM-DD) à partir d'un timestamp. */
+/** Valeur `<input type="date">` (YYYY-MM-DD) à partir d'un timestamp.
+ *  Inverse exact de `expiryInputToTs` (même fuseau local). */
 export function tsToExpiryInput(ts: number | null | undefined): string {
   if (typeof ts !== 'number' || ts <= 0) return '';
-  return new Date(ts).toISOString().slice(0, 10);
+  return toLocalDateInput(new Date(ts));
 }
 
 interface SweepOptions {
@@ -131,9 +144,17 @@ interface SweepOptions {
 /**
  * Supprime les fichiers et dossiers arrivés à échéance que l'utilisateur peut
  * supprimer. Un dossier expiré entraîne la suppression des fichiers qu'il
- * contient. Best-effort : les échecs (droits, réseau, doc déjà supprimé par un
- * autre poste) sont ignorés silencieusement. Renvoie le nombre d'éléments
- * effectivement supprimés.
+ * contient.
+ *
+ * Garde-fou anti-orphelin : un dossier n'est supprimé que si la session peut
+ * supprimer TOUS les fichiers qu'il contient ET qu'ils l'ont effectivement été.
+ * Sinon le dossier est laissé intact (un balayage avec plus de droits —
+ * gestionnaire d'antenne ou super admin, sans filtre — s'en chargera), ce qui
+ * évite de laisser une pièce avec un `folderId` pointant vers un dossier
+ * supprimé (invisible mais jamais re-balayée).
+ *
+ * Best-effort : les échecs (droits, réseau, doc déjà supprimé par un autre
+ * poste) sont ignorés silencieusement. Renvoie le nombre d'éléments supprimés.
  */
 export async function sweepExpired(opts: SweepOptions): Promise<{ files: number; folders: number }> {
   const { files, folders, sandbox, canDeleteFile, canDeleteFolder, onDeleted } = opts;
@@ -141,15 +162,23 @@ export async function sweepExpired(opts: SweepOptions): Promise<{ files: number;
   let nFiles = 0;
   let nFolders = 0;
 
-  const expiredFolders = folders.filter(
-    (f) => isExpired(f.expiresAt, now) && (canDeleteFolder ? canDeleteFolder(f) : true),
+  const canFile = (f: DossierFile) => (canDeleteFile ? canDeleteFile(f) : true);
+  const canFol = (f: Folder) => (canDeleteFolder ? canDeleteFolder(f) : true);
+
+  // Dossiers expirés « videables » : supprimables par la session ET dont
+  // chaque fichier contenu est lui aussi supprimable par la session.
+  const clearableFolders = folders.filter(
+    (fol) =>
+      isExpired(fol.expiresAt, now) &&
+      canFol(fol) &&
+      files.filter((f) => f.folderId === fol.id).every(canFile),
   );
-  const expiredFolderIds = new Set(expiredFolders.map((f) => f.id));
+  const clearableFolderIds = new Set(clearableFolders.map((f) => f.id));
 
   const filesToDelete = files.filter(
     (f) =>
-      (isExpired(f.expiresAt, now) || (f.folderId != null && expiredFolderIds.has(f.folderId))) &&
-      (canDeleteFile ? canDeleteFile(f) : true),
+      (isExpired(f.expiresAt, now) || (f.folderId != null && clearableFolderIds.has(f.folderId))) &&
+      canFile(f),
   );
 
   if (sandbox) {
@@ -158,8 +187,9 @@ export async function sweepExpired(opts: SweepOptions): Promise<{ files: number;
       onDeleted?.('file', f);
       nFiles++;
     }
-    for (const fol of expiredFolders) {
-      // localDb.deleteFolder supprime aussi les fichiers rattachés.
+    for (const fol of clearableFolders) {
+      // localDb.deleteFolder supprime aussi les fichiers rattachés ; comme le
+      // dossier est « videable », ils sont tous légitimement supprimables.
       localDb.deleteFolder(fol.id);
       onDeleted?.('folder', fol);
       nFolders++;
@@ -168,17 +198,23 @@ export async function sweepExpired(opts: SweepOptions): Promise<{ files: number;
   }
 
   // Fichiers d'abord (artefacts de stockage + document), puis dossiers.
+  const deletedFileIds = new Set<string>();
   for (const f of filesToDelete) {
     try {
       await deleteFileArtifacts(f);
       await deleteDoc(doc(db, 'files', f.id));
+      deletedFileIds.add(f.id);
       onDeleted?.('file', f);
       nFiles++;
     } catch (e) {
       console.warn('Suppression auto du fichier impossible:', f.id, e);
     }
   }
-  for (const fol of expiredFolders) {
+  for (const fol of clearableFolders) {
+    // On ne retire le dossier que si tous ses fichiers ont bien été supprimés,
+    // sinon on laisserait une pièce orpheline (folderId mort).
+    const allGone = files.filter((f) => f.folderId === fol.id).every((f) => deletedFileIds.has(f.id));
+    if (!allGone) continue;
     try {
       await deleteDoc(doc(db, 'folders', fol.id));
       onDeleted?.('folder', fol);
