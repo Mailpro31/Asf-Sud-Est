@@ -931,7 +931,13 @@ export default function AntenneAdminDashboard() {
   };
 
   const handleDeleteFolder = async (folder: Folder) => {
-    const ok = await confirm(`Supprimer le dossier « ${folder.name} » ? Les documents qu'il contient ne sont pas supprimés (ils reviennent à la racine).`);
+    // Supprimer un dossier supprime aussi TOUT ce qu'il contient.
+    const contained = files.filter((f) => (f.folderId || null) === folder.id);
+    const ok = await confirm(
+      contained.length
+        ? `Supprimer le dossier « ${folder.name} » ET les ${contained.length} document(s) qu'il contient ? Cette action est définitive.`
+        : `Supprimer le dossier « ${folder.name} » ?`,
+    );
     if (!ok) return;
     const logIt = () => logAction('folder_delete', {
       targetType: 'folder',
@@ -942,29 +948,37 @@ export default function AntenneAdminDashboard() {
     });
     if (activeFolderId === folder.id) setActiveFolderId(null);
     if (orgFolderId === folder.id) setOrgFolderId(null);
-    // Les fichiers du dossier reviennent à la racine (folderId = null) — sinon
-    // ils resteraient orphelins (invisibles à la racine ET sans dossier parent).
-    const contained = files.filter((f) => (f.folderId || null) === folder.id);
     if (localDb.isSandboxActive()) {
-      for (const f of contained) {
-        const t = localDb.getFiles().find((x) => x.id === f.id);
-        if (t) { t.folderId = null; localDb.saveFile(t); }
-      }
-      localDb.deleteFolder(folder.id);
+      localDb.deleteFolder(folder.id); // supprime aussi les fichiers rattachés
       logIt();
       reloadFoldersLocal();
       return;
     }
     try {
-      // Réaffectation des fichiers à la racine AVANT la suppression du dossier.
-      await Promise.all(
-        contained.map((f) => updateDoc(doc(db, 'files', f.id), { folderId: null }).catch((e) => {
-          console.warn('Réaffectation à la racine échouée pour', f.id, e);
-        })),
-      );
+      // Suppression des documents contenus (artefacts de stockage + document)
+      // AVANT la suppression du dossier.
+      for (const f of contained) {
+        try {
+          await deleteFileArtifacts(f);
+          await deleteDoc(doc(db, 'files', f.id));
+          logAction('file_delete', {
+            targetType: 'file',
+            targetId: f.id,
+            targetName: f.name,
+            antenne_id: f.antenne_id || antenneId,
+            delegation_id: f.delegation_id || delegationId,
+            details: `Supprimé avec le dossier « ${folder.name} »`,
+          });
+        } catch (e) {
+          console.warn('Suppression du document contenu échouée:', f.id, e);
+        }
+      }
       await deleteDoc(doc(db, 'folders', folder.id));
       logIt();
-      toast('Dossier supprimé.', 'success');
+      toast(
+        contained.length ? `Dossier et ${contained.length} document(s) supprimés.` : 'Dossier supprimé.',
+        'success',
+      );
     } catch (err: any) {
       console.error('Delete folder failed:', err);
       toast('Échec de la suppression du dossier : ' + (err?.message || 'erreur'), 'error');

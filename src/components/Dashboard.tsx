@@ -917,25 +917,35 @@ export default function Dashboard() {
 
   const confirmDeleteFolder = async () => {
     if (!deletingFolder) return;
+    // Supprimer un dossier supprime aussi tout ce qu'il contient.
     const folderFiles = files.filter(f => f.folderId === deletingFolder.id);
-    if (folderFiles.length > 0) {
-      toast('Impossible de supprimer le dossier car il n\'est pas vide.', 'warning');
-      setDeletingFolder(null);
-      return;
-    }
     const logIt = () => logAction('folder_delete', {
       targetType: 'folder',
       targetId: deletingFolder.id,
       targetName: deletingFolder.name,
     });
     if (localDb.isSandboxActive()) {
-      localDb.deleteFolder(deletingFolder.id);
+      localDb.deleteFolder(deletingFolder.id); // supprime aussi les fichiers rattachés
       logIt();
       refreshLocalState();
       setDeletingFolder(null);
       return;
     }
     try {
+      for (const f of folderFiles) {
+        if (f.orgId === user?.uid && f.uploadedBy !== 'admin') {
+          // Pièce de l'organisme : suppression complète (artefacts + document).
+          try {
+            await deleteFileArtifacts(f);
+            await deleteDoc(doc(db, 'files', f.id));
+            logAction('file_delete', { targetType: 'file', targetId: f.id, targetName: f.name, details: `Supprimé avec le dossier « ${deletingFolder.name} »` });
+          } catch (e) { console.warn('Suppression du document contenu échouée:', f.id, e); }
+        } else {
+          // Pièce déposée par l'antenne : non supprimable par l'organisme → on
+          // la remet à la racine pour ne pas la rendre orpheline.
+          await updateDoc(doc(db, 'files', f.id), { folderId: null }).catch(() => {});
+        }
+      }
       await deleteDoc(doc(db, 'folders', deletingFolder.id));
       logIt();
     } catch (error) {
@@ -2044,6 +2054,10 @@ export default function Dashboard() {
         onConfirm={confirmDeleteFolder}
         itemName={deletingFolder?.name || ''}
         itemType="folder"
+        warning={(() => {
+          const n = deletingFolder ? files.filter((f) => f.folderId === deletingFolder.id).length : 0;
+          return n > 0 ? `Ce dossier contient ${n} document(s) : ils seront également supprimés.` : null;
+        })()}
       />
 
       <FilePreviewModal
