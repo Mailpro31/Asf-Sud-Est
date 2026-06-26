@@ -34,7 +34,10 @@ export function formatExpiryDate(ts: number): string {
   return new Date(ts).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-export type ExpiryTone = 'expired' | 'soon' | 'scheduled';
+// Du plus calme (échéance lointaine) au plus alarmant (échéance dépassée) :
+// scheduled → upcoming → soon → critical → expired. La couleur « chauffe » à
+// mesure que la date approche.
+export type ExpiryTone = 'expired' | 'critical' | 'soon' | 'upcoming' | 'scheduled';
 
 /** Informations d'affichage pour un badge de suppression programmée. */
 export function expiryInfo(ts: number | null | undefined, now: number = Date.now()):
@@ -44,8 +47,53 @@ export function expiryInfo(ts: number | null | undefined, now: number = Date.now
   const days = daysUntil(ts, now);
   const date = formatExpiryDate(ts);
   if (days <= 0) return { tone: 'expired', label: 'Suppression imminente', date, days };
-  if (days <= 7) return { tone: 'soon', label: `Suppression dans ${days} j`, date, days };
-  return { tone: 'scheduled', label: `Suppression auto le ${date}`, date, days };
+  if (days === 1) return { tone: 'critical', label: 'Suppression demain', date, days };
+  if (days <= 2) return { tone: 'critical', label: `Suppression dans ${days} jours`, date, days };
+  if (days <= 7) return { tone: 'soon', label: `Suppression dans ${days} jours`, date, days };
+  if (days <= 30) return { tone: 'upcoming', label: `Suppression le ${date}`, date, days };
+  return { tone: 'scheduled', label: `Suppression le ${date}`, date, days };
+}
+
+/** Classes Tailwind par palier d'urgence (badge + pastille + icône seule).
+ *  Une seule source de vérité pour un rendu identique partout. */
+export const EXPIRY_STYLES: Record<ExpiryTone, { badge: string; dot: string; icon: string; pulse: boolean }> = {
+  expired: {
+    badge: 'bg-rose-600 text-white border-rose-600 dark:bg-rose-600 dark:text-white dark:border-rose-500 shadow-sm shadow-rose-500/30',
+    dot: 'bg-white',
+    icon: 'text-rose-600 dark:text-rose-400',
+    pulse: true,
+  },
+  critical: {
+    badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/40',
+    dot: 'bg-rose-500',
+    icon: 'text-rose-500 dark:text-rose-400',
+    pulse: true,
+  },
+  soon: {
+    badge: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/40',
+    dot: 'bg-orange-500',
+    icon: 'text-orange-500 dark:text-orange-400',
+    pulse: false,
+  },
+  upcoming: {
+    badge: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30',
+    dot: 'bg-amber-500',
+    icon: 'text-amber-600 dark:text-amber-300',
+    pulse: false,
+  },
+  scheduled: {
+    badge: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+    dot: 'bg-slate-400',
+    icon: 'text-slate-500 dark:text-slate-400',
+    pulse: false,
+  },
+};
+
+/** Couleur de l'icône « horloge » seule selon l'urgence (pour les endroits
+ *  où l'on ne peut pas afficher le badge complet, ex. la barre latérale). */
+export function expiryIconClass(ts: number | null | undefined, now: number = Date.now()): string {
+  const info = expiryInfo(ts, now);
+  return info ? EXPIRY_STYLES[info.tone].icon : '';
 }
 
 /** Date minimale sélectionnable (demain) pour un sélecteur `<input type="date">`. */

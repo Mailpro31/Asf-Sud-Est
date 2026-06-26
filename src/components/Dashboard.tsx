@@ -55,9 +55,9 @@ import { localDb } from '../lib/localDb';
 import { notifyAntenneOnUpload, notifyAntenneOnSubmission, subscribeAntenneSettings, type AntenneSettings } from '../lib/antenneSettings';
 import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
-import { sweepExpired, expiryInfo, formatExpiryDate, isExpired } from '../lib/expiry';
+import { sweepExpired, expiryInfo, formatExpiryDate, isExpired, expiryIconClass } from '../lib/expiry';
 import { firebaseConfig } from '../lib/firebaseConfig';
-import { StatusBadge, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, type NotificationItem, type TourStep } from './ui';
+import { StatusBadge, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 
@@ -665,7 +665,7 @@ export default function Dashboard() {
           title: 'Suppression automatique programmée',
           description: `${f.name} — sera supprimé le ${fi.date}.`,
           ts: f.expiresAt || 0,
-          tone: fi.tone === 'scheduled' ? 'info' : 'warning',
+          tone: (fi.tone === 'expired' || fi.tone === 'critical') ? 'danger' : fi.tone === 'soon' ? 'warning' : 'info',
           onClick: () => setPreviewingFile(f),
         });
       }
@@ -678,7 +678,7 @@ export default function Dashboard() {
           title: 'Dossier à suppression automatique',
           description: `Dossier « ${fol.name} » et son contenu seront supprimés le ${di.date}.`,
           ts: fol.expiresAt || 0,
-          tone: di.tone === 'scheduled' ? 'info' : 'warning',
+          tone: (di.tone === 'expired' || di.tone === 'critical') ? 'danger' : di.tone === 'soon' ? 'warning' : 'info',
           onClick: () => setCurrentFolderId(fol.id),
         });
       }
@@ -1137,7 +1137,7 @@ export default function Dashboard() {
                               onClick={(e) => { e.stopPropagation(); toast(`Le dossier « ${folder.name} » et son contenu seront supprimés automatiquement le ${formatExpiryDate(folder.expiresAt!)}.`, 'warning'); }}
                               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toast(`Le dossier « ${folder.name} » et son contenu seront supprimés automatiquement le ${formatExpiryDate(folder.expiresAt!)}.`, 'warning'); } }}
                               title={`Suppression automatique le ${formatExpiryDate(folder.expiresAt)} — cliquez pour le détail`}
-                              className="shrink-0 text-amber-400 hover:text-amber-300 cursor-pointer"
+                              className={`shrink-0 cursor-pointer hover:opacity-80 ${expiryIconClass(folder.expiresAt)}`}
                             >
                               <CalendarClock className="w-3.5 h-3.5" />
                             </span>
@@ -1311,7 +1311,7 @@ export default function Dashboard() {
                                 onClick={(e) => { e.stopPropagation(); toast(`Le dossier « ${folder.name} » et son contenu seront supprimés automatiquement le ${formatExpiryDate(folder.expiresAt!)}.`, 'warning'); }}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toast(`Le dossier « ${folder.name} » et son contenu seront supprimés automatiquement le ${formatExpiryDate(folder.expiresAt!)}.`, 'warning'); } }}
                                 title={`Suppression automatique le ${formatExpiryDate(folder.expiresAt)} — cliquez pour le détail`}
-                                className="shrink-0 text-amber-400 hover:text-amber-300 cursor-pointer"
+                                className={`shrink-0 cursor-pointer hover:opacity-80 ${expiryIconClass(folder.expiresAt)}`}
                               >
                                 <CalendarClock className="w-3.5 h-3.5" />
                               </span>
@@ -1901,14 +1901,7 @@ export default function Dashboard() {
                   <span className={`text-xs font-black uppercase ${themeConfig.textColor}`}>
                     📂 {currentFolder.name}
                   </span>
-                  {currentFolder.expiresAt ? (
-                    <span
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30"
-                      title={`Ce dossier et son contenu seront supprimés le ${formatExpiryDate(currentFolder.expiresAt)}`}
-                    >
-                      <CalendarClock className="w-3 h-3" /> Suppression auto le {formatExpiryDate(currentFolder.expiresAt)}
-                    </span>
-                  ) : null}
+                  {currentFolder.expiresAt ? <ExpiryBadge ts={currentFolder.expiresAt} /> : null}
                 </>
               )}
             </div>
@@ -1990,23 +1983,7 @@ export default function Dashboard() {
                             Déposé par l'administrateur
                           </span>
                         )}
-                        {(() => {
-                          const info = expiryInfo(file.expiresAt);
-                          if (!info) return null;
-                          const cls = info.tone === 'expired'
-                            ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30'
-                            : info.tone === 'soon'
-                              ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700';
-                          return (
-                            <span
-                              className={`mt-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${cls}`}
-                              title={`Ce document sera automatiquement supprimé le ${info.date}`}
-                            >
-                              <CalendarClock className="w-3 h-3" /> Suppression auto le {info.date}
-                            </span>
-                          );
-                        })()}
+                        {file.expiresAt ? <div className="mt-2"><ExpiryBadge ts={file.expiresAt} /></div> : null}
                         {file.submissionStatus === 'Incomplete' && file.reviewNote && (
                           <p className="mt-2 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-2 py-1 flex items-start gap-1.5" title="Correction demandée par votre antenne">
                             <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
