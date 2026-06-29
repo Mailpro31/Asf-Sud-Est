@@ -12,9 +12,10 @@ const admin = require('firebase-admin');
 
 admin.initializeApp();
 
-// Emails autorisés à recevoir le rôle administrateur.
+// Emails autorisés à recevoir le rôle administrateur (super admin).
 // Adaptez cette liste (ou branchez-la sur une collection Firestore).
-const ADMIN_EMAILS = ['mailprosasha2@gmail.com'];
+// Doit rester aligné avec isSuperAdminEmail() dans firestore.rules.
+const ADMIN_EMAILS = ['mailprosasha2@gmail.com', 'asf.sud.est@gmail.com'];
 
 /**
  * À la création d'un compte, attribue le claim admin si l'email est autorisé.

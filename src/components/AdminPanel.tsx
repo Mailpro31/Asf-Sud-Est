@@ -68,10 +68,11 @@ import { useExpiry, ExpiryModal } from './ui/ExpiryModal';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
-import { StatusBadge, StatusActions, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
+import { StatusBadge, StatusActions, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, PreferencesButton, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
 import { STATUS_ORDER } from '../lib/status';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
+import { useStickyState } from '../hooks/useStickyState';
 import { lonLatToXY, geocodeCity, FRANCE_MAINLAND, FRANCE_CORSICA, toSvgPoints } from '../lib/franceGeo';
 
 // Libellé + style de badge pour chaque rôle de compte.
@@ -294,13 +295,13 @@ export default function AdminPanel() {
   // Search, sorting, filters states
   const [searchQuery, setSearchQuery] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState('all');
-  const [fileStatusFilter, setFileStatusFilter] = useState<'all' | SubmissionStatus>('all');
+  const [fileStatusFilter, setFileStatusFilter] = useStickyState<'all' | SubmissionStatus>('all', `asf:admin:${organization?.id ?? 'anon'}:status`);
   // Gestionnaire d'utilisateurs : recherche + filtres rôle/statut.
   const [memberSearch, setMemberSearch] = useState('');
-  const [memberRole, setMemberRole] = useState<'all' | 'organization' | 'admin_antenne' | 'super_admin'>('all');
-  const [memberStatus, setMemberStatus] = useState<'all' | SubmissionStatus>('all');
+  const [memberRole, setMemberRole] = useStickyState<'all' | 'organization' | 'admin_antenne' | 'super_admin'>('all', `asf:admin:${organization?.id ?? 'anon'}:memberRole`);
+  const [memberStatus, setMemberStatus] = useStickyState<'all' | SubmissionStatus>('all', `asf:admin:${organization?.id ?? 'anon'}:memberStatus`);
   const [activeTour, setActiveTour] = useState<TourStep[] | null>(null);
-  const [sortBy, setSortBy] = useState('date-desc');
+  const [sortBy, setSortBy] = useStickyState('date-desc', `asf:admin:${organization?.id ?? 'anon'}:sort`);
 
   // Multi-tab support: workspaces for dossiers, members for validation and user access, plus config for superadmin
   const [activeTab, setActiveTab] = useState<'workspaces' | 'members' | 'delegations'>('workspaces');
@@ -1596,6 +1597,7 @@ export default function AdminPanel() {
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <NotificationBell items={notifItems} />
           <ThemeToggle />
+          <PreferencesButton />
           <div className="hidden sm:flex flex-col items-end text-right">
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
               {organization?.contactName || "Administrateur National"}

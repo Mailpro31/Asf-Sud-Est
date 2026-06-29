@@ -14,4 +14,5 @@ export { ComplianceRing, type ComplianceRingProps } from './ComplianceRing';
 export { GuidedTour, type GuidedTourProps, type TourStep } from './GuidedTour';
 export { StatusFilterChips, type StatusFilterChipsProps, type StatusFilterValue } from './StatusFilterChips';
 export { ThemeToggle, FloatingThemeToggle } from './ThemeToggle';
+export { PreferencesModal, PreferencesButton } from './PreferencesModal';
 export { ExpiryBadge, type ExpiryBadgeProps } from './ExpiryBadge';

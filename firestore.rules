@@ -27,13 +27,16 @@ service cloud.firestore {
     }
 
     // Safe Admin Email Verification
+    // Comptes super administrateur « en dur » (toujours reconnus, quel que soit
+    // l'état du custom claim ou du document Firestore). Comparaison en minuscules
+    // pour rester insensible à la casse.
     function isSuperAdminEmail() {
-      return isSignedIn() && 
-             request.auth.token != null && 
-             'email' in request.auth.token && 
-             request.auth.token.email != null && 
-             (request.auth.token.email == "mailprosasha2@gmail.com" || 
-              request.auth.token.email.matches('(?i)mailprosasha2@gmail\\.com'));
+      return isSignedIn() &&
+             request.auth.token != null &&
+             'email' in request.auth.token &&
+             request.auth.token.email != null &&
+             (request.auth.token.email.lower() == "mailprosasha2@gmail.com" ||
+              request.auth.token.email.lower() == "asf.sud.est@gmail.com");
     }
 
     // Checking if the user has a registered document in Firestore

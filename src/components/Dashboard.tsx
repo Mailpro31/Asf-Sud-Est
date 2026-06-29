@@ -57,9 +57,10 @@ import { logAction } from '../lib/auditLog';
 import { downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { sweepExpired, expiryInfo, formatExpiryDate, isExpired, expiryIconClass } from '../lib/expiry';
 import { firebaseConfig } from '../lib/firebaseConfig';
-import { StatusBadge, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
+import { StatusBadge, GuidedTour, StatusFilterChips, ThemeToggle, PreferencesButton, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
+import { useStickyState } from '../hooks/useStickyState';
 
 
 export default function Dashboard() {
@@ -602,9 +603,11 @@ export default function Dashboard() {
   const [renamingFile, setRenamingFile] = useState<DossierFile | null>(null);
   const [renameInput, setRenameInput] = useState('');
   const [previewingFile, setPreviewingFile] = useState<DossierFile | null>(null);
-  const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
-  const [fileStatusFilter, setFileStatusFilter] = useState<'all' | SubmissionStatus>('all');
-  const [sortBy, setSortBy] = useState<string>('date-desc');
+  // Préférences d'affichage mémorisées par utilisateur (filtre/tri retenus
+  // d'une visite à l'autre).
+  const [fileTypeFilter, setFileTypeFilter] = useStickyState<string>('all', `asf:dash:${organization?.id ?? 'anon'}:type`);
+  const [fileStatusFilter, setFileStatusFilter] = useStickyState<'all' | SubmissionStatus>('all', `asf:dash:${organization?.id ?? 'anon'}:status`);
+  const [sortBy, setSortBy] = useStickyState<string>('date-desc', `asf:dash:${organization?.id ?? 'anon'}:sort`);
   const [tourOpen, setTourOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -1481,6 +1484,7 @@ export default function Dashboard() {
               </button>
             )}
             <ThemeToggle className="w-8 h-8 !rounded-lg bg-white/10 border-transparent text-slate-200 hover:bg-white/20 hover:text-white dark:bg-white/10 dark:border-transparent dark:text-slate-200 dark:hover:bg-white/20 dark:hover:text-white" />
+            <PreferencesButton className="inline-flex items-center justify-center w-8 h-8 !rounded-lg bg-white/10 border-transparent text-slate-200 hover:bg-white/20 hover:text-white transition-colors cursor-pointer" />
             <button
               type="button"
               onClick={() => setIsProfileOpen(true)}
@@ -1525,6 +1529,7 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <NotificationBell items={notifItems} className="hidden md:block" />
             <ThemeToggle className="hidden md:inline-flex" />
+            <PreferencesButton className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-deep dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white transition-colors cursor-pointer" />
             {organization.antenne_id && (
               <button
                 onClick={revealAntenneInfo}
