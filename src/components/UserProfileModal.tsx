@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, User, Shield, Key, Mail, Phone, Building, Check, Loader2, AlertCircle,
-  KeyRound, Eye, EyeOff, LogOut, MailCheck,
+  KeyRound, Eye, EyeOff, LogOut, MailCheck, Trash2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from './ui';
@@ -11,6 +11,7 @@ import { db, auth } from '../lib/firebase';
 import { updatePassword, updateEmail, sendPasswordResetEmail } from 'firebase/auth';
 import { logAction } from '../lib/auditLog';
 import { authErrorMessage } from '../lib/authErrors';
+import { deleteUserAccount } from '../lib/accounts';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -69,6 +70,11 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   const [resetStatus, setResetStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [sendingReset, setSendingReset] = useState(false);
 
+  // Suppression du compte (auto-suppression)
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   // Avatar
   const [selectedAvatarId, setSelectedAvatarId] = useState('pilot-1');
 
@@ -97,6 +103,8 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
       setNewPassword('');
       setConfirmNewPassword('');
       setShowPassword(false);
+      setDeleteConfirm('');
+      setDeleteError(null);
     }
   }, [isOpen, organization, user]);
 
@@ -205,6 +213,36 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
       setResetStatus({ type: 'error', message: authErrorMessage(error, "Impossible d'envoyer l'e-mail.") });
     } finally {
       setSendingReset(false);
+    }
+  };
+
+  // --- Auto-suppression définitive du compte ---
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setDeleteError(null);
+    setDeletingAccount(true);
+    try {
+      logAction('org_delete', {
+        targetType: 'organization',
+        targetId: user.uid,
+        targetName: organization.name || organization.contactName || user.email || user.uid,
+        delegation_id: organization.delegation_id,
+        antenne_id: organization.antenne_id,
+        details: 'Compte et données supprimés par le titulaire (auto-suppression)',
+      });
+      await deleteUserAccount(user.uid);
+      // Le compte d'authentification est supprimé côté serveur : on déconnecte
+      // proprement la session locale encore en cache.
+      try { await signOut(); } catch { /* déjà invalidé */ }
+    } catch (err: any) {
+      console.error('Suppression du compte échouée :', err);
+      const code = err?.code || '';
+      setDeleteError(
+        code === 'functions/not-found'
+          ? "Le service de suppression n'est pas disponible pour le moment. Réessayez plus tard ou contactez un administrateur."
+          : (err?.message || 'Une erreur est survenue. Réessayez plus tard.'),
+      );
+      setDeletingAccount(false);
     }
   };
 
@@ -548,6 +586,53 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                           <button onClick={handleSendReset} disabled={sendingReset} className="btn-secondary text-[11px] px-4 py-1.5 disabled:opacity-60">
                             {sendingReset ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MailCheck className="w-3.5 h-3.5" />}
                             <span>Envoyer le lien de réinitialisation</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Zone de danger : suppression définitive du compte */}
+                      <div className="bg-rose-50/40 dark:bg-rose-950/10 p-5 rounded-2xl border border-rose-200 dark:border-rose-900/40 space-y-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 rounded-xl">
+                            <Trash2 className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-extrabold text-rose-700 dark:text-rose-300 uppercase tracking-wider">Supprimer mon compte</h4>
+                            <p className="text-[11px] text-rose-500/90 dark:text-rose-400/80">
+                              Action <strong>irréversible</strong> : votre compte, vos documents et vos dossiers
+                              seront définitivement supprimés, conformément à votre droit à l'effacement (RGPD).
+                            </p>
+                          </div>
+                        </div>
+
+                        {deleteError && (
+                          <div className="p-3 rounded-lg text-xs font-semibold flex items-center gap-2 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-100 dark:border-rose-500/30">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>{deleteError}</span>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="text-[10px] font-black uppercase text-rose-400 dark:text-rose-500/80 tracking-wider mb-1.5 block">
+                            Pour confirmer, saisissez <span className="font-mono text-rose-600 dark:text-rose-300">SUPPRIMER</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={deleteConfirm}
+                            onChange={(e) => setDeleteConfirm(e.target.value)}
+                            placeholder="SUPPRIMER"
+                            className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
+                          />
+                        </div>
+
+                        <div className="flex justify-end">
+                          <button
+                            onClick={handleDeleteAccount}
+                            disabled={deletingAccount || deleteConfirm.trim().toUpperCase() !== 'SUPPRIMER'}
+                            className="inline-flex items-center gap-2 text-[11px] font-bold px-4 py-1.5 rounded-xl text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                          >
+                            {deletingAccount ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                            <span>{deletingAccount ? 'Suppression…' : 'Supprimer définitivement mon compte'}</span>
                           </button>
                         </div>
                       </div>

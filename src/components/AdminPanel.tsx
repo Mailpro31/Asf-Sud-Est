@@ -62,6 +62,7 @@ import AuditLogPanel from './AuditLogPanel';
 import { localDb } from '../lib/localDb';
 import { logAction, subscribeAuditLogs, type AuditLog } from '../lib/auditLog';
 import { readFileAsDataUrl, deleteFileArtifacts, downloadFile } from '../lib/fileTransfer';
+import { deleteUserAccount } from '../lib/accounts';
 import { sweepExpired, isExpired, tsToExpiryInput, expiryInputToTs, minExpiryDateInput, formatExpiryDate } from '../lib/expiry';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
@@ -841,21 +842,21 @@ export default function AdminPanel() {
       return;
     }
     try {
-      // 1) Fichiers (+ artefacts de stockage), 2) dossiers, 3) profil.
-      for (const f of orgFiles) {
-        try { await deleteFileArtifacts(f); } catch { /* artefact déjà absent */ }
-        await deleteDoc(doc(db, 'files', f.id));
-      }
-      for (const fo of orgFolders) {
-        await deleteDoc(doc(db, 'folders', fo.id));
-      }
-      await deleteDoc(doc(db, 'organizations', org.id));
+      // Suppression côté serveur (Cloud Function) : compte d'authentification
+      // + fichiers (et leurs artefacts) + dossiers + profil. Indispensable car
+      // le client ne peut ni supprimer le compte Auth d'un tiers, ni empêcher un
+      // compte encore connecté de recréer son profil « Pending ».
+      const res = await deleteUserAccount(org.id);
       logIt();
-      toast(`Compte « ${label} » et ses ${orgFiles.length} fichier(s) supprimés.`, 'success');
+      toast(`Compte « ${label} » et ses ${res.files ?? orgFiles.length} fichier(s) supprimés.`, 'success');
       setOrgToDelete(null);
     } catch (err: any) {
       console.error("Error deleting organization:", err);
-      toast("Échec de la suppression : " + (err?.message || 'erreur inconnue'), 'error');
+      const code = err?.code || '';
+      const msg = code === 'functions/not-found'
+        ? "La fonction de suppression n'est pas déployée. Lancez : firebase deploy --only functions."
+        : (err?.message || 'erreur inconnue');
+      toast("Échec de la suppression : " + msg, 'error');
     } finally {
       setDeletingOrgBusy(false);
     }

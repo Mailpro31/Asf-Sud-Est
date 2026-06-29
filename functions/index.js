@@ -74,6 +74,88 @@ async function deleteExpiredFile(bucket, docSnap) {
 }
 
 /**
+ * Suppression DÉFINITIVE d'un compte utilisateur (authentification + données).
+ *
+ * Appel côté client :
+ *   httpsCallable(functions, 'deleteUserAccount')({ uid })
+ *
+ * Autorisé pour :
+ *   - un administrateur (claim `admin: true`) → supprime n'importe quel compte ;
+ *   - le titulaire lui-même (`context.auth.uid === uid`) → auto-suppression.
+ *
+ * Pourquoi une fonction serveur ? Le client ne peut PAS supprimer un compte
+ * Firebase Auth tiers, ni empêcher un compte encore connecté de recréer son
+ * profil Firestore. On supprime donc d'abord le compte Auth (révocation), puis
+ * toutes ses données (fichiers + artefacts de stockage, dossiers, profil).
+ */
+exports.deleteUserAccount = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Connexion requise.');
+  }
+  const { uid } = data || {};
+  if (typeof uid !== 'string' || uid.trim() === '') {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Paramètre attendu : { uid: string }.'
+    );
+  }
+  const isAdmin = context.auth.token.admin === true;
+  if (!isAdmin && context.auth.uid !== uid) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Vous ne pouvez supprimer que votre propre compte.'
+    );
+  }
+
+  const db = admin.firestore();
+  const bucket = admin.storage().bucket();
+
+  // 1) Révocation immédiate de l'accès : suppression du compte d'authentification.
+  //    (Empêche le compte de réécrire un profil « Pending » juste après.)
+  try {
+    await admin.auth().deleteUser(uid);
+  } catch (e) {
+    if (e.code !== 'auth/user-not-found') {
+      console.error('Suppression du compte Auth échouée:', uid, e);
+      throw new functions.https.HttpsError(
+        'internal',
+        "Impossible de supprimer le compte d'authentification."
+      );
+    }
+  }
+
+  // 2) Données Firestore : fichiers (+ artefacts), dossiers, puis profil.
+  let nFiles = 0;
+  let nFolders = 0;
+  const ownedFiles = await db.collection('files').where('orgId', '==', uid).get();
+  for (const f of ownedFiles.docs) {
+    try {
+      await deleteExpiredFile(bucket, f);
+      nFiles++;
+    } catch (e) {
+      console.error('Suppression du fichier (compte) impossible:', f.id, e);
+    }
+  }
+  const ownedFolders = await db.collection('folders').where('orgId', '==', uid).get();
+  for (const fo of ownedFolders.docs) {
+    try {
+      await fo.ref.delete();
+      nFolders++;
+    } catch (e) {
+      console.error('Suppression du dossier (compte) impossible:', fo.id, e);
+    }
+  }
+  try {
+    await db.collection('organizations').doc(uid).delete();
+  } catch (e) {
+    console.error('Suppression du profil impossible:', uid, e);
+  }
+
+  console.log(`Compte ${uid} supprimé : ${nFiles} fichier(s), ${nFolders} dossier(s).`);
+  return { success: true, uid, files: nFiles, folders: nFolders };
+});
+
+/**
  * Suppression automatique (« autodestruction ») planifiée des fichiers et
  * dossiers arrivés à l'échéance (`expiresAt`) programmée par le gestionnaire
  * d'antenne. Contrairement au balayage côté client (qui ne s'exécute que si une
