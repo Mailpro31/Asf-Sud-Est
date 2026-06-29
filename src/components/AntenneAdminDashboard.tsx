@@ -2166,7 +2166,7 @@ export default function AntenneAdminDashboard() {
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => setActiveTour(orgModalTour)}
-                  className="btn-ghost p-2"
+                  className="btn-tutorial"
                   title="Comment utiliser cette fiche ?"
                 >
                   <GraduationCap className="w-5 h-5" />
@@ -2466,7 +2466,7 @@ export default function AntenneAdminDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                <button onClick={() => setActiveTour(internalModalTour)} className="btn-ghost p-2" title="Comment ça marche ?">
+                <button onClick={() => setActiveTour(internalModalTour)} className="btn-tutorial" title="Comment ça marche ?">
                   <GraduationCap className="w-5 h-5" />
                 </button>
                 <button onClick={closeInternal} className="btn-ghost p-2" title="Fermer">

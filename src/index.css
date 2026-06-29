@@ -198,6 +198,36 @@
     transform: translateY(0) scale(0.985);
   }
 
+  /* Bouton tutoriel / aide (icône seule) — TOUJOURS orange, pour repérer l'aide
+     d'un coup d'œil quel que soit le dashboard ou la fenêtre. Variante « douce »
+     de l'accent orange : pastille discrète qui ne concurrence pas le bouton
+     « Tutoriel » plein (btn-sourire) de l'en-tête. */
+  .btn-tutorial {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+    color: var(--color-sourire);
+    background: var(--color-sourire-light);
+    transition: background 0.2s var(--ease-asf), color 0.2s var(--ease-asf), transform 0.2s var(--ease-asf);
+  }
+  .btn-tutorial:hover {
+    background: #ffe6c4;
+    color: var(--color-sourire-dark);
+  }
+  .btn-tutorial:active {
+    transform: scale(0.96);
+  }
+  .dark .btn-tutorial {
+    color: #ffb84d;
+    background: rgba(243, 146, 0, 0.14);
+  }
+  .dark .btn-tutorial:hover {
+    background: rgba(243, 146, 0, 0.24);
+    color: #ffc870;
+  }
+
   /* Bouton secondaire (contour neutre) */
   .btn-secondary {
     display: inline-flex;

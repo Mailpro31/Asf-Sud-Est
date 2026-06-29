@@ -12,6 +12,28 @@ import { logAction, setCurrentActor, AuditActor } from '../lib/auditLog';
 const loginLogged = new Set<string>();
 
 /**
+ * Comptes super administrateur reconnus côté client (élévation automatique au
+ * rôle `super_admin` + statut « Validé » à la connexion).
+ *
+ * Doit rester aligné avec `isSuperAdminEmail()` (firestore.rules) et
+ * `ADMIN_EMAILS` (functions/index.js). `VITE_ADMIN_EMAIL` accepte un ou
+ * plusieurs e-mails séparés par des virgules et S'AJOUTE à cette liste de base.
+ */
+const DEFAULT_ADMIN_EMAILS = ['mailprosasha2@gmail.com', 'asf.sud.est@gmail.com'];
+const ADMIN_EMAILS: string[] = Array.from(
+  new Set([
+    ...DEFAULT_ADMIN_EMAILS.map((e) => e.toLowerCase()),
+    ...String((import.meta as any).env?.VITE_ADMIN_EMAIL || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
+  ]),
+);
+function isAdminEmail(email?: string | null): boolean {
+  return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
+/**
  * Comptes (par uid) dont l'invitation d'antenne a déjà été résolue dans cette
  * session : évite de relire `antenne_invites` à chaque snapshot du doc org pour
  * les comptes qui n'ont pas d'invitation (cas courant des partenaires).
@@ -144,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchOrg = async (uid: string, email?: string | null, displayName?: string | null) => {
     const isSandbox = localDb.isSandboxActive();
-    const isAdminUser = email ? email.toLowerCase() === (import.meta as any).env.VITE_ADMIN_EMAIL?.toLowerCase() : false;
+    const isAdminUser = isAdminEmail(email);
     
     // Check for any locally saved wizard-flow registration info (to bypass race conditions/Google defaults)
     let pendingReg: any = null;
@@ -367,7 +389,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubOrgDoc(); // Clear previous listener if any
 
       if (currentUser) {
-        const isAdminUser = (currentUser.email ? currentUser.email.toLowerCase() === (import.meta as any).env.VITE_ADMIN_EMAIL?.toLowerCase() : false);
+        const isAdminUser = isAdminEmail(currentUser.email);
         
         if (localDb.isSandboxActive()) {
           await fetchOrg(currentUser.uid, currentUser.email, currentUser.displayName);
