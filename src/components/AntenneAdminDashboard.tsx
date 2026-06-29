@@ -1249,7 +1249,11 @@ export default function AntenneAdminDashboard() {
       : missing > 0
         ? `il reste ${missing} document(s) à compléter ou à valider. Merci de vous connecter à votre espace pour les régulariser.`
         : 'nous vous remercions pour les documents transmis.';
-    const portal = 'https://asf-sud-est.vercel.app';
+    // URL du portail dans le lien de relance : configurable via VITE_PORTAL_URL,
+    // sinon l'adresse du site sur lequel tourne l'app (suit automatiquement le
+    // nom de domaine, sans modification de code en cas de changement d'hébergeur).
+    const portal = (((import.meta as any).env?.VITE_PORTAL_URL as string) || '').trim()
+      || (typeof window !== 'undefined' ? window.location.origin : 'https://asf-ads.com');
     setReminderSubject(`Aviation Sans Frontières — Suivi de votre dossier (antenne ${antenneName})`);
     setReminderBody(
       `Bonjour ${org.contactName || ''},\n\n` +
