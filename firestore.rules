@@ -73,6 +73,11 @@ service cloud.firestore {
              request.auth.token != null &&
              'email' in request.auth.token &&
              request.auth.token.email != null &&
+             // L'adresse doit être vérifiée : c'est la preuve que le titulaire
+             // contrôle réellement l'e-mail invité. Sans cela, n'importe qui
+             // connaissant un e-mail pré-invité pourrait s'auto-attribuer le
+             // rôle admin_antenne. Les comptes Google sont vérifiés d'office.
+             request.auth.token.email_verified == true &&
              exists(/databases/$(database)/documents/antenne_invites/$(request.auth.token.email.lower())) &&
              get(/databases/$(database)/documents/antenne_invites/$(request.auth.token.email.lower())).data.get('antenne_id', '') == data.get('antenne_id', '') &&
              get(/databases/$(database)/documents/antenne_invites/$(request.auth.token.email.lower())).data.get('delegation_id', '') == data.get('delegation_id', '');
