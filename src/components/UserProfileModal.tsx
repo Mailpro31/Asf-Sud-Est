@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, User, Shield, Key, Mail, Phone, Building, Check, Loader2, AlertCircle,
-  KeyRound, Eye, EyeOff, LogOut, MailCheck, Trash2,
+  KeyRound, Eye, EyeOff, LogOut, MailCheck, Trash2, MapPin, Globe, Hash, FileText,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from './ui';
@@ -59,6 +59,12 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [orgName, setOrgName] = useState('');
+  const [address, setAddress] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [city, setCity] = useState('');
+  const [website, setWebsite] = useState('');
+  const [regNumber, setRegNumber] = useState('');
+  const [description, setDescription] = useState('');
 
   // Changement de mot de passe
   const [newPassword, setNewPassword] = useState('');
@@ -90,6 +96,12 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
       setPhone(organization.phone || '');
       setEmail(organization.email || '');
       setOrgName(organization.name || '');
+      setAddress(organization.address || '');
+      setPostalCode(organization.postalCode || '');
+      setCity(organization.city || '');
+      setWebsite(organization.website || '');
+      setRegNumber(organization.regNumber || '');
+      setDescription(organization.description || '');
 
       if (user) {
         const storedAvatar = localStorage.getItem(`asf_avatar_${user.uid}`);
@@ -129,6 +141,12 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         name: orgName.trim(),
         phone: phone.trim(),
         email: email.trim(),
+        address: address.trim(),
+        postalCode: postalCode.trim(),
+        city: city.trim(),
+        website: website.trim(),
+        regNumber: regNumber.trim(),
+        description: description.trim(),
         updatedAt: Date.now(),
       });
 
@@ -440,6 +458,92 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                               placeholder="+33 6 12 34 56 78"
                               className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
                             />
+                          </div>
+                        </div>
+
+                        {/* Coordonnées détaillées (facultatives) */}
+                        <div className="pt-2">
+                          <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-3">
+                            Coordonnées de l'organisme <span className="text-slate-300 dark:text-slate-600 normal-case font-semibold">(facultatif)</span>
+                          </p>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5" /> Adresse postale
+                              </label>
+                              <input
+                                type="text"
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                                placeholder="12 rue de l'Aviation"
+                                className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 block">
+                                  Code postal
+                                </label>
+                                <input
+                                  type="text"
+                                  value={postalCode}
+                                  onChange={(e) => setPostalCode(e.target.value)}
+                                  placeholder="13001"
+                                  className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 block">
+                                  Ville
+                                </label>
+                                <input
+                                  type="text"
+                                  value={city}
+                                  onChange={(e) => setCity(e.target.value)}
+                                  placeholder="Marseille"
+                                  className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 flex items-center gap-1">
+                                  <Globe className="w-3.5 h-3.5" /> Site web
+                                </label>
+                                <input
+                                  type="url"
+                                  value={website}
+                                  onChange={(e) => setWebsite(e.target.value)}
+                                  placeholder="https://mon-organisme.org"
+                                  className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 flex items-center gap-1">
+                                  <Hash className="w-3.5 h-3.5" /> N° SIRET / RNA
+                                </label>
+                                <input
+                                  type="text"
+                                  value={regNumber}
+                                  onChange={(e) => setRegNumber(e.target.value)}
+                                  placeholder="ex. W123456789 (RNA) ou SIRET"
+                                  className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1.5 flex items-center gap-1">
+                                <FileText className="w-3.5 h-3.5" /> Présentation de l'organisme
+                              </label>
+                              <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Décrivez en quelques mots votre organisme et son activité…"
+                                rows={3}
+                                maxLength={1000}
+                                className="input-asf text-xs dark:bg-slate-950 dark:text-slate-100 resize-none"
+                              />
+                            </div>
                           </div>
                         </div>
 

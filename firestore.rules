@@ -114,7 +114,13 @@ service cloud.firestore {
              (!('createdAt' in data) || data.createdAt is number) &&
              (!('updatedAt' in data) || data.updatedAt is number) &&
              (!('delegation_id' in data) || data.delegation_id == null || data.delegation_id is string) &&
-             (!('antenne_id' in data) || data.antenne_id == null || data.antenne_id is string);
+             (!('antenne_id' in data) || data.antenne_id == null || data.antenne_id is string) &&
+             (!('address' in data) || data.address == null || (data.address is string && data.address.size() <= 200)) &&
+             (!('postalCode' in data) || data.postalCode == null || (data.postalCode is string && data.postalCode.size() <= 20)) &&
+             (!('city' in data) || data.city == null || (data.city is string && data.city.size() <= 100)) &&
+             (!('website' in data) || data.website == null || (data.website is string && data.website.size() <= 200)) &&
+             (!('regNumber' in data) || data.regNumber == null || (data.regNumber is string && data.regNumber.size() <= 50)) &&
+             (!('description' in data) || data.description == null || (data.description is string && data.description.size() <= 1000));
     }
 
     function isValidFile(data) {
@@ -320,7 +326,7 @@ service cloud.firestore {
                     // partenaire peut renseigner LUI-MÊME sa délégation + antenne de
                     // rattachement tant qu'aucune ne lui a encore été attribuée.
                     (isOwner(orgId) && incoming().get('role', '') == 'organization' && (existing().get('antenne_id', '') == '' || existing().get('antenne_id', '') == null) && incoming().get('antenne_id', '') != '' && incoming().diff(existing()).affectedKeys().hasOnly(['delegation_id', 'antenne_id', 'updatedAt'])) ||
-                    (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt', 'dossierSubmittedAt', 'hasSeenTour']))
+                    (isOwner(orgId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactName', 'email', 'phone', 'updatedAt', 'dossierSubmittedAt', 'hasSeenTour', 'address', 'postalCode', 'city', 'website', 'regNumber', 'description']))
                   );
 
       // Suppression d'un compte : réservée au super admin.

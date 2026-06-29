@@ -99,16 +99,35 @@ exports.deleteUserAccount = functions.https.onCall(async (data, context) => {
       'Paramètre attendu : { uid: string }.'
     );
   }
-  const isAdmin = context.auth.token.admin === true;
-  if (!isAdmin && context.auth.uid !== uid) {
+  const db = admin.firestore();
+  const bucket = admin.storage().bucket();
+
+  // Autorisation : titulaire (auto-suppression), OU administrateur. Le statut
+  // « admin » est reconnu de trois façons, pour rester fiable même si le custom
+  // claim n'a pas (encore) été attribué au compte :
+  //   1) custom claim `admin: true` ;
+  //   2) rôle Firestore `super_admin`/`admin` (source de vérité de l'app) ;
+  //   3) e-mail figurant dans ADMIN_EMAILS.
+  let authorized = context.auth.uid === uid || context.auth.token.admin === true;
+  if (!authorized) {
+    try {
+      const callerSnap = await db.collection('organizations').doc(context.auth.uid).get();
+      const callerRole = callerSnap.exists ? (callerSnap.data().role || '') : '';
+      if (callerRole === 'super_admin' || callerRole === 'admin') authorized = true;
+    } catch (e) {
+      console.error('Lecture du rôle appelant échouée:', e);
+    }
+  }
+  if (!authorized) {
+    const callerEmail = (context.auth.token.email || '').toLowerCase();
+    if (ADMIN_EMAILS.includes(callerEmail)) authorized = true;
+  }
+  if (!authorized) {
     throw new functions.https.HttpsError(
       'permission-denied',
       'Vous ne pouvez supprimer que votre propre compte.'
     );
   }
-
-  const db = admin.firestore();
-  const bucket = admin.storage().bucket();
 
   // 1) Révocation immédiate de l'accès : suppression du compte d'authentification.
   //    (Empêche le compte de réécrire un profil « Pending » juste après.)
