@@ -136,27 +136,46 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
     try {
       const docRef = doc(db, 'organizations', user.uid);
-      await updateDoc(docRef, {
+      // Champs de base (toujours autorisés par les règles) et champs étendus
+      // (autorisés par une mise à jour de règles récente). Si les règles ne sont
+      // pas encore republiées, l'écriture des champs étendus est refusée : on se
+      // replie alors sur les champs de base pour ne RIEN perdre, et on prévient.
+      const baseFields = {
         contactName: contactName.trim(),
         name: orgName.trim(),
         phone: phone.trim(),
         email: email.trim(),
+        updatedAt: Date.now(),
+      };
+      const extendedFields = {
         address: address.trim(),
         postalCode: postalCode.trim(),
         city: city.trim(),
         website: website.trim(),
         regNumber: regNumber.trim(),
         description: description.trim(),
-        updatedAt: Date.now(),
-      });
+      };
+      let extendedSaved = true;
+      try {
+        await updateDoc(docRef, { ...baseFields, ...extendedFields });
+      } catch (err: any) {
+        if (err?.code === 'permission-denied') {
+          await updateDoc(docRef, baseFields);
+          extendedSaved = false;
+        } else {
+          throw err;
+        }
+      }
 
       // Synchronise l'e-mail de connexion Firebase Auth si modifié.
+      let emailIssue = false;
       if (email.trim() !== user.email) {
         try {
           await updateEmail(user, email.trim());
         } catch (authError: any) {
           console.warn('Sync e-mail Auth ignorée :', authError);
           if (authError.code === 'auth/requires-recent-login') {
+            emailIssue = true;
             setProfileErrorMsg("Les informations sont enregistrées, mais la modification de l'e-mail de connexion nécessite une reconnexion récente.");
           }
         }
@@ -174,7 +193,11 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
       });
 
       await refreshOrganization();
-      if (!profileErrorMsg) setProfileSuccessMsg('Profil et informations mis à jour avec succès !');
+      if (!extendedSaved) {
+        setProfileErrorMsg("Vos informations de base sont enregistrées. Les coordonnées détaillées (adresse, ville, site web, SIRET…) ne pourront l'être qu'une fois la mise à jour de sécurité finalisée par l'administrateur.");
+      } else if (!emailIssue) {
+        setProfileSuccessMsg('Profil et informations mis à jour avec succès !');
+      }
     } catch (err: any) {
       console.error('Error saving profile:', err);
       setProfileErrorMsg('Impossible de mettre à jour le profil. Une erreur est survenue.');
