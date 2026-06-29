@@ -83,11 +83,18 @@ export default function AuditLogPanel({
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
+  // Nombre maximal d'entrées chargées. Plafond volontaire (lectures Firestore) ;
+  // relevé par paliers via le bouton « Charger plus ».
+  const [max, setMax] = useState(500);
 
   useEffect(() => {
-    const unsub = subscribeAuditLogs({ antenneId: antenneId || null }, setLogs);
+    const unsub = subscribeAuditLogs({ antenneId: antenneId || null }, setLogs, max);
     return unsub;
-  }, [antenneId]);
+  }, [antenneId, max]);
+
+  // S'il y a (au moins) autant d'entrées chargées que le plafond, d'autres
+  // entrées plus anciennes existent probablement : on propose d'en charger plus.
+  const mayHaveMore = logs.length >= max;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -193,7 +200,20 @@ export default function AuditLogPanel({
         <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             {filtered.length} entrée{filtered.length > 1 ? 's' : ''}
+            {mayHaveMore && (
+              <span className="ml-1 normal-case font-semibold text-slate-300 dark:text-slate-600">
+                (plafond {max} atteint)
+              </span>
+            )}
           </span>
+          {mayHaveMore && (
+            <button
+              onClick={() => setMax((m) => m + 500)}
+              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-azur hover:border-azur/40 transition-colors"
+            >
+              Charger 500 de plus
+            </button>
+          )}
         </div>
 
         {filtered.length === 0 ? (
