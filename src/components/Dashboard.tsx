@@ -823,6 +823,19 @@ export default function Dashboard() {
   const remainingDocs = totalDocs - validatedDocs;
   const handleSubmitDossier = async () => {
     if (!organization || submittingDossier) return;
+    // Pré-requis : le compte doit avoir été approuvé par un coordinateur ASF.
+    // Tant qu'il est « Pending » (en attente) ou « Incomplete » (suspendu), la
+    // soumission est refusée (garde-fou aligné sur l'upload et la création de
+    // dossiers).
+    if (organization.submissionStatus !== 'Validated') {
+      toast(
+        organization.submissionStatus === 'Incomplete'
+          ? 'Compte suspendu : la soumission de dossier est désactivée.'
+          : "Votre compte doit d'abord être approuvé par un coordinateur ASF avant de pouvoir soumettre votre dossier.",
+        'warning',
+      );
+      return;
+    }
     setSubmittingDossier(true);
     const now = Date.now();
     try {
@@ -1755,7 +1768,9 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Soumission du dossier */}
+        {/* Soumission du dossier — réservée aux comptes approuvés (la bannière
+            ci-dessus explique le cas « en attente » / « suspendu »). */}
+        {organization.submissionStatus === 'Validated' && (
         <div data-tour="submit" className="mb-6 shrink-0">
           <div className={`card-asf p-5 flex flex-col sm:flex-row sm:items-center gap-4 border-azur/30 ${dossierSubmittedAt ? 'ring-1 ring-emerald-200 dark:ring-emerald-500/30' : ''}`}>
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-azur to-deep text-white flex items-center justify-center shrink-0 shadow-asf-md">
@@ -1792,6 +1807,7 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+        )}
 
         {/* Verdict de revue (dérivé des statuts/notes des fichiers) */}
         {(() => {
