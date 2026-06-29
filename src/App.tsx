@@ -13,6 +13,7 @@ import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
 import AntenneAdminDashboard from './components/AntenneAdminDashboard';
 import ChooseAntenne from './components/ChooseAntenne';
+import VerifyEmail from './components/VerifyEmail';
 import LandingPage from './components/LandingPage';
 import LegalModal from './components/LegalModal';
 import ConsentBanner from './components/ui/ConsentBanner';
@@ -82,6 +83,13 @@ function MainApp() {
   }
 
   if (user) {
+    // Garde de vérification : l'accès au portail n'est ouvert qu'une fois
+    // l'adresse e-mail confirmée. Les comptes Google sont vérifiés d'office
+    // (emailVerified === true) et passent donc sans friction ; seuls les comptes
+    // e-mail/mot de passe non confirmés sont retenus sur l'écran de vérification.
+    if (!user.emailVerified) {
+      return <VerifyEmail />;
+    }
     if (!organization) {
       // Just fallback loading until organization is auto-created or fetched
       return (

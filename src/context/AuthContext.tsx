@@ -36,6 +36,15 @@ async function provisionFromInvite(
     // déjà provisionné (sa réaffectation passe par le super admin).
     const role = data?.role;
     if (role === 'super_admin' || role === 'admin' || role === 'admin_antenne') return data;
+    // Sécurité : ne JAMAIS provisionner le rôle admin_antenne tant que l'adresse
+    // e-mail n'est pas vérifiée (preuve que le titulaire contrôle l'adresse
+    // invitée). Les comptes Google sont vérifiés d'office ; seuls les comptes
+    // e-mail/mot de passe non confirmés sont retenus. La règle Firestore
+    // applique la même condition côté serveur (défense en profondeur).
+    const cu = auth.currentUser;
+    if (cu && !cu.emailVerified && cu.providerData.some((p) => p.providerId === 'password')) {
+      return data;
+    }
     // Une invitation est une opération unique : on ne la relit pas à chaque
     // snapshot une fois résolue (absente).
     if (invitesResolved.has(uid)) return data;
