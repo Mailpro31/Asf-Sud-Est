@@ -197,7 +197,7 @@ export function subscribeAuditLogs(
         (err) => {
           console.warn('subscribeAuditLogs : repli sans tri serveur (index manquant ?) :', err);
           inner = onSnapshot(
-            query(coll, where(field, '==', value), limit(1000)),
+            query(coll, where(field, '==', value), limit(Math.max(max, 1000))),
             emit,
             (e2) => {
               console.warn('subscribeAuditLogs échec :', e2);
@@ -226,7 +226,7 @@ export function subscribeAuditLogs(
       (err) => {
         console.warn('subscribeAuditLogs (global) : repli sans tri serveur :', err);
         outer = onSnapshot(
-          query(coll, limit(1000)),
+          query(coll, limit(Math.max(max, 1000))),
           emitAll,
           (e2) => {
             console.warn('subscribeAuditLogs (global) échec :', e2);
