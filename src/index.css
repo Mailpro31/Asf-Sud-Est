@@ -27,6 +27,14 @@
   --color-sourire-dark: #d97e00;
   --color-sourire-light: #fff4e6;
 
+  /* Couleur d'accent PERSONNALISABLE (préférences utilisateur). Défaut = orange
+     ASF. Surchargée à l'exécution sur <html> par PreferencesContext, ce qui
+     met à jour automatiquement les boutons d'action et les utilitaires
+     `*-accent` / `*-accent-light` / `*-accent-dark`. */
+  --color-accent: #f39200;
+  --color-accent-dark: #d97e00;
+  --color-accent-light: #fff4e6;
+
   /* Couleurs sémantiques de statut (dossiers) */
   --color-status-pending: #f59e0b;   /* ambre — En attente */
   --color-status-review: #1b98c4;    /* azur — En révision */
@@ -174,7 +182,8 @@
     cursor: not-allowed;
   }
 
-  /* Bouton accent (orange — « déposer / sourire ») */
+  /* Bouton accent (« déposer / sourire / tutoriel ») — suit la couleur d'accent
+     choisie par l'utilisateur (--color-accent*), orange ASF par défaut. */
   .btn-sourire {
     display: inline-flex;
     align-items: center;
@@ -185,47 +194,47 @@
     font-family: var(--font-display);
     font-weight: 600;
     color: #fff;
-    background: linear-gradient(135deg, #ffa61f 0%, var(--color-sourire) 55%, var(--color-sourire-dark) 100%);
-    box-shadow: 0 1px 2px rgba(217, 126, 0, 0.20), 0 4px 12px -4px rgba(243, 146, 0, 0.38);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 82%, #fff) 0%, var(--color-accent) 55%, var(--color-accent-dark) 100%);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10), 0 4px 12px -4px color-mix(in srgb, var(--color-accent) 45%, transparent);
     transition: filter 0.2s var(--ease-asf), transform 0.2s var(--ease-asf), box-shadow 0.2s var(--ease-asf);
   }
   .btn-sourire:hover {
     filter: brightness(1.06);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(217, 126, 0, 0.20), 0 12px 24px -6px rgba(243, 146, 0, 0.46);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12), 0 12px 24px -6px color-mix(in srgb, var(--color-accent) 52%, transparent);
   }
   .btn-sourire:active {
     transform: translateY(0) scale(0.985);
   }
 
-  /* Bouton tutoriel / aide (icône seule) — TOUJOURS orange, pour repérer l'aide
-     d'un coup d'œil quel que soit le dashboard ou la fenêtre. Variante « douce »
-     de l'accent orange : pastille discrète qui ne concurrence pas le bouton
-     « Tutoriel » plein (btn-sourire) de l'en-tête. */
+  /* Bouton tutoriel / aide (icône seule) — variante « douce » de l'accent, pour
+     repérer l'aide d'un coup d'œil quel que soit le dashboard ou la fenêtre.
+     Suit la couleur d'accent choisie (orange ASF par défaut) : pastille discrète
+     qui ne concurrence pas le bouton « Tutoriel » plein (btn-sourire). */
   .btn-tutorial {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 0.75rem;
     padding: 0.5rem;
-    color: var(--color-sourire);
-    background: var(--color-sourire-light);
+    color: var(--color-accent);
+    background: var(--color-accent-light);
     transition: background 0.2s var(--ease-asf), color 0.2s var(--ease-asf), transform 0.2s var(--ease-asf);
   }
   .btn-tutorial:hover {
-    background: #ffe6c4;
-    color: var(--color-sourire-dark);
+    background: color-mix(in srgb, var(--color-accent) 18%, #fff);
+    color: var(--color-accent-dark);
   }
   .btn-tutorial:active {
     transform: scale(0.96);
   }
   .dark .btn-tutorial {
-    color: #ffb84d;
-    background: rgba(243, 146, 0, 0.14);
+    color: color-mix(in srgb, var(--color-accent) 70%, #fff);
+    background: color-mix(in srgb, var(--color-accent) 16%, transparent);
   }
   .dark .btn-tutorial:hover {
-    background: rgba(243, 146, 0, 0.24);
-    color: #ffc870;
+    background: color-mix(in srgb, var(--color-accent) 26%, transparent);
+    color: color-mix(in srgb, var(--color-accent) 55%, #fff);
   }
 
   /* Bouton secondaire (contour neutre) */

@@ -53,6 +53,7 @@ import { queueEmail } from '../lib/antenneAdmins';
 import { logAction, subscribeAuditLogs } from '../lib/auditLog';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
+import { useStickyState } from '../hooks/useStickyState';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
 import { sweepExpired, isExpired, formatExpiryDate } from '../lib/expiry';
 import { useExpiry, ExpiryModal } from './ui/ExpiryModal';
@@ -62,7 +63,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import { localDb } from '../lib/localDb';
 import { DossierFile, Folder, Organization, SubmissionStatus } from '../types';
 import { STATUS_ORDER, getStatusMeta } from '../lib/status';
-import { StatusBadge, StatusActions, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
+import { StatusBadge, StatusActions, ComplianceBar, GuidedTour, StatusFilterChips, ThemeToggle, PreferencesButton, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
 import { formatBytes } from '../lib/utils';
 import { LogoASF } from './LandingPage';
 import FilePreviewModal from './FilePreviewModal';
@@ -100,7 +101,7 @@ export default function AntenneAdminDashboard() {
   const [orgProfiles, setOrgProfiles] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | SubmissionStatus>('all');
+  const [statusFilter, setStatusFilter] = useStickyState<'all' | SubmissionStatus>('all', `asf:antenne:${organization?.id ?? 'anon'}:status`);
   // Dossiers
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [creatingFolder, setCreatingFolder] = useState(false);
@@ -112,9 +113,9 @@ export default function AntenneAdminDashboard() {
   // Téléchargement groupé en .zip en cours.
   const [zipping, setZipping] = useState(false);
   // Onglet actif du tableau de bord (réduit la longueur de la page).
-  const [view, setView] = useState<'workspace' | 'activity' | 'settings'>('workspace');
+  const [view, setView] = useStickyState<'workspace' | 'activity' | 'settings'>('workspace', `asf:antenne:${organization?.id ?? 'anon'}:view`);
   // Tri, filtre par organisme, sélection multiple, glisser-déposer
-  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc');
+  const [sortBy, setSortBy] = useStickyState<'date_desc' | 'date_asc' | 'name' | 'status' | 'size'>('date_desc', `asf:antenne:${organization?.id ?? 'anon'}:sort`);
   // Documents internes de l'antenne (non rattachés à un organisme).
   const [internalOpen, setInternalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1680,6 +1681,7 @@ export default function AntenneAdminDashboard() {
             <span className="hidden sm:inline">Déconnexion</span>
           </button>
           <ThemeToggle />
+          <PreferencesButton />
         </div>
       </header>
 

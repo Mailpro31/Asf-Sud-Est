@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PreferencesProvider } from './context/PreferencesContext';
 import { FeedbackProvider } from './hooks/useFeedback';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -142,14 +143,16 @@ function MainApp() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <FeedbackProvider>
-          <MainApp />
-          {/* Conformité RGPD : disponibles sur toutes les vues (overlays) */}
-          <LegalModal />
-          <ConsentBanner />
-        </FeedbackProvider>
-      </AuthProvider>
+      <PreferencesProvider>
+        <AuthProvider>
+          <FeedbackProvider>
+            <MainApp />
+            {/* Conformité RGPD : disponibles sur toutes les vues (overlays) */}
+            <LegalModal />
+            <ConsentBanner />
+          </FeedbackProvider>
+        </AuthProvider>
+      </PreferencesProvider>
     </ThemeProvider>
   );
 }
