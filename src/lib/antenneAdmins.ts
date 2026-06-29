@@ -11,7 +11,7 @@ import {
 import emailjs from '@emailjs/browser';
 import { db } from './firebase';
 import { localDb } from './localDb';
-import { emailjsConfig, emailjsConfigured } from './emailConfig';
+import { emailjsConfig, emailjsConfigured, emailReplyTo } from './emailConfig';
 import { AntenneInvite, Organization } from '../types';
 
 /**
@@ -174,6 +174,7 @@ export async function queueEmail(
           message: text,
           message_html: html,
           from_name: 'ASF Sud-Est',
+          reply_to: emailReplyTo,
         },
         { publicKey: emailjsConfig.publicKey },
       );
