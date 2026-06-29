@@ -221,6 +221,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setOrganization({ ...eff, id: docSnap.id } as Organization);
         }
       } else {
+        // Garde-fou anti-recréation : si le compte d'authentification vient
+        // d'être supprimé (par un administrateur ou par le titulaire lui-même),
+        // un jeton encore en cache permettrait de réécrire un profil « Pending »
+        // juste après la suppression — l'utilisateur « réapparaîtrait ». On
+        // vérifie que le compte existe toujours ; sinon, déconnexion propre.
+        if (auth.currentUser && auth.currentUser.uid === uid) {
+          try {
+            await auth.currentUser.reload();
+          } catch (reloadErr: any) {
+            const code = reloadErr?.code || '';
+            if (
+              code === 'auth/user-not-found' ||
+              code === 'auth/user-token-expired' ||
+              code === 'auth/user-disabled'
+            ) {
+              console.warn('Compte supprimé/invalide — déconnexion sans recréation.', code);
+              setOrganization(null);
+              try { await firebaseSignOut(auth); } catch { /* ignore */ }
+              return;
+            }
+            // Autre erreur (réseau…) : on poursuit le flux normal.
+          }
+        }
         // Compte partenaire sans antenne de rattachement (cas typique de la
         // 1re connexion via Google) : on DIFFÈRE la création du document
         // Firestore jusqu'au choix de l'antenne. Ainsi l'enregistrement de
