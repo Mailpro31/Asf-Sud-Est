@@ -44,6 +44,16 @@ export const emailjsConfig = {
   publicKey: orDefault(env.VITE_EMAILJS_PUBLIC_KEY, DEFAULTS.publicKey),
 };
 
+/**
+ * Adresse principale ASF Sud-Est utilisée comme **Reply-To** des e-mails envoyés
+ * (les réponses des destinataires arrivent ici) et comme nom/contact affiché.
+ * NB : l'adresse d'EXPÉDITION (champ « From ») dépend du compte Gmail relié au
+ * service dans le tableau de bord EmailJS ; pour qu'elle devienne
+ * asf.sud.est@gmail.com, reliez ce compte côté EmailJS. Le template EmailJS doit
+ * exposer un champ Reply-To référençant {{reply_to}} pour que ce réglage agisse.
+ */
+export const emailReplyTo: string = orDefault(env.VITE_EMAILJS_REPLY_TO, 'asf.sud.est@gmail.com');
+
 /** Vrai lorsque les trois identifiants EmailJS sont renseignés. */
 export const emailjsConfigured: boolean =
   !!(emailjsConfig.serviceId && emailjsConfig.templateId && emailjsConfig.publicKey);

@@ -6,6 +6,9 @@ import { firebaseConfig, firestoreDatabaseId } from './firebaseConfig';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+// Envoie les e-mails Firebase Auth (vérification d'adresse, réinitialisation du
+// mot de passe…) en français. Sans cela, Firebase utilise l'anglais (lang=en).
+auth.languageCode = 'fr';
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true
 }, firestoreDatabaseId);
