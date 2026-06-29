@@ -43,7 +43,8 @@ import {
   Search,
   X,
   GraduationCap,
-  Compass
+  Compass,
+  CalendarClock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -61,11 +62,11 @@ import AuditLogPanel from './AuditLogPanel';
 import { localDb } from '../lib/localDb';
 import { logAction, subscribeAuditLogs, type AuditLog } from '../lib/auditLog';
 import { readFileAsDataUrl, deleteFileArtifacts, downloadFile } from '../lib/fileTransfer';
-import { sweepExpired, isExpired } from '../lib/expiry';
+import { sweepExpired, isExpired, tsToExpiryInput, expiryInputToTs, minExpiryDateInput, formatExpiryDate } from '../lib/expiry';
 import { downloadFilesAsZip } from '../lib/zip';
 import { formatBytes, swatchFor } from '../lib/utils';
 import { setAntenneMembership, removeAntenneFromAllGroups, toggleAntenneInGroup } from '../lib/antenneGroups';
-import { StatusBadge, StatusActions, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, type NotificationItem, type TourStep } from './ui';
+import { StatusBadge, StatusActions, ComplianceBar, ComplianceRing, GuidedTour, StatusFilterChips, ThemeToggle, NotificationBell, ExpiryBadge, type NotificationItem, type TourStep } from './ui';
 import { STATUS_ORDER } from '../lib/status';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
@@ -237,6 +238,11 @@ export default function AdminPanel() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [orgProfiles, setOrgProfiles] = useState<Organization[]>([]);
 
+  // Suppression automatique programmée (autodestruction) — cible du modal.
+  const [expiryTarget, setExpiryTarget] = useState<{ kind: 'file' | 'folder'; id: string; name: string; current?: number | null } | null>(null);
+  const [expiryValue, setExpiryValue] = useState('');
+  const [savingExpiry, setSavingExpiry] = useState(false);
+
   // Balayage des suppressions automatiques arrivées à échéance. Le super admin
   // peut tout supprimer : sa session sert de filet de sécurité si aucun
   // gestionnaire d'antenne ne s'est connecté depuis l'échéance.
@@ -261,6 +267,61 @@ export default function AdminPanel() {
         }),
     }).finally(() => { sweepRunning.current = false; });
   }, [files, folders]);
+
+  // --- Suppression automatique programmée (autodestruction) ---
+  // Le super admin dispose des mêmes possibilités que le gestionnaire d'antenne :
+  // programmer / modifier / retirer une date d'autodestruction sur n'importe quel
+  // fichier ou dossier (les règles Firestore l'autorisent côté serveur).
+  const openExpiry = (kind: 'file' | 'folder', item: { id: string; name: string; expiresAt?: number | null }) => {
+    setExpiryTarget({ kind, id: item.id, name: item.name, current: item.expiresAt ?? null });
+    setExpiryValue(tsToExpiryInput(item.expiresAt));
+  };
+
+  const saveExpiry = async (ts: number | null) => {
+    if (!expiryTarget) return;
+    setSavingExpiry(true);
+    const { kind, id } = expiryTarget;
+    const coll = kind === 'file' ? 'files' : 'folders';
+    try {
+      if (localDb.isSandboxActive()) {
+        if (kind === 'file') {
+          const t = localDb.getFiles().find((f) => f.id === id);
+          if (t) { t.expiresAt = ts; localDb.saveFile(t); }
+        } else {
+          const t = localDb.getFolders().find((f) => f.id === id);
+          if (t) { t.expiresAt = ts; localDb.saveFolder(t); }
+        }
+      } else {
+        await updateDoc(doc(db, coll, id), { expiresAt: ts });
+      }
+      toast(
+        ts
+          ? `Suppression automatique programmée le ${formatExpiryDate(ts)}.`
+          : 'Suppression automatique retirée.',
+        'success',
+      );
+    } catch (err: any) {
+      console.error('Set expiry failed:', err);
+      toast('Échec de la programmation : ' + (err?.message || 'erreur'), 'error');
+    }
+    setSavingExpiry(false);
+    setExpiryTarget(null);
+  };
+
+  // Pastille « suppression automatique programmée » (couleur graduée selon l'urgence).
+  const renderExpiryBadge = (ts?: number | null) => <ExpiryBadge ts={ts} />;
+
+  // Bouton « programmer / modifier la suppression automatique ».
+  const expiryButton = (kind: 'file' | 'folder', item: { id: string; name: string; expiresAt?: number | null }) => (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); openExpiry(kind, item); }}
+      className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shrink-0 ${item.expiresAt ? 'text-azur dark:text-azur-pastel' : 'text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-100'}`}
+      title={item.expiresAt ? `Suppression auto le ${formatExpiryDate(item.expiresAt)} — modifier` : 'Programmer la suppression automatique'}
+    >
+      <CalendarClock className="w-4 h-4" />
+    </button>
+  );
 
   // Search, sorting, filters states
   const [searchQuery, setSearchQuery] = useState('');
@@ -2289,13 +2350,16 @@ export default function AdminPanel() {
                                     <div className={`w-11 h-11 rounded-2xl ${sw.icon} flex items-center justify-center shrink-0 border ${sw.border} shadow-3xs`}>
                                       <FolderIcon className="w-5 h-5 fill-current" />
                                     </div>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setFolderToDelete(folder); }}
-                                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 text-slate-300 dark:text-slate-600 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
-                                      title="Supprimer le dossier"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    <div className="flex items-center gap-0.5 shrink-0">
+                                      {expiryButton('folder', folder)}
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setFolderToDelete(folder); }}
+                                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 text-slate-300 dark:text-slate-600 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                                        title="Supprimer le dossier"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
                                   </div>
 
                                   <div className="min-w-0">
@@ -2311,6 +2375,7 @@ export default function AdminPanel() {
                                         Dossier {folder.createdBy === 'admin' ? 'interne' : 'partenaire'}
                                       </p>
                                     )}
+                                    {folder.expiresAt ? <div className="mt-1.5">{renderExpiryBadge(folder.expiresAt)}</div> : null}
                                   </div>
 
                                   <div className="mt-auto flex items-center justify-between gap-2">
@@ -2360,6 +2425,12 @@ export default function AdminPanel() {
                         <h4 className="text-sm font-black text-slate-900 dark:text-white border-l border-slate-200 dark:border-slate-800 pl-2">
                           📂 {currentFolder?.name}
                         </h4>
+                        {currentFolder && currentFolderId !== UNFILED_FOLDER_ID && (
+                          <div className="flex items-center gap-1.5">
+                            {currentFolder.expiresAt ? renderExpiryBadge(currentFolder.expiresAt) : null}
+                            {expiryButton('folder', currentFolder)}
+                          </div>
+                        )}
                       </div>
 
                       {/* Drop File Input buttons */}
@@ -2548,6 +2619,7 @@ export default function AdminPanel() {
                                               {uploaderName}
                                             </span>
                                           </span>
+                                          {file.expiresAt ? renderExpiryBadge(file.expiresAt) : null}
                                         </div>
                                       </div>
                                     )}
@@ -2570,6 +2642,7 @@ export default function AdminPanel() {
 
                                   <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex justify-end gap-1.5">
+                                      {expiryButton('file', file)}
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -3631,6 +3704,79 @@ export default function AdminPanel() {
         onClose={() => setIsCreatingFolder(false)}
         onConfirm={handleCreateFolder}
       />
+
+      {/* Suppression automatique programmée (autodestruction) */}
+      {expiryTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => !savingExpiry && setExpiryTarget(null)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-azur/10 text-azur dark:text-azur-pastel flex items-center justify-center shrink-0">
+                <CalendarClock className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Suppression automatique</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {expiryTarget.kind === 'folder' ? 'Dossier' : 'Document'} : {expiryTarget.name}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              {expiryTarget.kind === 'folder'
+                ? 'À la date choisie, ce dossier et tous les fichiers qu’il contient seront supprimés définitivement.'
+                : 'À la date choisie, ce document sera supprimé définitivement.'}{' '}
+              L’organisme est informé de la date directement sur la pièce concernée.
+            </p>
+
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Date de suppression</label>
+              <input
+                type="date"
+                value={expiryValue}
+                min={minExpiryDateInput()}
+                onChange={(e) => setExpiryValue(e.target.value)}
+                className="input-asf w-full mt-1"
+              />
+            </div>
+
+            {/* Raccourcis pratiques */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: '30 jours', days: 30 },
+                { label: '90 jours', days: 90 },
+                { label: '6 mois', days: 182 },
+                { label: '1 an', days: 365 },
+              ].map((p) => (
+                <button
+                  key={p.days}
+                  type="button"
+                  onClick={() => setExpiryValue(new Date(Date.now() + p.days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))}
+                  className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-azur/50 hover:text-azur transition-colors"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap justify-between gap-2 pt-1">
+              {expiryTarget.current ? (
+                <button onClick={() => saveExpiry(null)} disabled={savingExpiry} className="text-sm font-bold px-4 py-2 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 inline-flex items-center gap-1.5 disabled:opacity-60">
+                  <X className="w-4 h-4" /> Retirer
+                </button>
+              ) : <span />}
+              <div className="flex gap-2 ml-auto">
+                <button onClick={() => setExpiryTarget(null)} disabled={savingExpiry} className="btn-secondary text-sm">Annuler</button>
+                <button
+                  onClick={() => saveExpiry(expiryInputToTs(expiryValue))}
+                  disabled={savingExpiry || !expiryValue}
+                  className="btn-asf text-sm disabled:opacity-60"
+                >
+                  {savingExpiry ? 'Enregistrement…' : 'Programmer'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Suppression définitive d'un compte — confirmation par saisie. */}
       {orgToDelete && (() => {
