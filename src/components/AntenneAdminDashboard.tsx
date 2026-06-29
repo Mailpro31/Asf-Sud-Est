@@ -54,7 +54,8 @@ import { logAction, subscribeAuditLogs } from '../lib/auditLog';
 import { useCmdK } from '../hooks/useCmdK';
 import { useFirstRunTour } from '../hooks/useFirstRunTour';
 import { readFileAsDataUrl, downloadFile, deleteFileArtifacts } from '../lib/fileTransfer';
-import { sweepExpired, isExpired, tsToExpiryInput, expiryInputToTs, minExpiryDateInput, formatExpiryDate } from '../lib/expiry';
+import { sweepExpired, isExpired, formatExpiryDate } from '../lib/expiry';
+import { useExpiry, ExpiryModal } from './ui/ExpiryModal';
 import { downloadFilesAsZip } from '../lib/zip';
 import { useAuth } from '../context/AuthContext';
 import { useFeedback } from '../hooks/useFeedback';
@@ -175,10 +176,12 @@ export default function AntenneAdminDashboard() {
   const [renameValue, setRenameValue] = useState('');
   const [deletingFile, setDeletingFile] = useState<DossierFile | null>(null);
   const [deleting, setDeleting] = useState(false);
-  // Programmation de la suppression automatique d'un fichier OU d'un dossier.
-  const [expiryTarget, setExpiryTarget] = useState<{ kind: 'file' | 'folder'; id: string; name: string; current?: number | null } | null>(null);
-  const [expiryValue, setExpiryValue] = useState('');
-  const [savingExpiry, setSavingExpiry] = useState(false);
+  // Programmation de la suppression automatique d'un fichier OU d'un dossier
+  // (logique + modale mutualisées : voir ui/ExpiryModal).
+  const {
+    expiryTarget, expiryValue, setExpiryValue, savingExpiry,
+    openExpiry, saveExpiry, closeExpiry,
+  } = useExpiry({ toast, onSandboxSaved: () => loadLocalNow() });
   const fileInputRef = useRef<any>(null);
   // Note de revue d'un fichier (ce que l'organisme doit corriger).
   const [noteFile, setNoteFile] = useState<DossierFile | null>(null);
@@ -1105,44 +1108,6 @@ export default function AntenneAdminDashboard() {
     setDeleting(false);
     setDeletingFile(null);
     setPreviewFile(null);
-  };
-
-  // --- Suppression automatique programmée (autodestruction) ---
-  const openExpiry = (kind: 'file' | 'folder', item: { id: string; name: string; expiresAt?: number | null }) => {
-    setExpiryTarget({ kind, id: item.id, name: item.name, current: item.expiresAt ?? null });
-    setExpiryValue(tsToExpiryInput(item.expiresAt));
-  };
-
-  const saveExpiry = async (ts: number | null) => {
-    if (!expiryTarget) return;
-    setSavingExpiry(true);
-    const { kind, id, name } = expiryTarget;
-    const coll = kind === 'file' ? 'files' : 'folders';
-    try {
-      if (localDb.isSandboxActive()) {
-        if (kind === 'file') {
-          const t = localDb.getFiles().find((f) => f.id === id);
-          if (t) { t.expiresAt = ts; localDb.saveFile(t); }
-        } else {
-          const t = localDb.getFolders().find((f) => f.id === id);
-          if (t) { t.expiresAt = ts; localDb.saveFolder(t); }
-        }
-        loadLocalNow();
-      } else {
-        await updateDoc(doc(db, coll, id), { expiresAt: ts });
-      }
-      toast(
-        ts
-          ? `Suppression automatique programmée le ${formatExpiryDate(ts)}.`
-          : 'Suppression automatique retirée.',
-        'success',
-      );
-    } catch (err: any) {
-      console.error('Set expiry failed:', err);
-      toast('Échec de la programmation : ' + (err?.message || 'erreur'), 'error');
-    }
-    setSavingExpiry(false);
-    setExpiryTarget(null);
   };
 
   // Balayage des éléments arrivés à échéance : le gestionnaire d'antenne peut
@@ -2092,77 +2057,14 @@ export default function AntenneAdminDashboard() {
       )}
 
       {/* Programmation de la suppression automatique d'un fichier / dossier */}
-      {expiryTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => !savingExpiry && setExpiryTarget(null)}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-azur/10 text-azur dark:text-azur-pastel flex items-center justify-center shrink-0">
-                <CalendarClock className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-display text-lg font-bold text-deep dark:text-azur-pastel">Suppression automatique</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {expiryTarget.kind === 'folder' ? 'Dossier' : 'Document'} : {expiryTarget.name}
-                </p>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              {expiryTarget.kind === 'folder'
-                ? 'À la date choisie, ce dossier et tous les fichiers qu’il contient seront supprimés définitivement.'
-                : 'À la date choisie, ce document sera supprimé définitivement.'}{' '}
-              L’organisme est informé de la date directement sur la pièce concernée.
-            </p>
-
-            <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Date de suppression</label>
-              <input
-                type="date"
-                value={expiryValue}
-                min={minExpiryDateInput()}
-                onChange={(e) => setExpiryValue(e.target.value)}
-                className="input-asf w-full mt-1"
-              />
-            </div>
-
-            {/* Raccourcis pratiques */}
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { label: '30 jours', days: 30 },
-                { label: '90 jours', days: 90 },
-                { label: '6 mois', days: 182 },
-                { label: '1 an', days: 365 },
-              ].map((p) => (
-                <button
-                  key={p.days}
-                  type="button"
-                  onClick={() => setExpiryValue(tsToExpiryInput(Date.now() + p.days * 24 * 60 * 60 * 1000))}
-                  className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-azur/50 hover:text-azur transition-colors"
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap justify-between gap-2 pt-1">
-              {typeof expiryTarget.current === 'number' ? (
-                <button onClick={() => saveExpiry(null)} disabled={savingExpiry} className="text-sm font-bold px-4 py-2 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 inline-flex items-center gap-1.5 disabled:opacity-60">
-                  <X className="w-4 h-4" /> Retirer
-                </button>
-              ) : <span />}
-              <div className="flex gap-2 ml-auto">
-                <button onClick={() => setExpiryTarget(null)} disabled={savingExpiry} className="btn-secondary text-sm">Annuler</button>
-                <button
-                  onClick={() => saveExpiry(expiryInputToTs(expiryValue))}
-                  disabled={savingExpiry || !expiryValue}
-                  className="btn-asf text-sm disabled:opacity-60"
-                >
-                  {savingExpiry ? 'Enregistrement…' : 'Programmer'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ExpiryModal
+        target={expiryTarget}
+        value={expiryValue}
+        setValue={setExpiryValue}
+        saving={savingExpiry}
+        onSave={saveExpiry}
+        onClose={closeExpiry}
+      />
 
       {/* Note de revue d'un fichier (ce qu'il faut corriger) */}
       {noteFile && (
