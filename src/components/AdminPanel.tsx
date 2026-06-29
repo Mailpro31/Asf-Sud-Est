@@ -3800,13 +3800,14 @@ export default function AdminPanel() {
                       <span className="font-bold text-rose-600 dark:text-rose-300"> définitivement supprimés</span> :
                     </p>
                     <ul className="text-xs text-slate-500 dark:text-slate-400 mt-2 space-y-1 list-disc list-inside">
+                      <li>le compte de connexion (authentification),</li>
                       <li>le profil partenaire,</li>
                       <li>{nbFiles} fichier{nbFiles > 1 ? 's' : ''} déposé{nbFiles > 1 ? 's' : ''} (et leur stockage),</li>
                       <li>{nbFolders} dossier{nbFolders > 1 ? 's' : ''}.</li>
                     </ul>
                     <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">
-                      Cette action est irréversible. (Remarque : l'identifiant de connexion Google/e-mail
-                      n'est pas supprimé du système d'authentification.)
+                      Cette action est irréversible : le compte d'authentification et toutes les données
+                      associées sont définitivement effacés.
                     </p>
                   </div>
                 </div>

@@ -16,6 +16,15 @@ export interface Organization {
   hasSeenTour?: boolean;
   /** Date à laquelle l'organisme a soumis son dossier complet pour revue. */
   dossierSubmittedAt?: number;
+  /** Coordonnées détaillées de l'organisme (renseignées par le titulaire). */
+  address?: string;
+  postalCode?: string;
+  city?: string;
+  website?: string;
+  /** Numéro d'immatriculation (SIRET pour une entreprise, RNA pour une association). */
+  regNumber?: string;
+  /** Présentation libre de l'organisme et de son activité. */
+  description?: string;
 }
 
 export interface DossierFile {
