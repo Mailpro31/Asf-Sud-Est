@@ -2135,7 +2135,7 @@ export default function AntenneAdminDashboard() {
                 <button
                   key={p.days}
                   type="button"
-                  onClick={() => setExpiryValue(new Date(Date.now() + p.days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))}
+                  onClick={() => setExpiryValue(tsToExpiryInput(Date.now() + p.days * 24 * 60 * 60 * 1000))}
                   className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-azur/50 hover:text-azur transition-colors"
                 >
                   {p.label}
@@ -2144,7 +2144,7 @@ export default function AntenneAdminDashboard() {
             </div>
 
             <div className="flex flex-wrap justify-between gap-2 pt-1">
-              {expiryTarget.current ? (
+              {typeof expiryTarget.current === 'number' ? (
                 <button onClick={() => saveExpiry(null)} disabled={savingExpiry} className="text-sm font-bold px-4 py-2 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 inline-flex items-center gap-1.5 disabled:opacity-60">
                   <X className="w-4 h-4" /> Retirer
                 </button>
